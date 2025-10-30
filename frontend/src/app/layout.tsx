@@ -1,15 +1,63 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import theSeasonsFont from "next/font/local";
+import centuryGothicFont from "next/font/local";
+import { Open_Sans } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const theSeasons = theSeasonsFont({
+  src: [
+    {
+      path: "./fonts/The_Seasons/theseasons-lt.otf",
+      weight: "300",
+      style: "normal",
+    },
+    {
+      path: "./fonts/The_Seasons/theseasons-ltit.otf",
+      weight: "300",
+      style: "italic",
+    },
+    {
+      path: "./fonts/The_Seasons/theseasons-reg.otf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "./fonts/The_Seasons/theseasons-it.otf",
+      weight: "400",
+      style: "italic",
+    },
+    {
+      path: "./fonts/The_Seasons/theseasons-bd.otf",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "./fonts/The_Seasons/theseasons-bdit.otf",
+      weight: "700",
+      style: "italic",
+    },
+  ],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const centuryGothic = centuryGothicFont({
+  src: [
+    {
+      path: "./fonts/Century_Gothic/centurygothic.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "./fonts/Century_Gothic/centurygothic_bold.ttf",
+      weight: "700",
+      style: "normal",
+    },
+  ],
+});
+
+const openSans = Open_Sans({
   subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-open-sans",
 });
 
 export const metadata: Metadata = {
@@ -23,12 +71,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
-      </body>
+    <html
+      lang="en"
+      className={`${theSeasons.className} ${centuryGothic.className}`}
+    >
+      <body className={`${centuryGothic.className} antialiased`}>{children}</body>
     </html>
   );
 }

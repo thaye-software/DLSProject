@@ -10,6 +10,8 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-seasons: var(--font-the-seasons);
+  --font-century: var(--font-century-gothic);
 }
 
 @media (prefers-color-scheme: dark) {
