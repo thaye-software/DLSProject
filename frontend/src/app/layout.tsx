@@ -37,6 +37,7 @@ const theSeasons = theSeasonsFont({
       style: "italic",
     },
   ],
+  variable: "--font-the-seasons",
 });
 
 const centuryGothic = centuryGothicFont({
@@ -52,6 +53,7 @@ const centuryGothic = centuryGothicFont({
       style: "normal",
     },
   ],
+  variable: "--font-century-gothic",
 });
 
 const openSans = Open_Sans({
@@ -73,9 +75,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${theSeasons.className} ${centuryGothic.className}`}
+      className={`${theSeasons.variable} ${centuryGothic.variable} ${openSans.variable}`}
     >
-      <body className={`${centuryGothic.className} antialiased`}>{children}</body>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }
