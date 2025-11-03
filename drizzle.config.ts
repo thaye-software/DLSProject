@@ -1,5 +1,5 @@
 import { defineConfig } from "drizzle-kit";
-import './envConfig.ts';
+import './envConfig.js';
 
 const connectionString = process.env.APP_ENV == 'prod' 
   ? process.env.DATABASE_URL_PROD

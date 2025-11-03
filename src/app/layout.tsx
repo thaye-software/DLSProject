@@ -3,6 +3,11 @@ import theSeasonsFont from "next/font/local";
 import centuryGothicFont from "next/font/local";
 import { Open_Sans } from "next/font/google";
 import "./globals.css";
+import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
+import Image from "next/image";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { ModeToggle } from "@/components/ModeToggle";
 
 const theSeasons = theSeasonsFont({
   src: [
@@ -76,8 +81,46 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${theSeasons.variable} ${centuryGothic.variable} ${openSans.variable}`}
+      suppressHydrationWarning
     >
-      <body className="antialiased">{children}</body>
+      <body className="antialiased min-h-screen flex flex-col">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <header>
+            <div className="flex items-center justify-between w-full px-4">
+              <div></div>
+
+              <div className="flex items-center gap-4">
+                <Image
+                  src="/logo.svg"
+                  alt="Limited Watches Logo"
+                  width={80}
+                  height={80}
+                />
+                <h1 className="text-3xl font-seasons font-semibold text-champagne">
+                  Limited Watches
+                </h1>
+              </div>
+
+              <div className="w-20 flex justify-end">
+                <ModeToggle />
+              </div>
+            </div>
+          </header>
+          <nav className="container mx-auto">
+            <Navbar />
+          </nav>
+
+          {/* set height of main to fill available space */ }
+          <main className="container mx-auto flex-1">{children}</main>
+
+          <Footer />
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

@@ -1,6 +1,6 @@
 # limited-watches
-Exam project for Limited Watches by Chris Ye and Mads Fjeldberg
 
+Exam project for Limited Watches by Chris Ye and Mads Fjeldberg
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
@@ -19,10 +19,10 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-
 ## Spin up local supabase databse
 
 prerequisites:
+
 - have docker desktop installed and running.
 
 Only the very first time after cloning the project initilise the local supabase databse:
