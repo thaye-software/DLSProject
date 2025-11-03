@@ -92,10 +92,9 @@ export const watches = pgTable(
     braceletColor: varchar("bracelet_color", { length: 100 }),
     dialColor: varchar("dial_color", { length: 100 }),
     vat: integer("vat"),
-    productSafetyInfoId: bigint("product_safety_info_id", { mode: "number" }).references(
-      () => productSafetyInfo.id,
-      { onDelete: "set null" }
-    ),
+    productSafetyInfoId: bigint("product_safety_info_id", {
+      mode: "number",
+    }).references(() => productSafetyInfo.id, { onDelete: "set null" }),
   },
   (table) => [
     index("idx_watches_brand").on(table.brand),
@@ -114,6 +113,7 @@ export const users = pgTable(
     password: varchar("password", { length: 255 }).notNull(),
     avatarUrl: varchar("avatar_url", { length: 255 }),
     emailConfirmed: boolean("email_confirmed").notNull().default(false),
+    role: varchar("role", { length: 50 }).notNull().default("customer"),
     country: bigint("country", { mode: "number" }).references(
       () => countries.id,
       { onDelete: "set null" }
@@ -158,6 +158,20 @@ export const products = pgTable(
   ]
 );
 
+export const orderAddresses = pgTable(
+  "order_addresses",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    address1: varchar("address_line_1", { length: 255 }).notNull(),
+    address2: varchar("address_line_2", { length: 255 }),
+    city: varchar("city", { length: 255 }).notNull(),
+    zipCode: varchar("zip_code", { length: 50 }).notNull(),
+    stateProvince: varchar("state_province", { length: 255 }),
+    country: varchar("country", { length: 255 }).notNull(),
+  },
+  (table) => []
+);
+
 export const orders = pgTable(
   "orders",
   {
@@ -168,12 +182,20 @@ export const orders = pgTable(
     totalPrice: bigint("total_price", { mode: "number" }).notNull(),
     status: varchar("status", { length: 50 }).notNull(),
     currency: varchar("currency", { length: 10 }).notNull().default("DKK"),
+    deliveryAddressId: bigint("delivery_address_id", {
+      mode: "number",
+    }).references(() => orderAddresses.id, { onDelete: "set null" }),
+    billingAddressId: bigint("billing_address_id", {
+      mode: "number",
+    }).references(() => orderAddresses.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [
     index("idx_orders_user_id").on(table.userId),
     index("idx_orders_status").on(table.status),
     index("idx_orders_created_at").on(table.createdAt),
+    index("idx_orders_delivery_address").on(table.deliveryAddressId),
+    index("idx_orders_billing_address").on(table.billingAddressId),
     check(
       "orders_status_check",
       sql`${table.status} IN ('pending', 'paid', 'shipped', 'completed', 'cancelled')`
@@ -351,7 +373,25 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
     references: [users.id],
   }),
   orderItems: many(orderItems),
+  deliveryAddress: one(orderAddresses, {
+    fields: [orders.deliveryAddressId],
+    references: [orderAddresses.id],
+    relationName: "deliveryAddress",
+  }),
+  billingAddress: one(orderAddresses, {
+    fields: [orders.billingAddressId],
+    references: [orderAddresses.id],
+    relationName: "billingAddress",
+  }),
 }));
+
+export const orderAddressesRelations = relations(
+  orderAddresses,
+  ({ many }) => ({
+    deliveryOrders: many(orders, { relationName: "deliveryAddress" }),
+    billingOrders: many(orders, { relationName: "billingAddress" }),
+  })
+);
 
 export const orderItemsRelations = relations(orderItems, ({ one }) => ({
   order: one(orders, {
