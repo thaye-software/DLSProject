@@ -30,6 +30,6 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts",
     "src/database/drizzle.ts"
-  ],
+, "tailwind.config.js"  ],
   "exclude": ["node_modules"]
 }
