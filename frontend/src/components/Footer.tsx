@@ -43,13 +43,13 @@ export function Footer() {
         </div>
 
         {/* Three Column Section */}
-        <div className="flex">
+        <div className="grid grid-cols-3">
           {/* Quick Links */}
-          <div className="flex-1">
+          <div>
             <h4 className="text-lg font-semibold text-foreground">
               Quick Links
             </h4>
-            <ul className="">
+            <ul>
               <li>
                 <Link
                   href="/"
@@ -86,11 +86,11 @@ export function Footer() {
           </div>
 
           {/* Customer Service */}
-          <div className="flex-1">
+          <div>
             <h4 className="text-lg font-semibold text-foreground">
               Customer Service
             </h4>
-            <ul className="">
+            <ul>
               <li>
                 <Link
                   href="/shipping"
@@ -127,11 +127,11 @@ export function Footer() {
           </div>
 
           {/* Contact Info */}
-          <div className="flex-1">
+          <div>
             <h4 className="text-lg font-semibold text-foreground">
               Contact Info
             </h4>
-            <div className="">
+            <div>
               <div className="flex items-center space-x-3">
                 <MapPin className="h-4 w-4 text-champagne shrink-0" />
                 <span className="text-foreground/80 text-sm">
@@ -157,8 +157,8 @@ export function Footer() {
         </div>
 
         {/* Bottom Section */}
-        <div className=" border-t border-border">
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+        <div className="mt-4 border-t border-border">
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 mt-2">
             <p className="text-foreground/60 text-sm">
               © {new Date().getFullYear()} Limited Watches. All rights reserved.
             </p>
