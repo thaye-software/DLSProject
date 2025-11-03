@@ -14,8 +14,8 @@
     "db:seed": "node supabase/scripts/seed.js",
     "db:studio": "npx drizzle-kit studio",
 
-    "db:migrate:dev": "cross-env NODE_ENV=development npx drizzle-kit push",
-    "db:migrate:prod": "cross-env NODE_ENV=production npx drizzle-kit push",
+    "db:migrate:dev": "cross-env APP_ENV=development npx drizzle-kit push",
+    "db:migrate:prod": "cross-env APP_ENV=production npx drizzle-kit push",
 
     "supabase:init": "npx supabase init",
     "supabase:start": "npx supabase start",
