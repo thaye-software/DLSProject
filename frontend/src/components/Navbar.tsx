@@ -26,13 +26,13 @@ export function Navbar() {
               <ul className="grid w-[200px] gap-4">
                 <li>
                   <NavigationMenuLink asChild>
-                    <Link href="#">All Watches</Link>
+                    <Link href="/watches/all">All Watches</Link>
                   </NavigationMenuLink>
                   <NavigationMenuLink asChild>
-                    <Link href="#">New Arrivals</Link>
+                    <Link href="/watches/new">New Arrivals</Link>
                   </NavigationMenuLink>
                   <NavigationMenuLink asChild>
-                    <Link href="#">Limited editions</Link>
+                    <Link href="/watches/limited">Limited editions</Link>
                   </NavigationMenuLink>
                 </li>
               </ul>
