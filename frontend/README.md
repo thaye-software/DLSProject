@@ -2,16 +2,11 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+Right after cloning the project run the following commands:
 
 ```bash
+npm i
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
@@ -19,6 +14,25 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+
+## Spin up local supabase databse
+
+prerequisites:
+- have docker desktop installed and running.
+
+Only the very first time after cloning the project initilise the local supabase databse:
+
+```bash
+npm run supabase:init
+```
+
+To start/stop do:
+
+```bash
+npm run supabase:start
+npm run supabse:stop
+```
 
 ## Learn More
 
