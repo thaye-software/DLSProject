@@ -22,13 +22,11 @@ jobs:
       - name: Run migrations (develop)
         if: github.ref == 'refs/heads/dev'
         env:
-          APP_ENV: dev
           DATABASE_URL_DEV: ${{ secrets.DATABASE_URL_DEV }}
         run: npm run db:migrate:dev
       
       - name: Run migrations (production)
         if: github.ref == 'refs/heads/main'
         env:
-          APP_ENV: prod
           DATABASE_URL_PROD: ${{ secrets.DATABASE_URL_PROD }}
         run: npm run db:migrate:prod
