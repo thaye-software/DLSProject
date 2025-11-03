@@ -113,6 +113,7 @@ export const users = pgTable(
     password: varchar("password", { length: 255 }).notNull(),
     avatarUrl: varchar("avatar_url", { length: 255 }),
     emailConfirmed: boolean("email_confirmed").notNull().default(false),
+    role: varchar("role", { length: 50 }).notNull().default("customer"),
     country: bigint("country", { mode: "number" }).references(
       () => countries.id,
       { onDelete: "set null" }
