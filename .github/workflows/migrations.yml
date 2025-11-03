@@ -2,7 +2,7 @@ name: Database Migrations
 
 on:
   push:
-    branches: [develop, main]
+    branches: ['dev', 'main']
 
 jobs:
   migrate:
