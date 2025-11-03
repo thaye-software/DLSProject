@@ -1,8 +1,0 @@
-{
-  "compilerOptions": {
-    "types": ["node"],
-    "esModuleInterop": true,
-    "noEmit": true,
-    "allowImportingTsExtensions": true,
-  }
-}

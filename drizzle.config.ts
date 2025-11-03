@@ -1,9 +1,9 @@
 import { defineConfig } from "drizzle-kit";
 import './envConfig.ts';
 
-const connectionString = process.env.NODE_ENV == 'production' 
+const connectionString = process.env.APP_ENV == 'production' 
   ? process.env.DATABASE_URL_PROD
-  : process.env.NODE_ENV == 'development'
+  : process.env.APP_ENV == 'development'
   ? process.env.DATABASE_URL_DEV
   : process.env.DATABASE_URL_LOCAL; 
 
