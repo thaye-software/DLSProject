@@ -451,3 +451,13 @@ export const messagesRelations = relations(messages, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+export const test = pgTable(
+  "test",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    name: varchar("name", { length: 255 }).notNull(),
+    abbreviation: varchar("abbreviation", { length: 10 }).notNull(),
+    currency: varchar("currency", { length: 50 }).notNull(),
+  }
+);
