@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS "addresses" (
+CREATE TABLE "addresses" (
 	"id" bigserial PRIMARY KEY NOT NULL,
 	"user_id" bigint NOT NULL,
 	"address_line_1" varchar(255) NOT NULL,
@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS "addresses" (
 	"state_province" varchar(255)
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "auctions" (
+CREATE TABLE "auctions" (
 	"id" bigserial PRIMARY KEY NOT NULL,
 	"watch_id" bigint NOT NULL,
 	"starting_price" bigint NOT NULL,
@@ -16,13 +16,13 @@ CREATE TABLE IF NOT EXISTS "auctions" (
 	"ends_at" timestamp NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "blog_media" (
+CREATE TABLE "blog_media" (
 	"id" bigserial PRIMARY KEY NOT NULL,
 	"blog_id" bigint NOT NULL,
 	"media_url" varchar(255) NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "blog_posts" (
+CREATE TABLE "blog_posts" (
 	"id" bigserial PRIMARY KEY NOT NULL,
 	"title" varchar(255) NOT NULL,
 	"content" text NOT NULL,
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS "blog_posts" (
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "conversations" (
+CREATE TABLE "conversations" (
 	"id" bigserial PRIMARY KEY NOT NULL,
 	"customer_id" bigint NOT NULL,
 	"product_id" bigint NOT NULL,
@@ -40,14 +40,14 @@ CREATE TABLE IF NOT EXISTS "conversations" (
 	CONSTRAINT "conversations_status_check" CHECK ("conversations"."status" IN ('open', 'closed', 'pending'))
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "countries" (
+CREATE TABLE "countries" (
 	"id" bigserial PRIMARY KEY NOT NULL,
 	"name" varchar(255) NOT NULL,
 	"abbreviation" varchar(10) NOT NULL,
 	"currency" varchar(50) NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "messages" (
+CREATE TABLE "messages" (
 	"id" bigserial PRIMARY KEY NOT NULL,
 	"conversation_id" bigint NOT NULL,
 	"sender_id" bigint NOT NULL,
@@ -58,14 +58,14 @@ CREATE TABLE IF NOT EXISTS "messages" (
 	CONSTRAINT "messages_sender_type_check" CHECK ("messages"."sender_type" IN ('customer', 'seller'))
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "order_items" (
+CREATE TABLE "order_items" (
 	"id" bigserial PRIMARY KEY NOT NULL,
 	"order_id" bigint NOT NULL,
 	"product_id" bigint NOT NULL,
 	"quantity" integer DEFAULT 1 NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "orders" (
+CREATE TABLE "orders" (
 	"id" bigserial PRIMARY KEY NOT NULL,
 	"user_id" bigint NOT NULL,
 	"total_price" bigint NOT NULL,
@@ -75,13 +75,13 @@ CREATE TABLE IF NOT EXISTS "orders" (
 	CONSTRAINT "orders_status_check" CHECK ("orders"."status" IN ('pending', 'paid', 'shipped', 'completed', 'cancelled'))
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "product_images" (
+CREATE TABLE "product_images" (
 	"id" bigserial PRIMARY KEY NOT NULL,
 	"image_url" varchar(255) NOT NULL,
 	"is_thumbnail" boolean DEFAULT false NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "product_safety_info" (
+CREATE TABLE "product_safety_info" (
 	"id" bigserial PRIMARY KEY NOT NULL,
 	"brand_id" bigint NOT NULL,
 	"brand" varchar(255) NOT NULL,
@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS "product_safety_info" (
 	"website" varchar(255)
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "products" (
+CREATE TABLE "products" (
 	"id" bigserial PRIMARY KEY NOT NULL,
 	"watch_id" bigint,
 	"product_type" varchar(255) NOT NULL,
@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS "products" (
 	"image_id" bigint
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "users" (
+CREATE TABLE "users" (
 	"id" bigserial PRIMARY KEY NOT NULL,
 	"username" varchar(255) NOT NULL,
 	"email" varchar(255) NOT NULL,
@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS "users" (
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "watches" (
+CREATE TABLE "watches" (
 	"id" bigserial PRIMARY KEY NOT NULL,
 	"brand" varchar(255) NOT NULL,
 	"model" varchar(255) NOT NULL,
@@ -156,39 +156,39 @@ ALTER TABLE "products" ADD CONSTRAINT "products_image_id_product_images_id_fk" F
 ALTER TABLE "users" ADD CONSTRAINT "users_country_countries_id_fk" FOREIGN KEY ("country") REFERENCES "public"."countries"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_address_addresses_id_fk" FOREIGN KEY ("address") REFERENCES "public"."addresses"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "watches" ADD CONSTRAINT "watches_product_safety_info_id_product_safety_info_id_fk" FOREIGN KEY ("product_safety_info_id") REFERENCES "public"."product_safety_info"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_addresses_user_id" ON "addresses" USING btree ("user_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_auctions_watch_id" ON "auctions" USING btree ("watch_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_auctions_ends_at" ON "auctions" USING btree ("ends_at");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_auctions_current_price" ON "auctions" USING btree ("current_price");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_blog_media_blog_id" ON "blog_media" USING btree ("blog_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_blog_posts_author_id" ON "blog_posts" USING btree ("author_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_blog_posts_created_at" ON "blog_posts" USING btree ("created_at");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_conversations_customer_id" ON "conversations" USING btree ("customer_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_conversations_product_id" ON "conversations" USING btree ("product_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_conversations_status" ON "conversations" USING btree ("status");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_conversations_created_at" ON "conversations" USING btree ("created_at");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_countries_name" ON "countries" USING btree ("name");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_countries_abbreviation" ON "countries" USING btree ("abbreviation");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_messages_conversation_id" ON "messages" USING btree ("conversation_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_messages_sender_id" ON "messages" USING btree ("sender_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_messages_created_at" ON "messages" USING btree ("created_at");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_messages_is_read" ON "messages" USING btree ("is_read");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_order_items_order_id" ON "order_items" USING btree ("order_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_order_items_product_id" ON "order_items" USING btree ("product_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_orders_user_id" ON "orders" USING btree ("user_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_orders_status" ON "orders" USING btree ("status");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_orders_created_at" ON "orders" USING btree ("created_at");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_product_images_thumbnail" ON "product_images" USING btree ("is_thumbnail");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_product_safety_brand" ON "product_safety_info" USING btree ("brand");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_product_safety_country" ON "product_safety_info" USING btree ("country");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_products_watch_id" ON "products" USING btree ("watch_id");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_products_name" ON "products" USING btree ("name");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_products_created_at" ON "products" USING btree ("created_at");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_products_price_dkk" ON "products" USING btree ("price_dkk");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_users_country" ON "users" USING btree ("country");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_users_address" ON "users" USING btree ("address");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_users_email_confirmed" ON "users" USING btree ("email_confirmed");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_watches_brand" ON "watches" USING btree ("brand");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_watches_reference" ON "watches" USING btree ("reference");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_watches_year" ON "watches" USING btree ("year");--> statement-breakpoint
-CREATE INDEX IF NOT EXISTS "idx_watches_condition" ON "watches" USING btree ("condition");
+CREATE INDEX "idx_addresses_user_id" ON "addresses" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "idx_auctions_watch_id" ON "auctions" USING btree ("watch_id");--> statement-breakpoint
+CREATE INDEX "idx_auctions_ends_at" ON "auctions" USING btree ("ends_at");--> statement-breakpoint
+CREATE INDEX "idx_auctions_current_price" ON "auctions" USING btree ("current_price");--> statement-breakpoint
+CREATE INDEX "idx_blog_media_blog_id" ON "blog_media" USING btree ("blog_id");--> statement-breakpoint
+CREATE INDEX "idx_blog_posts_author_id" ON "blog_posts" USING btree ("author_id");--> statement-breakpoint
+CREATE INDEX "idx_blog_posts_created_at" ON "blog_posts" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "idx_conversations_customer_id" ON "conversations" USING btree ("customer_id");--> statement-breakpoint
+CREATE INDEX "idx_conversations_product_id" ON "conversations" USING btree ("product_id");--> statement-breakpoint
+CREATE INDEX "idx_conversations_status" ON "conversations" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "idx_conversations_created_at" ON "conversations" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "idx_countries_name" ON "countries" USING btree ("name");--> statement-breakpoint
+CREATE INDEX "idx_countries_abbreviation" ON "countries" USING btree ("abbreviation");--> statement-breakpoint
+CREATE INDEX "idx_messages_conversation_id" ON "messages" USING btree ("conversation_id");--> statement-breakpoint
+CREATE INDEX "idx_messages_sender_id" ON "messages" USING btree ("sender_id");--> statement-breakpoint
+CREATE INDEX "idx_messages_created_at" ON "messages" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "idx_messages_is_read" ON "messages" USING btree ("is_read");--> statement-breakpoint
+CREATE INDEX "idx_order_items_order_id" ON "order_items" USING btree ("order_id");--> statement-breakpoint
+CREATE INDEX "idx_order_items_product_id" ON "order_items" USING btree ("product_id");--> statement-breakpoint
+CREATE INDEX "idx_orders_user_id" ON "orders" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "idx_orders_status" ON "orders" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "idx_orders_created_at" ON "orders" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "idx_product_images_thumbnail" ON "product_images" USING btree ("is_thumbnail");--> statement-breakpoint
+CREATE INDEX "idx_product_safety_brand" ON "product_safety_info" USING btree ("brand");--> statement-breakpoint
+CREATE INDEX "idx_product_safety_country" ON "product_safety_info" USING btree ("country");--> statement-breakpoint
+CREATE INDEX "idx_products_watch_id" ON "products" USING btree ("watch_id");--> statement-breakpoint
+CREATE INDEX "idx_products_name" ON "products" USING btree ("name");--> statement-breakpoint
+CREATE INDEX "idx_products_created_at" ON "products" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "idx_products_price_dkk" ON "products" USING btree ("price_dkk");--> statement-breakpoint
+CREATE INDEX "idx_users_country" ON "users" USING btree ("country");--> statement-breakpoint
+CREATE INDEX "idx_users_address" ON "users" USING btree ("address");--> statement-breakpoint
+CREATE INDEX "idx_users_email_confirmed" ON "users" USING btree ("email_confirmed");--> statement-breakpoint
+CREATE INDEX "idx_watches_brand" ON "watches" USING btree ("brand");--> statement-breakpoint
+CREATE INDEX "idx_watches_reference" ON "watches" USING btree ("reference");--> statement-breakpoint
+CREATE INDEX "idx_watches_year" ON "watches" USING btree ("year");--> statement-breakpoint
+CREATE INDEX "idx_watches_condition" ON "watches" USING btree ("condition");
