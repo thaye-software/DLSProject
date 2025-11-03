@@ -115,6 +115,7 @@ export default function RootLayout({
             <Navbar />
           </nav>
 
+          {/* set height of main to fill available space */ }
           <main className="container mx-auto flex-1">{children}</main>
 
           <Footer />

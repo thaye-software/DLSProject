@@ -120,10 +120,10 @@ export function Navbar() {
       <div className="ml-auto">
         <Link
           href="/login"
-          className="inline-flex items-center gap-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground rounded-md transition-colors"
+          className="inline-flex items-center gap-2 p-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground rounded-md transition-colors"
         >
           <User className="h-4 w-4" />
-          <span className="font-bold">Login</span>
+          <span className="font-bold">Log in</span>
         </Link>
       </div>
     </div>

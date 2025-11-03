@@ -6,7 +6,7 @@ import { UserFetcher } from "@/components/UserFetcher";
 export default function Home() {
   return (
     <div>
-      Hello!
+      Hello! this is the homepage.
    </div>
     
   );
