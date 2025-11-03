@@ -13,6 +13,7 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
+    "allowImportingTsExtensions": true,
     "plugins": [
       {
         "name": "next"
@@ -30,6 +31,6 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts",
     "src/database/drizzle.ts"
-  ],
+, "supabase/scripts/seed.js"  ],
   "exclude": ["node_modules"]
 }
