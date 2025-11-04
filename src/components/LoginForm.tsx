@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
-import { login, type LoginFormState } from "@/app/auth/[login]/actions";
+import { login, type LoginFormState } from "@/app/login/actions";
 import { useActionState } from "react";
 
 function toggleLoginState(

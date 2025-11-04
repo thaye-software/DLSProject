@@ -83,7 +83,7 @@ export default function RootLayout({
   const pathname = usePathname();
 
   const hideRootShell =
-    pathname === "/auth/login" || pathname?.startsWith("/auth/");
+    pathname === "/login" || pathname?.startsWith("/login/");
 
   return (
     <html
