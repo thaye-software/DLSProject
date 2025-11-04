@@ -15,7 +15,7 @@ import { Avatar } from "./ui/avatar";
 import { AvatarImage } from "@radix-ui/react-avatar";
 
 export function UserNavbarDropdown() {
-  const { user, signOut, avatarUrl } = useSupabaseAuth();
+  const { user, signOut, avatarUrl, role } = useSupabaseAuth();
 
   function handleSignOut() {
     signOut();
@@ -38,6 +38,14 @@ export function UserNavbarDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end">
         <DropdownMenuGroup>
+          {role === "admin" ? (
+            <DropdownMenuItem>
+              <Link href="/admin" className="flex items-center gap-2">
+                <User />
+                Admin Panel
+              </Link>
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuItem>
             <Link href="/settings" className="flex items-center gap-2">
               <Settings />
