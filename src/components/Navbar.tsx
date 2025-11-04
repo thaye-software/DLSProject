@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { User } from "lucide-react";
+import { User as UserIcon, LogOut } from "lucide-react";
 import Image from "next/image";
+import { useSupabaseAuth } from "@/lib/useSupabaseAuth";
 
 import {
   NavigationMenu,
@@ -13,15 +14,28 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
+import { redirect } from "next/navigation";
+import { Button } from "./ui/button";
+
 
 export function Navbar() {
+  const { user, isLoggedIn, signOut, loading } = useSupabaseAuth();
+  console.log('Navbar render - isLoggedIn:', isLoggedIn, 'user:', user);
+
+  function handleSignOut() {
+    signOut();
+    redirect('/');
+  }
+
   return (
     <div className="flex justify-between items-center ">
       {/* Left side navigation */}
       <NavigationMenu>
         <NavigationMenuList className="flex-wrap">
           <NavigationMenuItem className="hidden md:block">
-            <NavigationMenuTrigger className="font-bold">Watches</NavigationMenuTrigger>
+            <NavigationMenuTrigger className="font-bold">
+              Watches
+            </NavigationMenuTrigger>
             <NavigationMenuContent>
               <ul className="grid w-[200px] gap-4">
                 <li>
@@ -39,7 +53,9 @@ export function Navbar() {
             </NavigationMenuContent>
           </NavigationMenuItem>
           <NavigationMenuItem className="hidden md:block">
-            <NavigationMenuTrigger className="font-bold">Brands</NavigationMenuTrigger>
+            <NavigationMenuTrigger className="font-bold">
+              Brands
+            </NavigationMenuTrigger>
             <NavigationMenuContent>
               <ul className="grid w-[200px] gap-4">
                 <li>
@@ -112,19 +128,34 @@ export function Navbar() {
               <Link href="/contact">Contact</Link>
             </NavigationMenuLink>
           </NavigationMenuItem>
-          
         </NavigationMenuList>
       </NavigationMenu>
 
       {/* Right side login */}
-      <div className="ml-auto">
-        <Link
-          href="/login"
-          className="inline-flex items-center gap-2 p-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground rounded-md transition-colors"
-        >
-          <User className="h-4 w-4" />
-          <span className="font-bold">Log in</span>
-        </Link>
+      <div className="ml-auto flex items-center gap-2">
+        {loading ? (
+          <div className="text-sm text-muted-foreground">Checking...</div>
+        ) : isLoggedIn && user ? (
+          <div className="flex items-center gap-2">
+            <UserIcon className="h-4 w-4" />
+            <span className="font-bold">{user.user_metadata.display_name}</span>
+              <Button
+                variant="ghost"
+              onClick={() => handleSignOut()}
+              
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="font-bold">Sign out</span>
+            </Button>
+          </div>
+        ) : (
+          <Link href="/login">
+            <Button variant="ghost">
+              <UserIcon className="h-4 w-4" />
+              <span className="font-bold">Log in</span>
+            </Button>
+          </Link>
+        )}
       </div>
     </div>
   );

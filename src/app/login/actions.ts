@@ -122,7 +122,7 @@ export async function register(
   }
 
   // Create Supabase auth user
-  const response = await supabase.auth.signUp({ email, password });
+  const response = await supabase.auth.signUp({ email, password, options: { data: { display_name: username } } });
 
   if (response.error) {
     return { formError: response.error.message };
