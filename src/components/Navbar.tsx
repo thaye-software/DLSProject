@@ -20,13 +20,7 @@ import { UserNavbarDropdown } from "./UserNavbarDropdown";
 
 
 export function Navbar() {
-  const { user, isLoggedIn, signOut, loading } = useSupabaseAuth();
-  console.log('Navbar render - isLoggedIn:', isLoggedIn, 'user:', user);
-
-  function handleSignOut() {
-    signOut();
-    redirect('/');
-  }
+  const { user, isLoggedIn, loading } = useSupabaseAuth();
 
   return (
     <div className="flex justify-between items-center ">
@@ -137,7 +131,7 @@ export function Navbar() {
         {loading ? (
           <div className="text-sm text-muted-foreground">Checking...</div>
         ) : isLoggedIn && user ? (
-          <UserNavbarDropdown user={user} />
+          <UserNavbarDropdown />
           // <div className="flex items-center gap-2">
           //   <UserIcon className="h-4 w-4" />
           //   <span className="font-bold">{user.user_metadata.display_name}</span>
