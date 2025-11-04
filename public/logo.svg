@@ -3,13 +3,13 @@
   <!-- Generator: Adobe Illustrator 30.0.0, SVG Export Plug-In . SVG Version: 2.1.1 Build 123)  -->
   <defs>
     <style>
-      .st0 {
+      <!-- .st0 {
         fill: #b09f7f;
-      }
+      } -->
 
       .st1 {
         fill: none;
-        stroke: #c2b59b;
+        stroke: #000000;
         stroke-miterlimit: 10;
       }
     </style>

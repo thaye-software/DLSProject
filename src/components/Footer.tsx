@@ -10,7 +10,7 @@ import {
 
 export function Footer() {
   return (
-    <footer className="border-t border-border mt-auto">
+    <footer className="border-t border-border">
       <div className="container mx-auto px-4 py-8">
         {/* Brand Section */}
         <div className="mb-10">
