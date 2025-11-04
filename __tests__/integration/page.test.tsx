@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import { render, screen } from '@testing-library/react'
-import Page from '../src/app/page.tsx'
+import Page from '../../src/app/page.tsx'
 
 describe('Home page content', () => {
   it('displays the homepage text', () => {

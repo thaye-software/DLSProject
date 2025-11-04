@@ -21,7 +21,10 @@
     "supabase:status": "npx supabase status",
 
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "test:unit": "jest __tests__/unit",
+    "test:integration": "jest __tests__/integration"
+
   },
   "dependencies": {
     "@next/env": "^16.0.1",
