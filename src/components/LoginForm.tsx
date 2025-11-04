@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
+import { login } from "@/app/login/actions";
+
 function toggleLoginState(
   isLogin: boolean,
   setIsLogin: (isLogin: boolean) => void
@@ -51,7 +53,7 @@ export function LoginForm({
           <Input id="password" type="password" required />
         </Field>
         <Field>
-          <Button type="submit">Login</Button>
+          <Button formAction={login} type="submit">Login</Button>
         </Field>
         <FieldSeparator />
         <Field>

@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
+import { register } from "@/app/login/actions";
+
 function toggleLoginState(
   isLogin: boolean,
   setIsLogin: (isLogin: boolean) => void
@@ -37,11 +39,11 @@ export function RegisterForm({
         
         <Field>
           <FieldLabel htmlFor="username">Username</FieldLabel>
-          <Input id="username" type="text" required />
+          <Input name="username" id="username" type="text" required />
         </Field>
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
-          <Input id="email" type="email" placeholder="m@example.com" required />
+          <Input name="email" id="email" type="email" placeholder="m@example.com" required />
         </Field>
         <Field>
           <div className="flex items-center">
@@ -54,6 +56,7 @@ export function RegisterForm({
             </a>
           </div>
           <Input
+            name="password"
             id="password"
             type="password"
             placeholder="********"
@@ -61,7 +64,7 @@ export function RegisterForm({
           />
         </Field>
         <Field>
-          <Button type="submit">Login</Button>
+          <Button formAction={register}>Sign Up</Button>
         </Field>
         <FieldSeparator />
         <Field>
