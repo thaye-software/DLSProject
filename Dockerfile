@@ -47,7 +47,9 @@ COPY . .
 RUN --mount=type=secret,id=database_url_prod \
     --mount=type=secret,id=database_url_dev \
     --mount=type=secret,id=app_env \
-  sh -c 'if [ -f /run/secrets/database_url_prod ]; then DATABASE_URL_PROD="$(cat /run/secrets/database_url_prod)"; elif [ -f /run/secrets/database_url_dev ]; then DATABASE_URL_DEV="$(cat /run/secrets/database_url_dev)"; fi; if [ -f /run/secrets/app_env ]; then APP_ENV="$(cat /run/secrets/app_env)"; echo "Build app_env=$APP_ENV"; fi; export DATABASE_URL_PROD DATABASE_URL_DEV APP_ENV; npm run build'
+    --mount=type=secret,id=supabase_url \
+    --mount=type=secret,id=supabase_key \
+  sh -c 'if [ -f /run/secrets/database_url_prod ]; then DATABASE_URL_PROD="$(cat /run/secrets/database_url_prod)"; elif [ -f /run/secrets/database_url_dev ]; then DATABASE_URL_DEV="$(cat /run/secrets/database_url_dev)"; fi; if [ -f /run/secrets/app_env ]; then APP_ENV="$(cat /run/secrets/app_env)"; echo "Build app_env=$APP_ENV"; fi; if [ -f /run/secrets/supabase_url ]; then NEXT_PUBLIC_SUPABASE_URL="$(cat /run/secrets/supabase_url)"; fi; if [ -f /run/secrets/supabase_key ]; then NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="$(cat /run/secrets/supabase_key)"; fi; export DATABASE_URL_PROD DATABASE_URL_DEV APP_ENV NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY; npm run build'
 
 ############################
 # Production image

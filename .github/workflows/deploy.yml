@@ -47,6 +47,8 @@ jobs:
                 secrets: |
                     app_env=dev
                     database_url_dev=${{ secrets.DATABASE_URL_DEV }}
+                    supabase_url=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+                    supabase_key=${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
 
 
             - name: (Prod) Build and push image (with registry cache)
@@ -65,7 +67,9 @@ jobs:
                 secrets: |
                     app_env=prod
                     database_url_prod=${{ secrets.DATABASE_URL_PROD }}
-    
+                    supabase_url=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+                    supabase_key=${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+
     deploy:
         needs: build-and-push
         runs-on: ubuntu-latest
