@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,8 +9,9 @@ import {
   FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "./ui/spinner";
 
-import { login, type LoginFormState } from "@/app/auth/[login]/actions";
+import { login, type LoginFormState } from "@/app/login/actions";
 import { useActionState } from "react";
 
 function toggleLoginState(
@@ -30,9 +32,18 @@ export function LoginForm({
 }) {
   const initialState: LoginFormState = {};
   const [state, formAction] = useActionState(login, initialState);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+  // whenever the action state changes, stop the loading spinner
+  // this covers success and error cases (server returned)
+  setLoading(false);
+}, [state]);
+
   return (
     <form
       action={formAction}
+      onSubmit={() => setLoading(true)}
       className={cn("flex flex-col gap-6", className)}
       {...props}
     >
@@ -51,6 +62,7 @@ export function LoginForm({
             type="email"
             placeholder="m@example.com"
             required
+            disabled={loading}
             defaultValue={state?.values?.email || ""}
           />
           {state?.fieldErrors?.email && (
@@ -75,6 +87,7 @@ export function LoginForm({
             type="password"
             placeholder="********"
             required
+            disabled={loading}
             defaultValue={state?.values?.password || ""}
           />
           {state?.fieldErrors?.password && (
@@ -87,7 +100,9 @@ export function LoginForm({
           <p className="text-sm text-destructive">{state.formError}</p>
         )}
         <Field>
-          <Button type="submit">Login</Button>
+          <Button type="submit" disabled={loading} aria-busy={loading}>
+            {loading ? <><Spinner /> Loading...</> : "Login"}
+          </Button>
         </Field>
         <FieldSeparator />
         <Field>

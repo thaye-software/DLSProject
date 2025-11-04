@@ -57,13 +57,39 @@ export async function login(
 
   const { email, password } = parsed.data;
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
+  // If sign in failed, return immediately
   if (error) {
     return {
       formError: error.message,
       values: { email, password },
     };
+  }
+
+  // On successful sign in, fetch avatar by email from the users table.
+  // Use the absolute baseUrl because this code runs on the server.
+  try {
+    const res = await fetch(
+      `${baseUrl}/api/users/avatar?email=${encodeURIComponent(email)}`
+    );
+
+    if (res.ok) {
+      const { avatarUrl } = await res.json();
+      // Note: this is server-side code; localStorage is not available here.
+      // If you want the client to have the avatar immediately, either:
+      // - store it in a cookie (via next/headers cookies()),
+      // - or return it to the client and let the client set localStorage,
+      // - or let the client fetch it after redirect via the hook.
+      // For now we don't persist it server-side — the value is fetched to ensure it exists.
+      console.log("avatarUrl (server):", avatarUrl);
+    }
+  } catch (fetchErr) {
+    // ignore avatar fetch failures — don't block sign-in
+    console.error("Failed to fetch avatar:", fetchErr);
   }
 
   revalidatePath("/", "layout");
@@ -122,7 +148,11 @@ export async function register(
   }
 
   // Create Supabase auth user
-  const response = await supabase.auth.signUp({ email, password });
+  const response = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { display_name: username } },
+  });
 
   if (response.error) {
     return { formError: response.error.message };
