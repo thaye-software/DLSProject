@@ -38,6 +38,66 @@ npm run supabase:start
 npm run supabse:stop
 ```
 
+
+
+## Playwright tests commands
+
+Inside that directory, you can run several commands:
+
+  npx playwright test
+    Runs the end-to-end tests.
+
+  npx playwright test --ui
+    Starts the interactive UI mode.
+
+  npx playwright test --project=chromium
+    Runs the tests only on Desktop Chrome.
+
+  npx playwright test example
+    Runs the tests in a specific file.
+
+  npx playwright test --debug
+    Runs the tests in debug mode.
+
+  npx playwright codegen
+    Auto generate tests with Codegen.
+
+We suggest that you begin by typing:
+
+    npx playwright test
+
+And check out the following files:
+  - .\playwright_tests\example.spec.ts - Example end-to-end test
+  - .\playwright.config.ts - Playwright Test configuration
+
+Visit https://playwright.dev/docs/intro for more information. ✨
+
+Happy hacking! 🎭
+
+
+
+## Jest tests commands
+
+For running all jests test you can simply do:
+
+```bash
+npm run test
+```
+
+To only run either unit or integration test do the following:
+
+```bash
+npm run test:unit
+npm run test:integration
+```
+
+You can also watch jest in progress using this command:
+```bash
+npm run test:watch
+```
+
+
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
