@@ -84,18 +84,20 @@ jobs:
             - name: (Dev) Deploy to Server
               if: github.ref == 'refs/heads/dev'
               run: |
-                ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+                ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
                   set -e
+                  echo "${{ secrets.GHCR_ACCESS_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
                   cd limited-watches/dev/
                   docker compose up -d --pull always --remove-orphans
                   docker image prune -af --filter "until=24h"
                 EOF
-            
+
             - name: (Prod) Deploy to Server
-              if: github.ref == 'refs/heads/main'
+              if: startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/tags/v')
               run: |
-                ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+                ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
                   set -e
+                  echo "${{ secrets.GHCR_ACCESS_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
                   cd limited-watches/prod/
                   docker compose up -d --pull always --remove-orphans
                   docker image prune -af --filter "until=24h"
