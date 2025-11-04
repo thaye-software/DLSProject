@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/navigation-menu";
 import { redirect } from "next/navigation";
 import { Button } from "./ui/button";
+import { UserNavbarDropdown } from "./UserNavbarDropdown";
 
 
 export function Navbar() {
@@ -136,18 +137,19 @@ export function Navbar() {
         {loading ? (
           <div className="text-sm text-muted-foreground">Checking...</div>
         ) : isLoggedIn && user ? (
-          <div className="flex items-center gap-2">
-            <UserIcon className="h-4 w-4" />
-            <span className="font-bold">{user.user_metadata.display_name}</span>
-              <Button
-                variant="ghost"
-              onClick={() => handleSignOut()}
+          <UserNavbarDropdown user={user} />
+          // <div className="flex items-center gap-2">
+          //   <UserIcon className="h-4 w-4" />
+          //   <span className="font-bold">{user.user_metadata.display_name}</span>
+          //     <Button
+          //       variant="ghost"
+          //     onClick={() => handleSignOut()}
               
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="font-bold">Sign out</span>
-            </Button>
-          </div>
+          //   >
+          //     <LogOut className="h-4 w-4" />
+          //     <span className="font-bold">Sign out</span>
+          //   </Button>
+          // </div>
         ) : (
           <Link href="/login">
             <Button variant="ghost">
