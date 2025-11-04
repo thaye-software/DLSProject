@@ -94,6 +94,7 @@ jobs:
                   cd limited-watches/dev/
                   docker compose up -d --pull always --remove-orphans
                   docker image prune -af --filter "until=24h"
+                  echo "Deployment to development completed."
                 EOF
 
             - name: (Prod) Deploy to Server
@@ -105,4 +106,5 @@ jobs:
                   cd limited-watches/prod/
                   docker compose up -d --pull always --remove-orphans
                   docker image prune -af --filter "until=24h"
+                  echo "Deployment to production completed."
                 EOF
