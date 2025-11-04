@@ -119,7 +119,7 @@ export function Navbar() {
       {/* Right side login */}
       <div className="ml-auto">
         <Link
-          href="/login"
+          href="/auth/login"
           className="inline-flex items-center gap-2 p-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground rounded-md transition-colors"
         >
           <User className="h-4 w-4" />

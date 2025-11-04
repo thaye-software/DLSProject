@@ -9,7 +9,8 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
-import { login } from "@/app/login/actions";
+import { login, type LoginFormState } from "@/app/auth/[login]/actions";
+import { useActionState } from "react";
 
 function toggleLoginState(
   isLogin: boolean,
@@ -27,8 +28,14 @@ export function LoginForm({
   isLogin: boolean;
   setIsLogin: (isLogin: boolean) => void;
 }) {
+  const initialState: LoginFormState = {};
+  const [state, formAction] = useActionState(login, initialState);
   return (
-    <form className={cn("flex flex-col gap-6", className)} {...props}>
+    <form
+      action={formAction}
+      className={cn("flex flex-col gap-6", className)}
+      {...props}
+    >
       <FieldGroup>
         <div className="flex flex-col items-center gap-1 text-center">
           <h1 className="text-2xl font-bold">Login to your account</h1>
@@ -38,7 +45,19 @@ export function LoginForm({
         </div>
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
-          <Input id="email" type="email" placeholder="m@example.com" required />
+          <Input
+            name="email"
+            id="email"
+            type="email"
+            placeholder="m@example.com"
+            required
+            defaultValue={state?.values?.email || ""}
+          />
+          {state?.fieldErrors?.email && (
+            <p className="text-sm text-destructive mt-1">
+              {state.fieldErrors.email}
+            </p>
+          )}
         </Field>
         <Field>
           <div className="flex items-center">
@@ -50,10 +69,25 @@ export function LoginForm({
               Forgot your password?
             </a>
           </div>
-          <Input id="password" type="password" required />
+          <Input
+            name="password"
+            id="password"
+            type="password"
+            placeholder="********"
+            required
+            defaultValue={state?.values?.password || ""}
+          />
+          {state?.fieldErrors?.password && (
+            <p className="text-sm text-destructive mt-1">
+              {state.fieldErrors.password}
+            </p>
+          )}
         </Field>
+        {state?.formError && (
+          <p className="text-sm text-destructive">{state.formError}</p>
+        )}
         <Field>
-          <Button formAction={login} type="submit">Login</Button>
+          <Button type="submit">Login</Button>
         </Field>
         <FieldSeparator />
         <Field>
