@@ -1,10 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { userService } from "@/services/userService";
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+async function resolveParams(params: any) {
+  // Some Next versions/types provide params as a Promise, others as a plain object.
+  if (!params) return {};
+  if (typeof params.then === "function") {
+    return await params;
+  }
+  return params;
+}
+
+export async function GET(request: NextRequest, context: { params?: any }) {
+  const params = await resolveParams(context.params);
   const id = parseInt(params.id);
 
   // Validate the ID
@@ -26,10 +33,8 @@ export async function GET(
 }
 
 // TODO: Add other HTTP methods
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, context: { params?: any }) {
+  const params = await resolveParams(context.params);
   const id = parseInt(params.id);
 
   if (isNaN(id)) {

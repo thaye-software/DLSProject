@@ -1,0 +1,17 @@
+# Ignore files that shouldn't be sent to the Docker daemon
+node_modules
+.next
+.git
+.gitignore
+Dockerfile
+.dockerignore
+README.md
+.env
+.env.*
+*.local
+dist
+build
+.vscode
+supabase/.cache
+npm-debug.log
+yarn-error.log
