@@ -22,6 +22,20 @@
       "when": 1762163654666,
       "tag": "0002_add-role-to-users-table",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1762346791149,
+      "tag": "0003_add-brands-table-and-relations",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1762347476169,
+      "tag": "0004_change-avatarurl-varchar-to-text",
+      "breakpoints": true
     }
   ]
 }

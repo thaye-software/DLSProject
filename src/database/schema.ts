@@ -54,8 +54,7 @@ export const productSafetyInfo = pgTable(
   "product_safety_info",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
-    brandId: bigint("brand_id", { mode: "number" }).notNull(),
-    brand: varchar("brand", { length: 255 }).notNull(),
+    // brand relation moved to `brands` table
     country: varchar("country", { length: 255 }).notNull(),
     address: varchar("address", { length: 255 }),
     address2: varchar("address_2", { length: 255 }),
@@ -66,17 +65,14 @@ export const productSafetyInfo = pgTable(
     email: varchar("email", { length: 255 }),
     website: varchar("website", { length: 255 }),
   },
-  (table) => [
-    index("idx_product_safety_brand").on(table.brand),
-    index("idx_product_safety_country").on(table.country),
-  ]
+  (table) => [index("idx_product_safety_country").on(table.country)]
 );
 
 export const watches = pgTable(
   "watches",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
-    brand: varchar("brand", { length: 255 }).notNull(),
+    brandId: bigint("brand_id", { mode: "number" }).notNull(),
     model: varchar("model", { length: 255 }).notNull(),
     reference: varchar("reference", { length: 255 }).notNull(),
     serialNumber: varchar("serial_number", { length: 255 }).notNull(),
@@ -97,10 +93,26 @@ export const watches = pgTable(
     }).references(() => productSafetyInfo.id, { onDelete: "set null" }),
   },
   (table) => [
-    index("idx_watches_brand").on(table.brand),
+    index("idx_watches_brand").on(table.brandId),
     index("idx_watches_reference").on(table.reference),
     index("idx_watches_year").on(table.year),
     index("idx_watches_condition").on(table.condition),
+  ]
+);
+
+export const brands = pgTable(
+  "brands",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    name: varchar("name", { length: 255 }).notNull().unique(),
+    slug: varchar("slug", { length: 255 }),
+    productSafetyInfoId: bigint("product_safety_info_id", {
+      mode: "number",
+    }).references(() => productSafetyInfo.id, { onDelete: "set null" }),
+  },
+  (table) => [
+    index("idx_brands_name").on(table.name),
+    index("idx_brands_slug").on(table.slug),
   ]
 );
 
@@ -111,7 +123,7 @@ export const users = pgTable(
     username: varchar("username", { length: 255 }).notNull().unique(),
     email: varchar("email", { length: 255 }).notNull().unique(),
     password: varchar("password", { length: 255 }).notNull(),
-    avatarUrl: varchar("avatar_url", { length: 255 }),
+    avatarUrl: text("avatar_url"),
     emailConfirmed: boolean("email_confirmed").notNull().default(false),
     role: varchar("role", { length: 50 }).notNull().default("customer"),
     country: bigint("country", { mode: "number" }).references(
@@ -350,9 +362,21 @@ export const watchesRelations = relations(watches, ({ one, many }) => ({
     fields: [watches.productSafetyInfoId],
     references: [productSafetyInfo.id],
   }),
+  brand: one(brands, {
+    fields: [watches.brandId],
+    references: [brands.id],
+  }),
   products: many(products),
   auctions: many(auctions),
   conversations: many(conversations),
+}));
+
+export const brandsRelations = relations(brands, ({ one, many }) => ({
+  productSafetyInfo: one(productSafetyInfo, {
+    fields: [brands.productSafetyInfoId],
+    references: [productSafetyInfo.id],
+  }),
+  watches: many(watches),
 }));
 
 export const productsRelations = relations(products, ({ one, many }) => ({
