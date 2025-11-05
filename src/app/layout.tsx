@@ -11,6 +11,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { ModeToggle } from "@/components/ModeToggle";
 import { usePathname } from "next/navigation";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 const theSeasons = theSeasonsFont({
   src: [
@@ -83,7 +84,7 @@ export default function RootLayout({
   const pathname = usePathname();
 
   const hideRootShell =
-    pathname === "/login" || pathname?.startsWith("/login/");
+    pathname === "/login" || pathname?.startsWith("/admin") || pathname?.startsWith("/login/");
 
   return (
     <html
@@ -134,13 +135,15 @@ export default function RootLayout({
             // and not show the navbar and footer.
             <div className="min-h-screen w-full">{children}</div>
           ) : (
-            <main className="container mx-auto flex-1 pt-5 pb-5">
+                <main className="container mx-auto flex-1 pt-5 pb-5">
+                  
               {children}
             </main>
           )}
 
-          {!hideRootShell && <Footer />}
-        </ThemeProvider>
+            {!hideRootShell && <Footer />}
+
+          </ThemeProvider>
       </body>
     </html>
   );

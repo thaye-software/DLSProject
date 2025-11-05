@@ -1,7 +1,5 @@
-export default function AdminPage() {
+export default function AdminLayout() {
   return (
-    <div>
-      <h1>Admin Panel</h1>
-    </div>
-  );
+    <p>hello</p>
+  )
 }
