@@ -1,6 +1,8 @@
 import '../../envConfig.ts';
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import * as schema from "./schema";
+import { seed } from "drizzle-seed"
 
 const connectionString = process.env.APP_ENV == 'prod' 
   ? process.env.DATABASE_URL_PROD
@@ -15,4 +17,13 @@ if (!connectionString) {
 }
 
 export const client = postgres(connectionString, { prepare: false });
-export const db = drizzle(client);
+export const db = drizzle({ client, schema });
+
+// async function runSeed() {
+//   console.log("Seeding database...");
+//   await seed(db, schema);
+//   console.log("Database seeded.");
+// }
+// runSeed().catch((error) => {
+//   console.error("Error seeding database:", error);
+// });

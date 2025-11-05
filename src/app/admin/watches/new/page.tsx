@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import BrandSelect from "@/components/BrandSelect";
+import MovementSelect from "@/components/MovementSelect";
 
 export default function NewWatchPage() {
   const router = useRouter();
@@ -132,7 +134,7 @@ export default function NewWatchPage() {
         <Field>
           <FieldLabel>Brand</FieldLabel>
           <FieldContent>
-            <Input name="brand" value={form.brand} onChange={handleChange} />
+            <BrandSelect />
             <FieldDescription>Brand of the watch</FieldDescription>
             {errors.brand && <FieldError>{errors.brand}</FieldError>}
           </FieldContent>
@@ -196,11 +198,7 @@ export default function NewWatchPage() {
           <Field>
             <FieldLabel>Movement</FieldLabel>
             <FieldContent>
-              <Input
-                name="movement"
-                value={form.movement}
-                onChange={handleChange}
-              />
+              <MovementSelect />
             </FieldContent>
           </Field>
         </div>

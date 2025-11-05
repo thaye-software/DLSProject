@@ -1,7 +1,15 @@
-export default function BrandsPage() {
+import BrandsList from "@/components/BrandsList";
+
+
+
+
+export default async function BrandsPage() { 
   return (
     <div>
-      <h1>Brands</h1>
+      <h1>Brands Page</h1>
+      <div>
+        <BrandsList />
+      </div>
     </div>
   );
 }
