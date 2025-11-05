@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,13 +13,33 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import BrandSelect from "@/components/BrandSelect";
-import MovementSelect from "@/components/MovementSelect";
+import constants from "@/lib/constants";
+import CustomSelect from "@/components/CustomSelect";
+import { Brand } from "@/services/brandService";
 
 export default function NewWatchPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [brands, setBrands] = useState<Brand[]>([]);
+
+  async function fetchBrands() {
+    try {
+      const res = await fetch("/api/brands");
+      if (!res.ok) {
+        throw new Error("Failed to fetch brands");
+      }
+
+      const data = await res.json();
+      setBrands(data);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  useEffect(() => {
+    fetchBrands();
+  }, []);
 
   const [form, setForm] = useState({
     brand: "",
@@ -134,7 +154,7 @@ export default function NewWatchPage() {
         <Field>
           <FieldLabel>Brand</FieldLabel>
           <FieldContent>
-            <BrandSelect />
+            <CustomSelect placeholderText={"Select a brand"} array={brands} />
             <FieldDescription>Brand of the watch</FieldDescription>
             {errors.brand && <FieldError>{errors.brand}</FieldError>}
           </FieldContent>
@@ -189,7 +209,7 @@ export default function NewWatchPage() {
           </Field>
 
           <Field>
-            <FieldLabel>Size</FieldLabel>
+            <FieldLabel>Size<span className="text-xs text-muted-foreground mt-1">mm</span></FieldLabel>
             <FieldContent>
               <Input name="size" value={form.size} onChange={handleChange} />
             </FieldContent>
@@ -198,7 +218,7 @@ export default function NewWatchPage() {
           <Field>
             <FieldLabel>Movement</FieldLabel>
             <FieldContent>
-              <MovementSelect />
+              <CustomSelect placeholderText={"Select a movement"} array={constants.MOVEMENT_OPTIONS} />
             </FieldContent>
           </Field>
         </div>
@@ -207,11 +227,7 @@ export default function NewWatchPage() {
           <Field>
             <FieldLabel>Glass Type</FieldLabel>
             <FieldContent>
-              <Input
-                name="glassType"
-                value={form.glassType}
-                onChange={handleChange}
-              />
+              <CustomSelect placeholderText={"Select a glass type"} array={constants.GLASS_OPTIONS} />
             </FieldContent>
           </Field>
 
@@ -299,11 +315,7 @@ export default function NewWatchPage() {
         <Field>
           <FieldLabel>Bracelet Type</FieldLabel>
           <FieldContent>
-            <Input
-              name="braceletType"
-              value={form.braceletType}
-              onChange={handleChange}
-            />
+            <CustomSelect placeholderText={"Select a bracelet type"} array={constants.BRACELET_OPTIONS} />
           </FieldContent>
         </Field>
 
@@ -326,21 +338,6 @@ export default function NewWatchPage() {
               value={form.dialColor}
               onChange={handleChange}
             />
-          </FieldContent>
-        </Field>
-
-        <Field>
-          <FieldLabel>Product Safety Info Id</FieldLabel>
-          <FieldContent>
-            <Input
-              name="productSafetyInfoId"
-              value={form.productSafetyInfoId}
-              onChange={handleChange}
-              type="number"
-            />
-            <FieldDescription>
-              Optional id referencing product safety info
-            </FieldDescription>
           </FieldContent>
         </Field>
 
