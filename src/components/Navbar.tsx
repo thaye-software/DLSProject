@@ -14,13 +14,12 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
-import { redirect } from "next/navigation";
 import { Button } from "./ui/button";
 import { UserNavbarDropdown } from "./UserNavbarDropdown";
 
 
 export function Navbar() {
-  const { user, isLoggedIn, loading } = useSupabaseAuth();
+  const { user, isLoggedIn, loading, role } = useSupabaseAuth();
 
   return (
     <div className="flex justify-between items-center ">

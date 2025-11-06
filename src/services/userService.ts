@@ -1,12 +1,7 @@
 import { db } from "@/database/drizzle";
 import { users } from "@/database/schema";
 import { eq } from "drizzle-orm";
-
-interface User {
-  username: string;
-  email: string;
-  password: string;
-}
+import { UserModel, NewUserModel } from "@/database/types";
 
 export const userService = {
   async getAllUsers() {
@@ -52,7 +47,7 @@ export const userService = {
     }
   },
 
-  async createUser(user: User) {
+  async createUser(user: NewUserModel) {
     // check if user with the same username already exists
     const existingUser = await db
       .select()

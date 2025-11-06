@@ -8,6 +8,7 @@ const supabase = createClient();
 
 export function useSupabaseAuth() {
   const [user, setUser] = useState<User | null>(null);
+  const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
@@ -45,6 +46,19 @@ export function useSupabaseAuth() {
               setAvatarUrl(null);
             });
         }
+        // fetch profile including role from server (secure lookup in our users table)
+        if (currentUser?.email) {
+          void fetch(`/api/auth/me`)
+            .then((r) => (r.ok ? r.json() : null))
+            .then((profile) => {
+              if (!mounted) return;
+              setRole(profile?.role ?? null);
+            })
+            .catch(() => {
+              if (!mounted) return;
+              setRole(null);
+            });
+        }
       } catch (err) {
         if (!mounted) return;
         setUser(null);
@@ -53,8 +67,9 @@ export function useSupabaseAuth() {
         setLoading(false);
       }
     }
-
     getUser();
+
+    // role will be fetched after the user is known above
 
     const { data: listener } = supabase.auth.onAuthStateChange((_, session) => {
       // session?.user is the current user when signed in
@@ -104,6 +119,7 @@ export function useSupabaseAuth() {
 
   return {
     user,
+    role,
     loading,
     avatarUrl,
     isLoggedIn: Boolean(user),

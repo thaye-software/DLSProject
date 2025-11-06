@@ -22,6 +22,41 @@
       "when": 1762163654666,
       "tag": "0002_add-role-to-users-table",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1762346791149,
+      "tag": "0003_add-brands-table-and-relations",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1762347476169,
+      "tag": "0004_change-avatarurl-varchar-to-text",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1762427099986,
+      "tag": "0005_add-product_id-to-product_images_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1762428208411,
+      "tag": "0006_remove-relation-from-watch-to-product_safety_info",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1762428304492,
+      "tag": "0007_remove-ref-from-product-to-product_images",
+      "breakpoints": true
     }
   ]
 }

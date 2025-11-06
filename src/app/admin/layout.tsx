@@ -1,0 +1,69 @@
+import { ReactNode } from "react";
+import { redirect } from "next/navigation";
+
+import { createClient } from "@/database/supabase/server";
+import { userService } from "@/services/userService";
+import { Truck, Users, Watch } from "lucide-react";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AdminSidebar } from "@/components/AdminSidebar";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
+
+export default async function AdminLayout({
+  children,
+}: {
+  children: ReactNode;
+  }) {
+  
+  // Server-side auth + role check
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error || !user || !user.email) {
+      // Not signed in - send to login
+      redirect("/login");
+    }
+
+    const result = await userService.getUserByEmail(user.email);
+    if (!result.success || !result.data) {
+      // No matching application user
+      redirect("/");
+    }
+
+    if (result.data.role !== "admin") {
+      // Not an admin
+      redirect("/");
+    }
+  } catch (err) {
+    // On unexpected errors, redirect to home
+    console.error("Admin auth check failed:", err);
+    redirect("/");
+  }
+
+  return (
+    <SidebarProvider
+      style={
+        {
+          "--sidebar-width": "19rem",
+        } as React.CSSProperties
+      }
+    >
+      <AdminSidebar />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator
+            orientation="vertical"
+            className="mr-2 data-[orientation=vertical]:h-4"
+          />
+          
+        </header>
+        <main className="p-6">{children}</main>
+      </SidebarInset>
+    </SidebarProvider>
+  )
+}
