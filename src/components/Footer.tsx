@@ -7,6 +7,7 @@ import {
   MapPin,
   Phone,
 } from "lucide-react";
+import Logo from "./Logo";
 
 export function Footer() {
   return (
@@ -15,35 +16,24 @@ export function Footer() {
         {/* Brand Section */}
         <div className="mb-10">
           <div className="flex flex-col items-center text-center">
-            <h3 className="text-xl font-seasons font-semibold text-champagne">
+            <h3 className="text-xl font-bold flex-row">
               Limited Watches
             </h3>
-            <p className="text-foreground/80 text-sm leading-relaxed max-w-2xl">
-              Discover exclusive timepieces crafted for the discerning
-              collector. Each watch tells a story of precision, luxury, and
-              timeless elegance.
-            </p>
+            
             <div className="flex space-x-4">
               <Link
-                href="#"
-                className="text-foreground/60 hover:text-champagne transition-colors"
+                href="https://www.instagram.com/limited__watches"
+                className="text-foreground/60 hover:text-champagne transition-colors mt-2"
                 aria-label="Instagram"
               >
                 <Instagram className="h-5 w-5" />
-              </Link>
-              <Link
-                href="#"
-                className="text-foreground/60 hover:text-champagne transition-colors"
-                aria-label="Twitter"
-              >
-                <Twitter className="h-5 w-5" />
               </Link>
             </div>
           </div>
         </div>
 
         {/* Three Column Section */}
-        <div className="grid grid-cols-3">
+        <div className="grid grid-cols-3 justify-center max-w-7xl mr-9 mx-auto">
           {/* Quick Links */}
           <div>
             <h4 className="text-lg font-semibold text-foreground">
@@ -135,21 +125,20 @@ export function Footer() {
               <div className="flex items-center space-x-3">
                 <MapPin className="h-4 w-4 text-champagne shrink-0" />
                 <span className="text-foreground/80 text-sm">
-                  123 Luxury Avenue
+                  Greve, Denmark
                   <br />
-                  Watch District, NY 10001
                 </span>
               </div>
               <div className="flex items-center space-x-3">
                 <Phone className="h-4 w-4 text-champagne shrink-0" />
                 <span className="text-foreground/80 text-sm">
-                  +1 (555) 123-4567
+                  +45 26 46 95 96
                 </span>
               </div>
               <div className="flex items-center space-x-3">
                 <Mail className="h-4 w-4 text-champagne shrink-0" />
                 <span className="text-foreground/80 text-sm">
-                  info@limitedwatches.com
+                  contact@limitedwatches.com
                 </span>
               </div>
             </div>
