@@ -5,7 +5,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import constants from "@/lib/constants";
 
 export default function CustomSelect({
   placeholderText,
@@ -18,7 +17,6 @@ export default function CustomSelect({
   value?: string;
   onValueChange?: (val: string) => void;
 }) {
-  const movementOptions = constants.MOVEMENT_OPTIONS;
 
   return (
     <Select value={value} onValueChange={onValueChange}>

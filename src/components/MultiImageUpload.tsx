@@ -1,9 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { createClient } from "@/database/supabase/client";
 import { Button } from "@/components/ui/button";
-import { supabaseService } from "@/services/supabaseService";
 import { Input } from "./ui/input";
 
 type UploadedItem = {

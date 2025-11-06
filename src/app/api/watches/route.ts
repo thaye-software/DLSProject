@@ -55,17 +55,6 @@ export async function POST(request: Request) {
           : vat
         : undefined;
 
-    if (
-      Number.isNaN(Number(brand)) ||
-      Number.isNaN(Number(yearNum)) ||
-      Number.isNaN(Number(conditionNum))
-    ) {
-      return NextResponse.json(
-        { error: "brandId, year and condition must be valid numbers" },
-        { status: 400 }
-      );
-    }
-
     const watchData: Omit<NewWatchModel, "id"> = {
       brandId: brand as number,
       model,
@@ -94,22 +83,6 @@ export async function POST(request: Request) {
         ? bodyAny.imageUrls
         : undefined;
 
-      // Basic product validation
-      if (
-        !productData.productType ||
-        !productData.name ||
-        productData.priceDkk === undefined ||
-        !productData.description
-      ) {
-        return NextResponse.json(
-          {
-            error:
-              "Missing required product fields: productType, name, priceDkk, description",
-          },
-          { status: 400 }
-        );
-      }
-
       const txResult = await watchService.createWatchWithProductAndImages({
         watchData,
         productData: productData as Omit<NewProductModel, "id" | "createdAt">,
@@ -121,15 +94,6 @@ export async function POST(request: Request) {
       }
 
       return NextResponse.json({ error: txResult.error }, { status: 500 });
-    }
-
-    // fallback: just create the watch
-    const result = await watchService.createWatch(watchData);
-
-    if (result.success) {
-      return NextResponse.json(result.data, { status: 201 });
-    } else {
-      return NextResponse.json({ error: result.error }, { status: 500 });
     }
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

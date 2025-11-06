@@ -3,8 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { db } from "@/database/drizzle";
 import { productImages } from "@/database/schema";
 
-const SUPABASE_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export async function POST(request: Request) {
@@ -47,6 +46,7 @@ export async function POST(request: Request) {
       dbRow?: any;
     }> = [];
 
+    // provide each file a unique name
     for (const file of files) {
       const unique = `${Date.now()}_${Math.random().toString(36).slice(2, 9)}_${
         file.name
@@ -57,6 +57,7 @@ export async function POST(request: Request) {
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
+      // upload to Supabase storage
       const { data, error } = await supabase.storage
         .from("product_images")
         .upload(path, buffer, { contentType: file.type });
@@ -64,10 +65,12 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
+      // get public URL
       const publicUrl = supabase.storage
         .from("product_images")
         .getPublicUrl(data.path).data.publicUrl;
 
+      // create DB row if productId provided
       let dbRow = undefined;
       if (productId) {
         const res = await db

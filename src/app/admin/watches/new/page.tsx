@@ -78,34 +78,30 @@ export default function NewWatchPage() {
     setLoading(true);
     setErrors({});
 
-    // Basic client validation
-    const newErrors: Record<string, string> = {};
-    if (!form.brand) newErrors.brand = "Brand is required";
-    if (!form.model) newErrors.model = "Model is required";
-    if (!form.reference) newErrors.reference = "Reference is required";
-    if (!form.serialNumber)
-      newErrors.serialNumber = "Serial number is required";
-    if (!form.year || isNaN(Number(form.year)))
-      newErrors.year = "Year must be a number";
-    if (!form.condition || isNaN(Number(form.condition)))
-      newErrors.condition = "Condition must be a number";
-
-    if (Object.keys(newErrors).length) {
-      setErrors(newErrors);
+    // Use zod schema for client validation (safeParse returns success or issues)
+    const result = createNewWatchSchema.safeParse(form);
+    if (!result.success) {
+      const issues = result.error.issues;
+      const fieldErrors: Record<string, string> = {};
+      issues.forEach((issue: z.ZodIssue) => {
+        if (
+          issue.path &&
+          issue.path.length > 0 &&
+          typeof issue.path[0] === "string"
+        ) {
+          const key = issue.path[0] as string;
+          // If a field already has an error, keep the first (you could concatenate)
+          if (!fieldErrors[key]) fieldErrors[key] = issue.message;
+        }
+      });
+      setErrors({
+        ...fieldErrors,
+        submitList: issues.map((i) => i.message).join("|"),
+      });
       setLoading(false);
       return;
     }
-
-    let parsed;
-    try {
-      parsed = createNewWatchSchema.parse(form);
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        setErrors({ submit: err.message });
-      }
-      setLoading(false);
-      return;
-    }
+    const parsed = result.data;
 
     // Build payload for transactional creation: watch + product + images using parsed/coerced values
     const payload = {
@@ -356,6 +352,7 @@ export default function NewWatchPage() {
           <FieldLabel>Price (DKK)</FieldLabel>
           <FieldContent>
             <Input name="price" value={form.price} onChange={handleChange} />
+            {errors.price && <FieldError>{errors.price}</FieldError>}
           </FieldContent>
         </Field>
 
@@ -370,6 +367,9 @@ export default function NewWatchPage() {
                 setForm((prev) => ({ ...prev, braceletType: val }))
               }
             />
+            {errors.braceletType && (
+              <FieldError>{errors.braceletType}</FieldError>
+            )}
           </FieldContent>
         </Field>
 
@@ -381,6 +381,9 @@ export default function NewWatchPage() {
               value={form.braceletColor}
               onChange={handleChange}
             />
+            {errors.braceletColor && (
+              <FieldError>{errors.braceletColor}</FieldError>
+            )}
           </FieldContent>
         </Field>
 
@@ -392,6 +395,7 @@ export default function NewWatchPage() {
               value={form.dialColor}
               onChange={handleChange}
             />
+            {errors.dialColor && <FieldError>{errors.dialColor}</FieldError>}
           </FieldContent>
         </Field>
         <MultiImageUpload
@@ -401,10 +405,6 @@ export default function NewWatchPage() {
             setUploadedImages(urls.filter(Boolean) as string[]);
           }}
         />
-
-        {errors.submit && (
-          <div className="text-destructive">{errors.submit}</div>
-        )}
 
         <div className="flex gap-2">
           <Button type="submit" disabled={loading}>

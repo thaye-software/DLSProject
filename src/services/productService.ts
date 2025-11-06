@@ -1,8 +1,9 @@
 import { db } from "@/database/drizzle";
-import { products, watches } from "@/database/migrations/schema";
+import { products } from "@/database/migrations/schema";
 import { NewProductModel } from "@/database/types";
 
 export const productService = {
+  
   async createProduct(data: Omit<NewProductModel, "id" | "createdAt">) {
     try {
       const result = await db.insert(products).values(data).returning();
