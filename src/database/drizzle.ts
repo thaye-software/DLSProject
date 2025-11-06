@@ -13,7 +13,7 @@ const connectionString = process.env.APP_ENV == 'prod'
   console.log("Database connection string:", connectionString);
   console.log("Database connection string:", process.env.APP_ENV);
 if (!connectionString) {
-  throw new Error("DATABASE_URL is not set in environment variables");
+  throw new Error("the database connection string is not set in environment variables");
 }
 
 export const client = postgres(connectionString, { prepare: false });

@@ -23,10 +23,24 @@ jobs:
         if: github.ref == 'refs/heads/dev'
         env:
           DATABASE_URL_DEV: ${{ secrets.DATABASE_URL_DEV }}
-        run: npm run db:migrate:dev
+        run: |
+          set -e
+          OUTPUT=$(npm run db:migrate:dev 2>&1) || true
+          echo "$OUTPUT"
+          if echo "$OUTPUT" | grep -q "Error"; then
+            echo "Migration failed"
+            exit 1
+          fi
       
       - name: Run migrations (production)
         if: github.ref == 'refs/heads/main'
         env:
           DATABASE_URL_PROD: ${{ secrets.DATABASE_URL_PROD }}
-        run: npm run db:migrate:prod
+        run: |
+          set -e
+          OUTPUT=$(npm run db:migrate:prod 2>&1) || true
+          echo "$OUTPUT"
+          if echo "$OUTPUT" | grep -q "Error"; then
+            echo "Migration failed"
+            exit 1
+          fi
