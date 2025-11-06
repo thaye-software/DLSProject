@@ -13,38 +13,16 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Brand } from "@/services/brandService";
 import constants from "@/lib/constants";
 import CustomSelect from "@/components/CustomSelect";
+import { BrandModel } from "@/database/types";
 import MultiImageUpload from "@/components/MultiImageUpload";
-import z from "zod";
-
-const formSchema = z.object({
-  brand: z.string().min(2).max(100),
-  model: z.string().min(2).max(100),
-  reference: z.string().min(2).max(100),
-  serialNumber: z.string().min(2).max(100),
-  year: z.string().min(4).max(4),
-  size: z.string().max(100).optional(),
-  movement: z.string().max(100).optional(),
-  glassType: z.string().max(100).optional(),
-  limited: z.boolean(),
-  box: z.boolean(),
-  papers: z.boolean(),
-  condition: z.string().min(1).max(1),
-  price: z.string().min(1).max(100).optional(),
-  braceletType: z.string().max(100).optional(),
-  braceletColor: z.string().max(100).optional(),
-  dialColor: z.string().max(100).optional(),
-  vat: z.string().min(1).max(100).optional(),
-  productSafetyInfoId: z.string().min(1).max(100).optional(),
-});
 
 export default function NewWatchPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [brands, setBrands] = useState<Brand[]>([]);
+  const [brands, setBrands] = useState<BrandModel[]>([]);
 
   async function fetchBrands() {
     try {
@@ -96,18 +74,21 @@ export default function NewWatchPage() {
     e.preventDefault();
     setLoading(true);
     setErrors({});
-    // Validate with Zod
-    const parsed = formSchema.safeParse(form);
-    if (!parsed.success) {
-      const zodErrors: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        const key = issue.path[0] as string | undefined;
-        if (key) {
-          // prefer the first error message for the field
-          if (!zodErrors[key]) zodErrors[key] = issue.message;
-        }
-      }
-      setErrors(zodErrors);
+
+    // Basic client validation
+    const newErrors: Record<string, string> = {};
+    if (!form.brand) newErrors.brand = "Brand is required";
+    if (!form.model) newErrors.model = "Model is required";
+    if (!form.reference) newErrors.reference = "Reference is required";
+    if (!form.serialNumber)
+      newErrors.serialNumber = "Serial number is required";
+    if (!form.year || isNaN(Number(form.year)))
+      newErrors.year = "Year must be a number";
+    if (!form.condition || isNaN(Number(form.condition)))
+      newErrors.condition = "Condition must be a number";
+
+    if (Object.keys(newErrors).length) {
+      setErrors(newErrors);
       setLoading(false);
       return;
     }

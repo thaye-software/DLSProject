@@ -1,12 +1,4 @@
 import { db } from "@/database/drizzle";
-import { brands, productSafetyInfo } from "@/database/schema";
-import { eq } from "drizzle-orm";
-
-export interface Brand {
-  id: number;
-  name: string;
-  product_safety_info_id: number | null;
-}
 
 export const brandService = {
   async getAllBrands() {
