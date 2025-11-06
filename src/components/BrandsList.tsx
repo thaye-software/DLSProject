@@ -1,4 +1,4 @@
-import { Brand } from "@/services/brandService";
+import { BrandModel } from "@/database/types";
 
 export default async function BrandsList() {
 
@@ -15,7 +15,6 @@ export default async function BrandsList() {
     }
   };
   const brands = await getBrands();
-  console.log(brands)
 
   return (
     <div>
@@ -23,7 +22,7 @@ export default async function BrandsList() {
       <h1>Brands:</h1>
       <br></br>
       <ul>
-        {brands.map((brand: Brand) => (
+        {brands.map((brand: BrandModel) => (
           <li key={brand.id}>{brand.name}</li>
         ))}
       </ul>

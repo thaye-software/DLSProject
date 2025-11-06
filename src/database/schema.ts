@@ -44,6 +44,10 @@ export const productImages = pgTable(
   "product_images",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
+    productId: bigint("product_id", { mode: "number" }).references(
+      () => products.id,
+      { onDelete: "cascade" }
+    ),
     imageUrl: varchar("image_url", { length: 255 }).notNull(),
     isThumbnail: boolean("is_thumbnail").notNull().default(false),
   },
@@ -88,9 +92,6 @@ export const watches = pgTable(
     braceletColor: varchar("bracelet_color", { length: 100 }),
     dialColor: varchar("dial_color", { length: 100 }),
     vat: integer("vat"),
-    productSafetyInfoId: bigint("product_safety_info_id", {
-      mode: "number",
-    }).references(() => productSafetyInfo.id, { onDelete: "set null" }),
   },
   (table) => [
     index("idx_watches_brand").on(table.brandId),
@@ -157,10 +158,6 @@ export const products = pgTable(
     priceDkk: bigint("price_dkk", { mode: "number" }).notNull(),
     description: text("description").notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
-    imageId: bigint("image_id", { mode: "number" }).references(
-      () => productImages.id,
-      { onDelete: "set null" }
-    ),
   },
   (table) => [
     index("idx_products_watch_id").on(table.watchId),
@@ -358,10 +355,6 @@ export const addressesRelations = relations(addresses, ({ many }) => ({
 }));
 
 export const watchesRelations = relations(watches, ({ one, many }) => ({
-  productSafetyInfo: one(productSafetyInfo, {
-    fields: [watches.productSafetyInfoId],
-    references: [productSafetyInfo.id],
-  }),
   brand: one(brands, {
     fields: [watches.brandId],
     references: [brands.id],
@@ -384,11 +377,15 @@ export const productsRelations = relations(products, ({ one, many }) => ({
     fields: [products.watchId],
     references: [watches.id],
   }),
-  image: one(productImages, {
-    fields: [products.imageId],
-    references: [productImages.id],
-  }),
   orderItems: many(orderItems),
+  productImages: many(productImages),
+}));
+
+export const productImagesRelations = relations(productImages, ({ one }) => ({
+  product: one(products, {
+    fields: [productImages.productId],
+    references: [products.id],
+  }),
 }));
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({

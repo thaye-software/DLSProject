@@ -19,7 +19,7 @@ export default function MultiImageUpload({
   bucket?: string;
   folder?: string;
   onComplete?: (items: UploadedItem[]) => void;
-  }) {
+}) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -31,6 +31,11 @@ export default function MultiImageUpload({
     setFiles(selected);
     setPreviews(selected.map((f) => URL.createObjectURL(f)));
     setStatuses({});
+    // auto-upload immediately after selection
+    if (selected.length) {
+      // fire-and-forget; uploadAll will manage uploading state
+      void uploadAll(selected);
+    }
   }
 
   function clearSelection() {
@@ -43,25 +48,40 @@ export default function MultiImageUpload({
     setStatuses({});
   }
 
-  async function uploadAll() {
-    if (!files.length) return;
+  async function uploadAll(filesToUpload?: File[]) {
+    const targetFiles = filesToUpload ?? files;
+    if (!targetFiles.length) return;
     setUploading(true);
     const uploaded: UploadedItem[] = [];
 
-    for (const file of files) {
-      const unique = `${Date.now()}_${Math.random().toString(36).slice(2, 9)}_${
-        file.name
-      }`;
-      const path = `${folder}/${unique}`;
-      setStatuses((s) => ({ ...s, [file.name]: "uploading" }));
+    // send files as FormData to server endpoint
+    const formData = new FormData();
+    for (const f of targetFiles) formData.append("files", f);
+    // include optional folder and bucket for future flexibility
+    formData.append("folder", folder);
 
-      try {
-        supabaseService.uploadFile(file).then((publicUrl) => {
-          uploaded.push({ path, publicUrl });
-          setStatuses((statuses) => ({ ...statuses, [file.name]: "done" }));
-        });
-      } catch (err: any) {
-        console.error("Upload failed", file.name, err);
+    try {
+      const res = await fetch("/api/uploads", {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(txt || "Upload failed");
+      }
+
+      const json = await res.json();
+      // json.uploaded: [{ path, publicUrl, dbRow? }]
+      for (const it of json.uploaded as any[]) {
+        uploaded.push({ path: it.path, publicUrl: it.publicUrl ?? null });
+        // mark as done for the corresponding filename roughly by matching path end
+        const filename = it.path.split("/").pop() ?? it.path;
+        setStatuses((statuses) => ({ ...statuses, [filename]: "done" }));
+      }
+    } catch (err: any) {
+      console.error("Upload failed:", err);
+      // set all target files to error
+      for (const file of targetFiles) {
         setStatuses((statuses) => ({ ...statuses, [file.name]: "error" }));
       }
     }
@@ -89,9 +109,7 @@ export default function MultiImageUpload({
         >
           Clear
         </Button>
-        <Button onClick={uploadAll} disabled={!files.length || uploading}>
-          {uploading ? "Uploading..." : "Upload all"}
-        </Button>
+        {/* Upload happens automatically on file selection */}
       </div>
 
       {previews.length > 0 && (
