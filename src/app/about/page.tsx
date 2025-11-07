@@ -26,7 +26,7 @@ const teamMembers = [
 
 export default function AboutPage() {
   return (
-    <div className="mx-auto px-3 py-6">
+    <div className="container mx-auto px-3 py-6">
       {/* Hero */}
       <section className="grid md:grid-cols-2 mb-12 gap-10">
         <div>
