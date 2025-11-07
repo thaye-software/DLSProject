@@ -1,18 +1,15 @@
 "use client";
 
-import type { Metadata } from "next";
 import theSeasonsFont from "next/font/local";
 import centuryGothicFont from "next/font/local";
 import { Open_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import Image from "next/image";
 import Logo from "@/components/Logo";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { ModeToggle } from "@/components/ModeToggle";
 import { usePathname } from "next/navigation";
-import { SidebarProvider } from "@/components/ui/sidebar";
 
 const theSeasons = theSeasonsFont({
   src: [

@@ -7,14 +7,13 @@ import {
   MapPin,
   Phone,
 } from "lucide-react";
-import Logo from "./Logo";
 
 export function Footer() {
   return (
     <footer className="border-t border-border">
       <div className="container mx-auto px-4 py-8">
         {/* Brand Section */}
-        <div className="mb-10">
+        <div className="mb-6">
           <div className="flex flex-col items-center text-center">
             <h3 className="text-xl font-bold flex-row">
               Limited Watches
