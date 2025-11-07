@@ -1,17 +1,15 @@
 "use client";
 
-import type { Metadata } from "next";
 import theSeasonsFont from "next/font/local";
 import centuryGothicFont from "next/font/local";
 import { Open_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import Image from "next/image";
+import Logo from "@/components/Logo";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { ModeToggle } from "@/components/ModeToggle";
 import { usePathname } from "next/navigation";
-import { SidebarProvider } from "@/components/ui/sidebar";
 
 const theSeasons = theSeasonsFont({
   src: [
@@ -84,7 +82,9 @@ export default function RootLayout({
   const pathname = usePathname();
 
   const hideRootShell =
-    pathname === "/login" || pathname?.startsWith("/admin") || pathname?.startsWith("/login/");
+    pathname === "/login" ||
+    pathname?.startsWith("/admin") ||
+    pathname?.startsWith("/login/");
 
   return (
     <html
@@ -99,21 +99,20 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+       
           {!hideRootShell && (
-            <header>
+            <nav className="container mx-auto">
+              <header>
               <div className="flex items-center justify-between w-full px-4">
                 <div></div>
-
-                <div className="flex items-center gap-4">
-                  <Image
-                    src="/logo.svg"
-                    alt="Limited Watches Logo"
-                    width={80}
-                    height={80}
-                  />
-                  <h1 className="text-3xl font-seasons font-semibold text-champagne">
-                    Limited Watches
-                  </h1>
+                <div className="pt-4 pb-4">
+                  
+                  <div className="flex flex-col items-center justify-center gap-2">
+                  <div className="">
+                        <Logo className="h-12 w-12 dark:text-white" />
+                    </div>
+                  <h1 className="text-2xl font-bold">Limited Watches</h1>
+                  </div>
                 </div>
 
                 <div className="w-20 flex justify-end">
@@ -121,10 +120,6 @@ export default function RootLayout({
                 </div>
               </div>
             </header>
-          )}
-
-          {!hideRootShell && (
-            <nav className="container mx-auto">
               <Navbar />
             </nav>
           )}
@@ -135,15 +130,13 @@ export default function RootLayout({
             // and not show the navbar and footer.
             <div className="min-h-screen w-full">{children}</div>
           ) : (
-                <main className="container mx-auto flex-1 pt-5 pb-5">
-                  
+            <main className="container mx-auto flex-1 pt-5 pb-5">
               {children}
             </main>
           )}
 
-            {!hideRootShell && <Footer />}
-
-          </ThemeProvider>
+          {!hideRootShell && <Footer />}
+        </ThemeProvider>
       </body>
     </html>
   );
