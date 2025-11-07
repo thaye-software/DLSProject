@@ -5,7 +5,8 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 interface CarouselCardProps {
-  image: string;
+  image: { id: number; src: string; brand: string };
+  
 }
 
 export const CarouselCard: React.FC<CarouselCardProps> = ({ image }) => {
@@ -36,12 +37,12 @@ export const CarouselCard: React.FC<CarouselCardProps> = ({ image }) => {
               exit={{ opacity: 0 }}
             >
               <motion.h1
-                className="text-white text-xs px-3 py-2 gap-2 flex items-center"
+                className="text-white text-xl px-3 py-2 gap-2 flex justify-center items-center h-full"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
               >
-                <span>Watch model</span>
+                <span>{image.brand}</span>
               </motion.h1>
             </motion.div>
           )}
@@ -49,8 +50,8 @@ export const CarouselCard: React.FC<CarouselCardProps> = ({ image }) => {
 
         {/* Plain image — no filter animation to avoid repaints */}
         <Image
-          src={image}
-          alt={image}
+          src={image.src}
+          alt={image.brand}
           fill
           style={{ objectFit: "cover" }}
         />

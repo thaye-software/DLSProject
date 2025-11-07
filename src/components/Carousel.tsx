@@ -10,14 +10,19 @@ type Direction = "left" | "right";
 export default function Carousel({
   direction = "left",
   duration = 25,
-  images
+  images,
 }: {
   direction?: Direction;
   duration?: number;
-  images: string[];
+  images: (string | { id: number; src: string; brand: string })[];
 }) {
   const [ref, { width }] = useMeasure();
   const xTranslation = useMotionValue(0);
+
+  // normalize images to objects { id, src, brand }
+  const normalizedImages = images.map((item, idx) =>
+    typeof item === "string" ? { id: idx, src: item, brand: "" } : item
+  );
 
   useEffect(() => {
     if (!width) return;
@@ -52,8 +57,8 @@ export default function Carousel({
   return (
     <div className="w-full overflow-visible">
       <motion.div ref={ref} className="flex w-max" style={{ x: xTranslation }}>
-        {[...images, ...images].map((item, i) => (
-          <CarouselCard image={item} key={i} />
+        {[...normalizedImages, ...normalizedImages].map((image, i) => (
+          <CarouselCard image={image} key={i} />
         ))}
       </motion.div>
     </div>

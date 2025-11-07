@@ -130,7 +130,7 @@ export default function RootLayout({
             // and not show the navbar and footer.
             <div className="min-h-screen w-full">{children}</div>
           ) : (
-            <main className="flex-1 pt-5 pb-5">
+            <main className="pt-5 pb-5">
               {children}
             </main>
           )}
