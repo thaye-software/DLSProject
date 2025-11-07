@@ -5,20 +5,16 @@ import { useEffect } from "react";
 import useMeasure from "react-use-measure";
 import { motion } from "framer-motion";
 
-const images = [
-  "/carousel/carousel-1.jpg",
-  "/carousel/carousel-2.jpg",
-  "/carousel/carousel-3.jpg",
-];
-
 type Direction = "left" | "right";
 
 export default function Carousel({
   direction = "left",
   duration = 25,
+  images
 }: {
   direction?: Direction;
   duration?: number;
+  images: string[];
 }) {
   const [ref, { width }] = useMeasure();
   const xTranslation = useMotionValue(0);

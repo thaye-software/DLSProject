@@ -21,8 +21,8 @@ export const CarouselCard: React.FC<CarouselCardProps> = ({ image }) => {
         {/* Composited dim overlay (animating opacity) — cheaper than animating filter on the image */}
         <motion.div
           className="absolute inset-0 z-10 pointer-events-none"
-          initial={{ opacity: 0.3 }}
-          animate={{ opacity: showOverlay ? 0.32 : 0.3 }}
+          initial={{ opacity: 0.5 }}
+          animate={{ opacity: showOverlay ? 0.32 : 0.5 }}
           style={{ backgroundColor: "black" }}
           transition={{ duration: 0.18 }}
         />
