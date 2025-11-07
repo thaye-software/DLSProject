@@ -9,7 +9,7 @@ import Logo from "@/components/Logo";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { ModeToggle } from "@/components/ModeToggle";
-import { usePathname } from "next/navigation";
+import { usePathname, redirect } from "next/navigation";
 
 const theSeasons = theSeasonsFont({
   src: [
@@ -107,7 +107,7 @@ export default function RootLayout({
                 <div></div>
                 <div className="pt-4 pb-4">
                   
-                  <div className="flex flex-col items-center justify-center gap-2">
+                  <div onClick={() => redirect('/')} className="flex flex-col items-center justify-center gap-2 cursor-pointer">
                   <div className="">
                         <Logo className="h-12 w-12 dark:text-white" />
                     </div>
