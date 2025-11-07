@@ -1,0 +1,65 @@
+"use client";
+import { CarouselCard } from "@/components/CarouselCard";
+import { animate, useMotionValue } from "framer-motion";
+import { useEffect } from "react";
+import useMeasure from "react-use-measure";
+import { motion } from "framer-motion";
+
+const images = [
+  "/carousel/carousel-1.jpg",
+  "/carousel/carousel-2.jpg",
+  "/carousel/carousel-3.jpg",
+];
+
+type Direction = "left" | "right";
+
+export default function Carousel({
+  direction = "left",
+  duration = 25,
+}: {
+  direction?: Direction;
+  duration?: number;
+}) {
+  const [ref, { width }] = useMeasure();
+  const xTranslation = useMotionValue(0);
+
+  useEffect(() => {
+    if (!width) return;
+    const singleCopyWidth = width / 2;
+
+    // For left: animate 0 -> -singleCopyWidth, then reset to 0
+    // For right: animate -singleCopyWidth -> 0, then reset to -singleCopyWidth
+    const startValue = direction === "left" ? 0 : -singleCopyWidth;
+    const targetValue = direction === "left" ? -singleCopyWidth : 0;
+
+    // ensure starting position
+    xTranslation.set(startValue);
+
+    let controls: ReturnType<typeof animate> | undefined;
+
+    const start = () => {
+      controls = animate(xTranslation, targetValue, {
+        ease: "linear",
+        duration,
+        onComplete: () => {
+          // reset to start value and restart — duplication of images makes this seamless
+          xTranslation.set(startValue);
+          start();
+        },
+      });
+    };
+
+    start();
+    return () => controls?.stop();
+  }, [width, xTranslation, direction, duration]);
+
+  return (
+    <div className="w-full overflow-visible">
+      <motion.div ref={ref} className="flex w-max" style={{ x: xTranslation }}>
+        {[...images, ...images].map((item, i) => (
+          <CarouselCard image={item} key={i} />
+        ))}
+      </motion.div>
+    </div>
+  );
+}
