@@ -158,7 +158,8 @@ export async function register(
     return { formError: response.error.message };
   }
 
-  // Success: redirect to home
-  revalidatePath("/", "layout");
-  redirect("/");
+  return { success: true };
+  // // Success: redirect to home
+  // revalidatePath("/", "layout");
+  // redirect("/");
 }
