@@ -10,6 +10,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import Logo from "@/components/Logo";
 
 const images = ["/login_cover.jpg", "/login_cover_1.jpg", "/login_cover_2.jpg"];
 
@@ -25,13 +26,7 @@ export default function LoginPage() {
             Back
           </Button>
           <div className="flex items-center justify-end flex-1">
-            <Image
-              src="/logo.svg"
-              alt="Logo"
-              className="fill-black"
-              width={56}
-              height={56}
-            />
+            <Logo className="h-8 w-8 dark:text-white mr-2" />
             <span className="text-2xl font-seasons font-semibold">
               Limited Watches
             </span>
