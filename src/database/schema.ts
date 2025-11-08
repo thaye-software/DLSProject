@@ -191,6 +191,13 @@ export const orders = pgTable(
     totalPrice: bigint("total_price", { mode: "number" }).notNull(),
     status: varchar("status", { length: 50 }).notNull(),
     currency: varchar("currency", { length: 10 }).notNull().default("DKK"),
+
+    // Currency fields
+    currencyCode: varchar("currency_code", { length: 3 }).notNull().default("DKK"),
+    exchangeRateUsed: decimal("exchange_rate_used", { precision: 10, scale: 6 }).notNull().default("1.000000"),
+    totalPriceDkk: decimal("total_price_dkk", { precision: 12, scale: 2 }).notNull(),
+    totalPriceCurrency: decimal("total_price_currency", { precision: 12, scale: 2 }).notNull(),
+    
     deliveryAddressId: bigint("delivery_address_id", {
       mode: "number",
     }).references(() => orderAddresses.id, { onDelete: "set null" }),
@@ -205,6 +212,7 @@ export const orders = pgTable(
     index("idx_orders_created_at").on(table.createdAt),
     index("idx_orders_delivery_address").on(table.deliveryAddressId),
     index("idx_orders_billing_address").on(table.billingAddressId),
+    index("idx_orders_currency_code").on(table.currencyCode), // NEW INDEX
     check(
       "orders_status_check",
       sql`${table.status} IN ('pending', 'paid', 'shipped', 'completed', 'cancelled')`
@@ -331,6 +339,54 @@ export const messages = pgTable(
   ]
 );
 
+import { decimal } from "drizzle-orm/pg-core";
+
+// Add these tables after your existing tables
+
+export const currencies = pgTable(
+  "currencies",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    code: varchar("code", { length: 3 }).notNull().unique(),
+    exchangeRate: decimal("exchange_rate", { precision: 10, scale: 6 }).notNull(),
+    isActive: boolean("is_active").notNull().default(true),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_currencies_code").on(table.code),
+    index("idx_currencies_is_active").on(table.isActive),
+  ]
+);
+
+export const currencyHistory = pgTable(
+  "currency_history",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    currencyId: bigint("currency_id", { mode: "number" })
+      .notNull()
+      .references(() => currencies.id, { onDelete: "cascade" }),
+    exchangeRate: decimal("exchange_rate", { precision: 10, scale: 6 }).notNull(),
+    changedAt: timestamp("changed_at").notNull().defaultNow(),
+    changedBy: varchar("changed_by", { length: 255 }),
+  },
+  (table) => [
+    index("idx_currency_history_currency_id").on(table.currencyId),
+    index("idx_currency_history_changed_at").on(table.changedAt),
+  ]
+);
+
+
+
+
+
+
+//----------------------------------------------------------------  Relations --------------------------------------------------------------------
+
+
+
+
+
+
 export const countriesRelations = relations(countries, ({ many }) => ({
   users: many(users),
 }));
@@ -408,6 +464,10 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
     references: [orderAddresses.id],
     relationName: "billingAddress",
   }),
+  currency: one(currencies, {
+    fields: [orders.currencyCode],
+    references: [currencies.code],
+  }),
 }));
 
 export const orderAddressesRelations = relations(
@@ -474,5 +534,17 @@ export const messagesRelations = relations(messages, ({ one }) => ({
   sender: one(users, {
     fields: [messages.senderId],
     references: [users.id],
+  }),
+}));
+
+export const currenciesRelations = relations(currencies, ({ many }) => ({
+  history: many(currencyHistory),
+  orders: many(orders),
+}));
+
+export const currencyHistoryRelations = relations(currencyHistory, ({ one }) => ({
+  currency: one(currencies, {
+    fields: [currencyHistory.currencyId],
+    references: [currencies.id],
   }),
 }));

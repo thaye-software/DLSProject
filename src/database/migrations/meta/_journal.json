@@ -78,6 +78,13 @@
       "when": 1762607864238,
       "tag": "0010_add-stock-field-to-products",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1762614136351,
+      "tag": "0011_created-currencies-table-and-updated-orders",
+      "breakpoints": true
     }
   ]
 }
