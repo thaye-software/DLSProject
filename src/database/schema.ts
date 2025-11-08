@@ -80,6 +80,7 @@ export const products = pgTable(
     name: varchar("name", { length: 255 }).notNull(),
     priceDkk: bigint("price_dkk", { mode: "number" }).notNull(),
     description: text("description").notNull(),
+    stock: integer("stock").notNull().default(0),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [
@@ -138,7 +139,9 @@ export const watches = pgTable(
     productId: bigint("product_id", { mode: "number" })
       .notNull()
       .references(() => products.id, { onDelete: "cascade" }),
-    brandId: bigint("brand_id", { mode: "number" }).notNull(),
+    brandId: bigint("brand_id", { mode: "number" })
+      .notNull()
+      .references(() => brands.id, { onDelete: "cascade" }),
     model: varchar("model", { length: 255 }).notNull(),
     reference: varchar("reference", { length: 255 }).notNull(),
     serialNumber: varchar("serial_number", { length: 255 }).notNull(),
