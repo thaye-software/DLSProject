@@ -1,4 +1,4 @@
-import { WatchCard } from "@/components/WatchCard";
+import { WatchesGrid } from "@/components/WatchesGrid";
 
 import { productService } from "@/services/productService";
 
@@ -9,6 +9,7 @@ import { Spinner } from "@/components/ui/spinner";
 
 export default async function AllWatches() {
 
+   await new Promise((resolve) => setTimeout(resolve, 2000))
   const watches: Products[] = await productService.getAllProducts();
 
 
@@ -16,13 +17,11 @@ export default async function AllWatches() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold mb-2">All Watches</h1>
       <p className="text-muted-foreground mb-8">This is the page that lists all watches.</p>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {watches.map((watch) => (
-          <Suspense key={watch.id} fallback={<Spinner />}>
-            <WatchCard watch={watch} />
-          </Suspense>
-        ))}
+      
+      <div className="flex justify-center">
+        <Suspense fallback={<Spinner className="w-8 h-8"/>}>
+          <WatchesGrid watches={watches}/>
+        </Suspense>
       </div>
     </div>
   );
