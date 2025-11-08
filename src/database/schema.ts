@@ -72,32 +72,20 @@ export const productSafetyInfo = pgTable(
   (table) => [index("idx_product_safety_country").on(table.country)]
 );
 
-export const watches = pgTable(
-  "watches",
+export const products = pgTable(
+  "products",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
-    brandId: bigint("brand_id", { mode: "number" }).notNull(),
-    model: varchar("model", { length: 255 }).notNull(),
-    reference: varchar("reference", { length: 255 }).notNull(),
-    serialNumber: varchar("serial_number", { length: 255 }).notNull(),
-    year: integer("year").notNull(),
-    size: varchar("size", { length: 50 }),
-    movement: varchar("movement", { length: 100 }),
-    glassType: varchar("glass_type", { length: 100 }),
-    limited: boolean("limited").notNull().default(false),
-    box: boolean("box").notNull().default(false),
-    papers: boolean("papers").notNull().default(false),
-    condition: integer("condition").notNull(),
-    braceletType: varchar("bracelet_type", { length: 100 }),
-    braceletColor: varchar("bracelet_color", { length: 100 }),
-    dialColor: varchar("dial_color", { length: 100 }),
-    vat: integer("vat"),
+    productType: varchar("product_type", { length: 255 }).notNull(),
+    name: varchar("name", { length: 255 }).notNull(),
+    priceDkk: bigint("price_dkk", { mode: "number" }).notNull(),
+    description: text("description").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [
-    index("idx_watches_brand").on(table.brandId),
-    index("idx_watches_reference").on(table.reference),
-    index("idx_watches_year").on(table.year),
-    index("idx_watches_condition").on(table.condition),
+    index("idx_products_name").on(table.name),
+    index("idx_products_created_at").on(table.createdAt),
+    index("idx_products_price_dkk").on(table.priceDkk),
   ]
 );
 
@@ -143,27 +131,36 @@ export const users = pgTable(
   ]
 );
 
-export const products = pgTable(
-  "products",
+export const watches = pgTable(
+  "watches",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
-    watchId: bigint("watch_id", { mode: "number" }).references(
-      () => watches.id,
-      {
-        onDelete: "cascade",
-      }
-    ),
-    productType: varchar("product_type", { length: 255 }).notNull(),
-    name: varchar("name", { length: 255 }).notNull(),
-    priceDkk: bigint("price_dkk", { mode: "number" }).notNull(),
-    description: text("description").notNull(),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
+    productId: bigint("product_id", { mode: "number" })
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    brandId: bigint("brand_id", { mode: "number" }).notNull(),
+    model: varchar("model", { length: 255 }).notNull(),
+    reference: varchar("reference", { length: 255 }).notNull(),
+    serialNumber: varchar("serial_number", { length: 255 }).notNull(),
+    year: integer("year").notNull(),
+    size: varchar("size", { length: 50 }),
+    movement: varchar("movement", { length: 100 }),
+    glassType: varchar("glass_type", { length: 100 }),
+    limited: boolean("limited").notNull().default(false),
+    box: boolean("box").notNull().default(false),
+    papers: boolean("papers").notNull().default(false),
+    condition: integer("condition").notNull(),
+    braceletType: varchar("bracelet_type", { length: 100 }),
+    braceletColor: varchar("bracelet_color", { length: 100 }),
+    dialColor: varchar("dial_color", { length: 100 }),
+    vat: integer("vat"),
   },
   (table) => [
-    index("idx_products_watch_id").on(table.watchId),
-    index("idx_products_name").on(table.name),
-    index("idx_products_created_at").on(table.createdAt),
-    index("idx_products_price_dkk").on(table.priceDkk),
+    index("idx_watches_product_id").on(table.productId),
+    index("idx_watches_brand").on(table.brandId),
+    index("idx_watches_reference").on(table.reference),
+    index("idx_watches_year").on(table.year),
+    index("idx_watches_condition").on(table.condition),
   ]
 );
 
@@ -354,14 +351,13 @@ export const addressesRelations = relations(addresses, ({ many }) => ({
   users: many(users),
 }));
 
-export const watchesRelations = relations(watches, ({ one, many }) => ({
-  brand: one(brands, {
-    fields: [watches.brandId],
-    references: [brands.id],
+export const productsRelations = relations(products, ({ one, many }) => ({
+  watch: one(watches, {
+    fields: [products.id],
+    references: [watches.productId],
   }),
-  products: many(products),
-  auctions: many(auctions),
-  conversations: many(conversations),
+  orderItems: many(orderItems),
+  productImages: many(productImages),
 }));
 
 export const brandsRelations = relations(brands, ({ one, many }) => ({
@@ -372,14 +368,19 @@ export const brandsRelations = relations(brands, ({ one, many }) => ({
   watches: many(watches),
 }));
 
-export const productsRelations = relations(products, ({ one, many }) => ({
-  watch: one(watches, {
-    fields: [products.watchId],
-    references: [watches.id],
+export const watchesRelations = relations(watches, ({ one, many }) => ({
+  product: one(products, {
+    fields: [watches.productId],
+    references: [products.id],
   }),
-  orderItems: many(orderItems),
-  productImages: many(productImages),
+  brand: one(brands, {
+    fields: [watches.brandId],
+    references: [brands.id],
+  }),
+  auctions: many(auctions),
+  conversations: many(conversations),
 }));
+
 
 export const productImagesRelations = relations(productImages, ({ one }) => ({
   product: one(products, {

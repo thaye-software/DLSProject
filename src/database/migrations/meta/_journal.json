@@ -57,6 +57,13 @@
       "when": 1762428304492,
       "tag": "0007_remove-ref-from-product-to-product_images",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1762606370150,
+      "tag": "0008_restructure-watches-and-products-table",
+      "breakpoints": true
     }
   ]
 }
