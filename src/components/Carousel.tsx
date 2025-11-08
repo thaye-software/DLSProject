@@ -26,7 +26,9 @@ export default function Carousel({
 
   useEffect(() => {
     if (!width) return;
-    const singleCopyWidth = width / 2;
+    // use an integer pixel width to avoid fractional translations which can
+    // produce a 1px seam between duplicated content on some displays / browsers
+    const singleCopyWidth = Math.round(width / 2);
 
     // For left: animate 0 -> -singleCopyWidth, then reset to 0
     // For right: animate -singleCopyWidth -> 0, then reset to -singleCopyWidth
@@ -55,8 +57,13 @@ export default function Carousel({
   }, [width, xTranslation, direction, duration]);
 
   return (
-    <div className="w-full overflow-visible">
-      <motion.div ref={ref} className="flex w-max" style={{ x: xTranslation }}>
+    // hide overflow to prevent thin seams appearing between duplicated slides
+    <div className="w-full overflow-hidden">
+      <motion.div
+        ref={ref}
+        className="flex w-max will-change-transform"
+        style={{ x: xTranslation, willChange: "transform" }}
+      >
         {[...normalizedImages, ...normalizedImages].map((image, i) => (
           <CarouselCard image={image} key={i} />
         ))}
