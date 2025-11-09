@@ -20,7 +20,7 @@ export function WatchCard({ watch }: { watch: Products }) {
 
     console.log(watch)
     return (
-        <Link href={`/watches/details/${watch.id}`}>
+        <Link href={`/watches/view/${watch.id}`}>
         
             <Card className="group overflow-hidden transition-all duration-300 hover:shadow-2xl border-0">
                 <CardHeader className="p-0">
