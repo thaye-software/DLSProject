@@ -209,13 +209,54 @@ const seededProducts = await db
 await db.insert(productImages).values([
   {
     productId: seededProducts[0].id,
-    imageUrl: "/unboxing2.jpg",
+    imageUrl: "https://images.unsplash.com/photo-1587925358603-c2eea5305bbc?fm=jpg&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8d3Jpc3R3YXRjaHxlbnwwfHwwfHx8MA%3D%3D&ixlib=rb-4.1.0&q=60&w=3000",
     isThumbnail: true,
   },
   {
     productId: seededProducts[0].id,
-    imageUrl: "/login_cover.jpg",
+    imageUrl: "https://images.unsplash.com/photo-1587925358603-c2eea5305bbc?fm=jpg&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8d3Jpc3R3YXRjaHxlbnwwfHwwfHx8MA%3D%3D&ixlib=rb-4.1.0&q=60&w=3000",
   },
+  {
+    productId: seededProducts[1].id,
+    imageUrl: "https://images.unsplash.com/photo-1689287428096-7e1dcc705a5c?fm=jpg&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTh8fHdyaXN0d2F0Y2h8ZW58MHx8MHx8fDA%3D&ixlib=rb-4.1.0&q=60&w=3000",
+    isThumbnail: true,
+  },
+  {
+    productId: seededProducts[1].id,
+    imageUrl: "https://images.unsplash.com/photo-1689287428096-7e1dcc705a5c?fm=jpg&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTh8fHdyaXN0d2F0Y2h8ZW58MHx8MHx8fDA%3D&ixlib=rb-4.1.0&q=60&w=3000",
+  },
+  {
+    productId: seededProducts[2].id,
+    imageUrl: "https://images.unsplash.com/photo-1604242692760-2f7b0c26856d?fm=jpg&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fGx1eHVyeSUyMHdhdGNofGVufDB8fDB8fHww&ixlib=rb-4.1.0&q=60&w=3000",
+    isThumbnail: true,
+  },
+  {
+    productId: seededProducts[2].id,
+    imageUrl: "https://images.unsplash.com/photo-1604242692760-2f7b0c26856d?fm=jpg&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fGx1eHVyeSUyMHdhdGNofGVufDB8fDB8fHww&ixlib=rb-4.1.0&q=60&w=3000",
+  },
+  {
+    productId: seededProducts[3].id,
+    imageUrl: "https://images.unsplash.com/photo-1670404160620-a3a86428560e?fm=jpg&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8bHV4dXJ5JTIwd2F0Y2h8ZW58MHx8MHx8fDA%3D&ixlib=rb-4.1.0&q=60&w=3000",
+    isThumbnail: true,
+  },
+  {
+    productId: seededProducts[3].id,
+    imageUrl: "https://images.unsplash.com/photo-1670404160620-a3a86428560e?fm=jpg&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8bHV4dXJ5JTIwd2F0Y2h8ZW58MHx8MHx8fDA%3D&ixlib=rb-4.1.0&q=60&w=3000",
+  },
+  {
+    productId: seededProducts[4].id,
+    imageUrl: "https://images.unsplash.com/photo-1508962914676-134849a727f0?fm=jpg&ixid=M3wxMjA3fDB8MHxwcm9maWxlLWxpa2VkfDE3fHx8ZW58MHx8fHx8&ixlib=rb-4.0.3&q=60&w=3000",
+    isThumbnail: true,
+  },
+  {
+    productId: seededProducts[4].id,
+    imageUrl: "https://images.unsplash.com/photo-1508962914676-134849a727f0?fm=jpg&ixid=M3wxMjA3fDB8MHxwcm9maWxlLWxpa2VkfDE3fHx8ZW58MHx8fHx8&ixlib=rb-4.0.3&q=60&w=3000",
+  },
+  {
+    productId: seededProducts[4].id,
+    imageUrl: "https://images.unsplash.com/photo-1633451238208-11c8e6c1fed4?fm=jpg&ixid=M3wxMjA3fDB8MHxwcm9maWxlLWxpa2VkfDEwfHx8ZW58MHx8fHx8&ixlib=rb-4.0.3&q=60&w=3000",
+  },
+  
 ]);
 
 // 7. Watches

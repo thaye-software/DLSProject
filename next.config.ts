@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    domains: ["example.com"]
+    domains: ["example.com", "images.unsplash.com", "unsplash.com"]
   },
 
 };
