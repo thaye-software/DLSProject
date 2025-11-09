@@ -92,7 +92,7 @@ export default function RootLayout({
       className={`${theSeasons.variable} ${centuryGothic.variable} ${openSans.variable}`}
       suppressHydrationWarning
     >
-      <body className="antialiased min-h-screen flex flex-col">
+      <body className="antialiased min-h-screen flex flex-col bg-[#F5F3EE]">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
