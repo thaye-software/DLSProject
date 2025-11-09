@@ -54,23 +54,9 @@ export const productImages = pgTable(
   (table) => [index("idx_product_images_thumbnail").on(table.isThumbnail)]
 );
 
-export const productSafetyInfo = pgTable(
-  "product_safety_info",
-  {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
-    // brand relation moved to `brands` table
-    country: varchar("country", { length: 255 }).notNull(),
-    address: varchar("address", { length: 255 }),
-    address2: varchar("address_2", { length: 255 }),
-    zipCode: varchar("zip_code", { length: 50 }),
-    city: varchar("city", { length: 255 }),
-    stateProvince: varchar("state_province", { length: 255 }),
-    phoneNumber: varchar("phone_number", { length: 50 }),
-    email: varchar("email", { length: 255 }),
-    website: varchar("website", { length: 255 }),
-  },
-  (table) => [index("idx_product_safety_country").on(table.country)]
-);
+/* Merged product safety info into `brands` table. The old
+   `product_safety_info` table was removed and its columns were moved
+   into `brands`. Update your DB migrations accordingly. */
 
 export const products = pgTable(
   "products",
@@ -95,14 +81,20 @@ export const brands = pgTable(
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
     name: varchar("name", { length: 255 }).notNull().unique(),
-    slug: varchar("slug", { length: 255 }),
-    productSafetyInfoId: bigint("product_safety_info_id", {
-      mode: "number",
-    }).references(() => productSafetyInfo.id, { onDelete: "set null" }),
+    country: varchar("country", { length: 255 })
+      .notNull()
+      .default(""),
+    addressLine1: varchar("address_line_1", { length: 255 }),
+    addressLine2: varchar("address_line_2", { length: 255 }),
+    zipCode: varchar("zip_code", { length: 50 }),
+    city: varchar("city", { length: 255 }),
+    stateProvince: varchar("state_province", { length: 255 }),
+    phoneNumber: varchar("phone_number", { length: 50 }),
+    email: varchar("email", { length: 255 }),
+    website: varchar("website", { length: 255 }),
   },
   (table) => [
     index("idx_brands_name").on(table.name),
-    index("idx_brands_slug").on(table.slug),
   ]
 );
 
@@ -419,11 +411,7 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   productImages: many(productImages),
 }));
 
-export const brandsRelations = relations(brands, ({ one, many }) => ({
-  productSafetyInfo: one(productSafetyInfo, {
-    fields: [brands.productSafetyInfoId],
-    references: [productSafetyInfo.id],
-  }),
+export const brandsRelations = relations(brands, ({ many }) => ({
   watches: many(watches),
 }));
 

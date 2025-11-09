@@ -8,7 +8,6 @@ import { Product } from "../app/watches/type";
 import { eq } from "drizzle-orm";
 
 export const productService = {
-  
   async createProduct(data: Omit<NewProductModel, "id" | "createdAt">) {
     try {
       const result = await db.insert(products).values(data).returning();
@@ -25,11 +24,7 @@ export const productService = {
         with: {
           watch: {
             with: {
-              brand: {
-                with: {
-                  productSafetyInfo: true,
-                },
-              },
+              brand: true,
             },
           },
           productImages: true,
