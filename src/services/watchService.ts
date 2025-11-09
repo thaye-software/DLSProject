@@ -18,17 +18,10 @@ export const watchService = {
 
     try {
       const result = await db.transaction(async (tx) => {
-        // 1) create watch
-        const watchInsert = await tx
-          .insert(watches)
-          .values(watchData)
-          .returning();
-        const createdWatch = watchInsert[0];
 
-        // 2) create product first (without imageId) linking to watch
+        // 1) create product first (without imageId) linking to watch
         const productToInsert: Omit<NewProductModel, "id" | "createdAt"> = {
           ...productData,
-          watchId: createdWatch.id,
         };
 
         const prodRes = await tx
@@ -36,6 +29,17 @@ export const watchService = {
           .values(productToInsert)
           .returning();
         let createdProduct = prodRes[0];
+
+        watchData.productId = createdProduct.id;
+
+        // 2) create watch
+        const watchInsert = await tx
+          .insert(watches)
+          .values(watchData)
+          .returning();
+        const createdWatch = watchInsert[0];
+
+        
 
         // 3) create product images (if any), linking them to the created product via product_id
         const createdImages: Array<{

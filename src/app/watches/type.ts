@@ -30,21 +30,16 @@ export interface Product {
     vat: number | null;
     brand: {
       id: number;
-      name: string;
-      slug: string | null;
-      productSafetyInfoId: number | null;
-      productSafetyInfo: {
-        id: number | string;
-        country: string | null;
-        address: string | null;
-        address2: string | null;
-        zipCode: string | null;
-        city: string | null;
-        stateProvince: string | null;
-        phoneNumber: string | null;
-        email: string | null;
-        website: string | null;
-      } | null;
+      name: string;  
+      country: string | null;
+      address: string | null;
+      address2: string | null;
+      zipCode: string | null;
+      city: string | null;
+      stateProvince: string | null;
+      phoneNumber: string | null;
+      email: string | null;
+      website: string | null;
     };
   };
 

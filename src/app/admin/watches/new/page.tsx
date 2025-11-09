@@ -121,8 +121,6 @@ export default function NewWatchPage() {
       braceletColor: parsed.braceletColor || null,
       dialColor: parsed.dialColor || null,
       vat: parsed.vat,
-      productSafetyInfoId: parsed.productSafetyInfoId,
-      // productData that will be created and linked to the watch
       productData: {
         productType: "watch",
         name: `${parsed.model}`,

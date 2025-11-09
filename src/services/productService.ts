@@ -40,10 +40,10 @@ export const productService = {
   },
 
   //TODO optimise this funciton
-  async getAllProductsByBrandName(brandSlug: string): Promise<Product[]> {
+  async getAllProductsByBrandName(brandName: string): Promise<Product[]> {
     try {
       const brand = await db.query.brands.findFirst({
-        where: eq(brands.slug, brandSlug),
+        where: eq(brands.name, brandName),
       });
 
       if (!brand) {
@@ -64,7 +64,7 @@ export const productService = {
     }
   },
 
-  async getProductById(watchId: string | number): Promise<Product | null> {
+  async getProductById(watchId: string | number): Promise<any | null> {
     try {
       const watch = await db.query.products.findFirst({
         where: eq(products.id, Number(watchId)),
@@ -72,18 +72,14 @@ export const productService = {
         with: {
           watch: {
             with: {
-              brand: {
-                with: {
-                  productSafetyInfo: true,
-                },
-              },
+              brand: true,
             },
           },
           productImages: true,
         },
       })
 
-      if(watch === undefined || watch === null) {
+      if (watch === undefined || watch === null) {
         return null
       }
 

@@ -9,7 +9,7 @@ import Link from "next/link";
 export default async function BrandsPage() {
 
   const initialBrands = (await brandService.getAllBrands()).data || [];
-  const initialProducts = (await productService.getAllProducts()).data || [];
+  const initialProducts = (await productService.getAllProducts()) || [];
 
   return (
     <div>
