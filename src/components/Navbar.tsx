@@ -54,7 +54,7 @@ export function Navbar() {
               <ul className="grid w-[200px] gap-4">
                 <li>
                   <NavigationMenuLink asChild>
-                    <Link href="#" className="flex-row items-center gap-2">
+                    <Link href="/watches/cartier" className="flex-row items-center gap-2">
                       <Image
                         src="/brands/cartier.svg"
                         alt="Cartier Logo"
@@ -65,7 +65,7 @@ export function Navbar() {
                     </Link>
                   </NavigationMenuLink>
                   <NavigationMenuLink asChild>
-                    <Link href="#" className="flex-row items-center gap-2">
+                    <Link href="/watches/omega" className="flex-row items-center gap-2">
                       <Image
                         src="/brands/omega.svg"
                         alt="Omega Logo"
@@ -76,7 +76,7 @@ export function Navbar() {
                     </Link>
                   </NavigationMenuLink>
                   <NavigationMenuLink asChild>
-                    <Link href="#" className="flex-row items-center gap-2">
+                    <Link href="/watches/jaeger" className="flex-row items-center gap-2">
                       <Image
                         src="/brands/jaeger.svg"
                         alt="Jaeger LeCoultre Logo"

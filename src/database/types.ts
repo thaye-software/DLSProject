@@ -15,6 +15,8 @@ import {
   auctions,
   conversations,
   messages,
+  currencies,
+  currencyHistory
 } from "./schema";
 
 // This file provides convenient TypeScript types for the database models
@@ -68,5 +70,10 @@ export type NewConversationModel = InferInsertModel<typeof conversations>;
 export type MessageModel = InferSelectModel<typeof messages>;
 export type NewMessageModel = InferInsertModel<typeof messages>;
 
+export type CurrencyModel = InferSelectModel<typeof currencies>;
+export type NewCurrencyModel = InferInsertModel<typeof currencies>;
+
+export type CurrencyHistoryModel = InferSelectModel<typeof currencyHistory>;
+export type NewCurrencyHistoryModel = InferInsertModel<typeof currencyHistory>;
 // Import the specific types directly, e.g.:
 // import { WatchModel, NewWatch } from "~/src/database/types";

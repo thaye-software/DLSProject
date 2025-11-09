@@ -58,32 +58,21 @@ export const productImages = pgTable(
    `product_safety_info` table was removed and its columns were moved
    into `brands`. Update your DB migrations accordingly. */
 
-export const watches = pgTable(
-  "watches",
+export const products = pgTable(
+  "products",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
-    brandId: bigint("brand_id", { mode: "number" }).notNull(),
-    model: varchar("model", { length: 255 }).notNull(),
-    reference: varchar("reference", { length: 255 }).notNull(),
-    serialNumber: varchar("serial_number", { length: 255 }).notNull(),
-    year: integer("year").notNull(),
-    size: varchar("size", { length: 50 }),
-    movement: varchar("movement", { length: 100 }),
-    glassType: varchar("glass_type", { length: 100 }),
-    limited: boolean("limited").notNull().default(false),
-    box: boolean("box").notNull().default(false),
-    papers: boolean("papers").notNull().default(false),
-    condition: integer("condition").notNull(),
-    braceletType: varchar("bracelet_type", { length: 100 }),
-    braceletColor: varchar("bracelet_color", { length: 100 }),
-    dialColor: varchar("dial_color", { length: 100 }),
-    vat: integer("vat"),
+    productType: varchar("product_type", { length: 255 }).notNull(),
+    name: varchar("name", { length: 255 }).notNull(),
+    priceDkk: bigint("price_dkk", { mode: "number" }).notNull(),
+    description: text("description").notNull(),
+    stock: integer("stock").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [
-    index("idx_watches_brand").on(table.brandId),
-    index("idx_watches_reference").on(table.reference),
-    index("idx_watches_year").on(table.year),
-    index("idx_watches_condition").on(table.condition),
+    index("idx_products_name").on(table.name),
+    index("idx_products_created_at").on(table.createdAt),
+    index("idx_products_price_dkk").on(table.priceDkk),
   ]
 );
 
@@ -135,27 +124,38 @@ export const users = pgTable(
   ]
 );
 
-export const products = pgTable(
-  "products",
+export const watches = pgTable(
+  "watches",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
-    watchId: bigint("watch_id", { mode: "number" }).references(
-      () => watches.id,
-      {
-        onDelete: "cascade",
-      }
-    ),
-    productType: varchar("product_type", { length: 255 }).notNull(),
-    name: varchar("name", { length: 255 }).notNull(),
-    priceDkk: bigint("price_dkk", { mode: "number" }).notNull(),
-    description: text("description").notNull(),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
+    productId: bigint("product_id", { mode: "number" })
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    brandId: bigint("brand_id", { mode: "number" })
+      .notNull()
+      .references(() => brands.id, { onDelete: "cascade" }),
+    model: varchar("model", { length: 255 }).notNull(),
+    reference: varchar("reference", { length: 255 }).notNull(),
+    serialNumber: varchar("serial_number", { length: 255 }).notNull(),
+    year: integer("year").notNull(),
+    size: varchar("size", { length: 50 }),
+    movement: varchar("movement", { length: 100 }),
+    glassType: varchar("glass_type", { length: 100 }),
+    limited: boolean("limited").notNull().default(false),
+    box: boolean("box").notNull().default(false),
+    papers: boolean("papers").notNull().default(false),
+    condition: integer("condition").notNull(),
+    braceletType: varchar("bracelet_type", { length: 100 }),
+    braceletColor: varchar("bracelet_color", { length: 100 }),
+    dialColor: varchar("dial_color", { length: 100 }),
+    vat: integer("vat"),
   },
   (table) => [
-    index("idx_products_watch_id").on(table.watchId),
-    index("idx_products_name").on(table.name),
-    index("idx_products_created_at").on(table.createdAt),
-    index("idx_products_price_dkk").on(table.priceDkk),
+    index("idx_watches_product_id").on(table.productId),
+    index("idx_watches_brand").on(table.brandId),
+    index("idx_watches_reference").on(table.reference),
+    index("idx_watches_year").on(table.year),
+    index("idx_watches_condition").on(table.condition),
   ]
 );
 
@@ -183,6 +183,13 @@ export const orders = pgTable(
     totalPrice: bigint("total_price", { mode: "number" }).notNull(),
     status: varchar("status", { length: 50 }).notNull(),
     currency: varchar("currency", { length: 10 }).notNull().default("DKK"),
+
+    // Currency fields
+    currencyCode: varchar("currency_code", { length: 3 }).notNull().default("DKK"),
+    exchangeRateUsed: decimal("exchange_rate_used", { precision: 10, scale: 6 }).notNull().default("1.000000"),
+    totalPriceDkk: decimal("total_price_dkk", { precision: 12, scale: 2 }).notNull(),
+    totalPriceCurrency: decimal("total_price_currency", { precision: 12, scale: 2 }).notNull(),
+    
     deliveryAddressId: bigint("delivery_address_id", {
       mode: "number",
     }).references(() => orderAddresses.id, { onDelete: "set null" }),
@@ -197,6 +204,7 @@ export const orders = pgTable(
     index("idx_orders_created_at").on(table.createdAt),
     index("idx_orders_delivery_address").on(table.deliveryAddressId),
     index("idx_orders_billing_address").on(table.billingAddressId),
+    index("idx_orders_currency_code").on(table.currencyCode), // NEW INDEX
     check(
       "orders_status_check",
       sql`${table.status} IN ('pending', 'paid', 'shipped', 'completed', 'cancelled')`
@@ -323,6 +331,54 @@ export const messages = pgTable(
   ]
 );
 
+import { decimal } from "drizzle-orm/pg-core";
+
+// Add these tables after your existing tables
+
+export const currencies = pgTable(
+  "currencies",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    code: varchar("code", { length: 3 }).notNull().unique(),
+    exchangeRate: decimal("exchange_rate", { precision: 10, scale: 6 }).notNull(),
+    isActive: boolean("is_active").notNull().default(true),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_currencies_code").on(table.code),
+    index("idx_currencies_is_active").on(table.isActive),
+  ]
+);
+
+export const currencyHistory = pgTable(
+  "currency_history",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    currencyId: bigint("currency_id", { mode: "number" })
+      .notNull()
+      .references(() => currencies.id, { onDelete: "cascade" }),
+    exchangeRate: decimal("exchange_rate", { precision: 10, scale: 6 }).notNull(),
+    changedAt: timestamp("changed_at").notNull().defaultNow(),
+    changedBy: varchar("changed_by", { length: 255 }),
+  },
+  (table) => [
+    index("idx_currency_history_currency_id").on(table.currencyId),
+    index("idx_currency_history_changed_at").on(table.changedAt),
+  ]
+);
+
+
+
+
+
+
+//----------------------------------------------------------------  Relations --------------------------------------------------------------------
+
+
+
+
+
+
 export const countriesRelations = relations(countries, ({ many }) => ({
   users: many(users),
 }));
@@ -346,28 +402,32 @@ export const addressesRelations = relations(addresses, ({ many }) => ({
   users: many(users),
 }));
 
-export const watchesRelations = relations(watches, ({ one, many }) => ({
-  brand: one(brands, {
-    fields: [watches.brandId],
-    references: [brands.id],
+export const productsRelations = relations(products, ({ one, many }) => ({
+  watch: one(watches, {
+    fields: [products.id],
+    references: [watches.productId],
   }),
-  products: many(products),
-  auctions: many(auctions),
-  conversations: many(conversations),
+  orderItems: many(orderItems),
+  productImages: many(productImages),
 }));
 
 export const brandsRelations = relations(brands, ({ many }) => ({
   watches: many(watches),
 }));
 
-export const productsRelations = relations(products, ({ one, many }) => ({
-  watch: one(watches, {
-    fields: [products.watchId],
-    references: [watches.id],
+export const watchesRelations = relations(watches, ({ one, many }) => ({
+  product: one(products, {
+    fields: [watches.productId],
+    references: [products.id],
   }),
-  orderItems: many(orderItems),
-  productImages: many(productImages),
+  brand: one(brands, {
+    fields: [watches.brandId],
+    references: [brands.id],
+  }),
+  auctions: many(auctions),
+  conversations: many(conversations),
 }));
+
 
 export const productImagesRelations = relations(productImages, ({ one }) => ({
   product: one(products, {
@@ -391,6 +451,10 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
     fields: [orders.billingAddressId],
     references: [orderAddresses.id],
     relationName: "billingAddress",
+  }),
+  currency: one(currencies, {
+    fields: [orders.currencyCode],
+    references: [currencies.code],
   }),
 }));
 
@@ -458,5 +522,17 @@ export const messagesRelations = relations(messages, ({ one }) => ({
   sender: one(users, {
     fields: [messages.senderId],
     references: [users.id],
+  }),
+}));
+
+export const currenciesRelations = relations(currencies, ({ many }) => ({
+  history: many(currencyHistory),
+  orders: many(orders),
+}));
+
+export const currencyHistoryRelations = relations(currencyHistory, ({ one }) => ({
+  currency: one(currencies, {
+    fields: [currencyHistory.currencyId],
+    references: [currencies.id],
   }),
 }));

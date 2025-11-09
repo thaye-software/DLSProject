@@ -10,7 +10,7 @@
     "lint": "eslint",
     "db:generate": "npx drizzle-kit generate --name",
     "db:migrate": "npx drizzle-kit migrate",
-    "db:seed": "node supabase/scripts/seed.js",
+    "db:seed": "npx tsx src/database/seed.ts",
     "db:studio": "npx drizzle-kit studio",
     "db:migrate:dev": "cross-env APP_ENV=dev npx drizzle-kit push",
     "db:migrate:prod": "cross-env APP_ENV=prod npx drizzle-kit push",

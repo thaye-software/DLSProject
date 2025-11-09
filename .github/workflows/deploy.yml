@@ -2,11 +2,36 @@ name: Build and push Docker image to GitHub Container Registry then deploy on se
 
 on:
     push:
-        branches: [ 'main', 'dev' ]
-        tags: ['v*'] # when we tag the repository with a version like v1.0.0 in main to create releases
+        branches: [ "main", "dev" ]
+        tags: ["v*"] # when we tag the repository with a version like v1.0.0 in main to create releases
     workflow_dispatch:
 
 jobs:
+    # migrate-dev:
+    #     if: github.ref == 'refs/heads/dev'
+    #     uses: ./.github/workflows/migrations.yml
+    #     with:
+    #         environment: "dev"
+    #         node-version: "24"
+    #         npm-script: "db:migrate:dev"
+    #     secrets:
+    #         database-url: ${{ secrets.DATABASE_URL_DEV }}
+  
+    # migrate-prod:
+    #     if: github.ref == 'refs/heads/main'
+    #     uses: ./.github/workflows/migrations.yml
+    #     with:
+    #         environment: "prod"
+    #         node-version: "24"
+    #         npm-script: "db:migrate:prod"
+    #     secrets:
+    #         database-url: ${{ secrets.DATABASE_URL_PROD }}
+
+
+
+
+
+
     build-and-push:
         runs-on: ubuntu-latest
 
