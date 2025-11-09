@@ -9,7 +9,7 @@ on:
 jobs:
     migrate-dev:
         if: github.ref == 'refs/heads/dev'
-        uses: ./.github/workflows/reusable-migration.yml
+        uses: ./.github/workflows/migrations.yml
         with:
             environment: "dev"
             node-version: "24"
@@ -19,7 +19,7 @@ jobs:
   
     migrate-prod:
         if: github.ref == 'refs/heads/main'
-        uses: ./.github/workflows/reusable-migration.yml
+        uses: ./.github/workflows/migrations.yml
         with:
             environment: "prod"
             node-version: "24"
