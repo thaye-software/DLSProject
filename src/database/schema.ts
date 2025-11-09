@@ -54,10 +54,6 @@ export const productImages = pgTable(
   (table) => [index("idx_product_images_thumbnail").on(table.isThumbnail)]
 );
 
-/* Merged product safety info into `brands` table. The old
-   `product_safety_info` table was removed and its columns were moved
-   into `brands`. Update your DB migrations accordingly. */
-
 export const products = pgTable(
   "products",
   {
