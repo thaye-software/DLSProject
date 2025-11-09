@@ -57,6 +57,34 @@
       "when": 1762428304492,
       "tag": "0007_remove-ref-from-product-to-product_images",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1762606370150,
+      "tag": "0008_restructure-watches-and-products-table",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1762606846474,
+      "tag": "0009_added-missing-references-to-brandId-in-watches",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1762607864238,
+      "tag": "0010_add-stock-field-to-products",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1762614136351,
+      "tag": "0011_created-currencies-table-and-updated-orders",
+      "breakpoints": true
     }
   ]
 }

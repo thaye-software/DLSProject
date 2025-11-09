@@ -7,10 +7,10 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import "swiper/css";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+
 import Image from "next/image";
 import Logo from "@/components/Logo";
+import BackButton from "@/components/BackButton";
 
 const images = ["/login_cover.jpg", "/login_cover_1.jpg", "/login_cover_2.jpg"];
 
@@ -21,10 +21,7 @@ export default function LoginPage() {
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="flex flex-col gap-4 p-6 md:p-10">
         <div className="flex justify-between items-center gap-2">
-          <Button onClick={() => window.history.back()} variant="ghost">
-            <ArrowLeft />
-            Back
-          </Button>
+          <BackButton />
           <div className="flex items-center justify-end flex-1">
             <Logo className="h-8 w-8 dark:text-white mr-2" />
             <span className="text-2xl font-seasons font-semibold">

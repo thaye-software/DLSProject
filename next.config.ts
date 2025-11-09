@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
       fullUrl: true,
     },
   },
+  images: {
+    domains: ["example.com", "images.unsplash.com", "unsplash.com"]
+  },
 
 };
 

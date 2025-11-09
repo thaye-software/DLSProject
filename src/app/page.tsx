@@ -1,10 +1,9 @@
-"use client";
-
 import Carousel from "@/components/Carousel";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { motion } from "framer-motion";
+import RedirectButton from "@/components/RedirectButton";
 
 const images = [
   { id: 1, src: "/carousel/1.jpg", brand: "Breguet" },
@@ -59,13 +58,7 @@ export default function Home() {
               Each piece in our collection is a testament to fine craftsmanship
               and unique style, perfect for collectors and enthusiasts alike.
             </p>
-            <Button
-              onClick={() => redirect("/watches")}
-              size="lg"
-              className="cursor-pointer font-bold"
-            >
-              Explore Collection
-            </Button>
+            <RedirectButton targetPage="/watches" buttonText="Explore Collection"/>
           </div>
           <div className="flex justify-end items-center col-span-3">
             <Image
