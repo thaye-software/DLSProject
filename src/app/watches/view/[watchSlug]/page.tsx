@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { Check, Shield, Package, FileText, Calendar, Gauge, Clock } from "lucide-react";
 import { currencyService } from "@/services/currencyService";
 import ProductSafetyInfo from "@/components/Watches/ProductSaftyInfoCard";
-import ContactButton from "@/components/asdasda/ContactButton";
+import ContactButton from "@/components/Contact/ContactButton";
 import { Product } from "../../type";
 import AddToCartButton from "@/components/Watches/AddToCartButton";
 
