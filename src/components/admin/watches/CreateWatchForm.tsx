@@ -58,6 +58,7 @@ export default function CreateWatchForm({
     braceletColor: "",
     dialColor: "",
     vat: "0",
+    stock: "1",
     productSafetyInfoId: "",
   });
 
