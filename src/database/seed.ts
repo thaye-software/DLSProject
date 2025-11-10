@@ -1,7 +1,7 @@
 import { db } from "@/database/drizzle";
 // import { seed } from "drizzle-seed";
 import { sql } from "drizzle-orm";
-import { users, watches, products, productImages, productSafetyInfo, addresses, brands, currencies, countries } from "./schema.ts";
+import { users, watches, products, productImages, addresses, brands, currencies, countries } from "./schema.ts";
 
 /*
 At the moment seed script wont work with this import type in envConfig.ts file:
@@ -103,27 +103,19 @@ async function seed() {
     })
     .returning();
 
-  // 3. Product Safety Info
-  const [safetyInfo] = await db
-    .insert(productSafetyInfo)
-    .values({
-      country: "Denmark",
-      address: "Strandgade 12",
-      city: "Copenhagen",
-      zipCode: "1401",
-      phoneNumber: "+45 12345678",
-      email: "support@watchco.dk",
-      website: "https://watchco.dk",
-    })
-    .returning();
-
   // 4. Brands
 const [rolex] = await db
   .insert(brands)
   .values({
     name: "Rolex",
     slug: "rolex",
-    productSafetyInfoId: safetyInfo.id,
+    country: "Switzerland",
+    addressLine1: "Rue François-Dussaud 3-5-7",
+    addressLine2: "",
+    city: "Geneva",
+    zipCode: "1211",
+    phoneNumber: "+41 22 300 20 20",
+    website: "https://www.rolex.com",
   })
   .returning();
 
@@ -132,7 +124,13 @@ const [omega] = await db
   .values({
     name: "Omega",
     slug: "omega",
-    productSafetyInfoId: safetyInfo.id,
+    country: "Switzerland",
+    addressLine1: "11 Rue des Moulins",
+    addressLine2: "",
+    city: "Biel/Bienne",
+    zipCode: "2502",
+    phoneNumber: "+41 32 343 65 11",
+    website: "https://www.omegawatches.com",
   })
   .returning();
 
@@ -141,7 +139,13 @@ const [tagHeuer] = await db
   .values({
     name: "Tag Heuer",
     slug: "tag-heuer",
-    productSafetyInfoId: safetyInfo.id,
+    country: "Switzerland",
+    addressLine1: "Rue Jean-Pierre Vaucher 3",
+    addressLine2: "",
+    city: "La Chaux-de-Fonds",
+    zipCode: "2300",
+    phoneNumber: "+41 32 343 65 11",
+    website: "https://www.tagheuer.com",
   })
   .returning();
 
@@ -150,7 +154,13 @@ const [patekPhilippe] = await db
   .values({
     name: "Patek Philippe",
     slug: "patek-philippe",
-    productSafetyInfoId: safetyInfo.id,
+    country: "Switzerland",
+    addressLine1: "Rue du Rhône 41",
+    addressLine2: "",
+    city: "Geneva",
+    zipCode: "1204",
+    phoneNumber: "+41 22 311 95 11",
+    website: "https://www.patek.com",
   })
   .returning();
 
@@ -159,7 +169,13 @@ const [audemarsPiguet] = await db
   .values({
     name: "Audemars Piguet",
     slug: "audemars-piguet",
-    productSafetyInfoId: safetyInfo.id,
+    country: "Switzerland",
+    addressLine1: "Route de France 16",
+    addressLine2: "",
+    city: "Le Brassus",
+    zipCode: "1348",
+    phoneNumber: "+41 21 863 36 36",
+    website: "https://www.audemarspiguet.com",
   })
   .returning();
 
@@ -265,6 +281,7 @@ const seededWatches = await db
   .values([
     {
       productId: seededProducts[0].id, // Rolex Submariner
+      slug: "rolex-submariner-124060",
       brandId: rolex.id,
       model: "Submariner",
       reference: "124060",
@@ -284,6 +301,7 @@ const seededWatches = await db
     },
     {
       productId: seededProducts[1].id, // Omega Speedmaster
+      slug: "omega-speedmaster-moonwatch",
       brandId: omega.id,
       model: "Speedmaster Professional Moonwatch",
       reference: "310.30.42.50.01.001",
@@ -303,6 +321,7 @@ const seededWatches = await db
     },
     {
       productId: seededProducts[2].id, // Tag Heuer Monaco
+      slug: "tag-heuer-monaco-caw211p",
       brandId: tagHeuer.id,
       model: "Monaco",
       reference: "CAW211P.FC6356",
@@ -322,6 +341,7 @@ const seededWatches = await db
     },
     {
       productId: seededProducts[3].id, // Patek Philippe Nautilus
+      slug: "patek-philippe-nautilus-5711",
       brandId: patekPhilippe.id,
       model: "Nautilus",
       reference: "5711/1A-010",
@@ -341,6 +361,7 @@ const seededWatches = await db
     },
     {
       productId: seededProducts[4].id, // Audemars Piguet Royal Oak
+      slug: "audemars-piguet-royal-oak-15500st",
       brandId: audemarsPiguet.id,
       model: "Royal Oak",
       reference: "15500ST.OO.1220ST.01",

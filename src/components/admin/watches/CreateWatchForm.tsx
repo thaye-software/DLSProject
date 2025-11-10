@@ -1,3 +1,4 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { createWatch } from "@/app/admin/watches/new/actions";
@@ -16,29 +17,50 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import CustomSelect from "@/components/CustomSelect";
 import MultiImageUpload from "../MultiImageUpload";
+import { BrandModel } from "@/database/types";
+import { useEffect, useState } from "react";
 
 export default function CreateWatchForm({
-  form,
-  setForm,
-  brands,
-  errors,
-  setErrors,
-  loading,
-  setLoading,
-  uploadedImages,
-  setUploadedImages,
+  initialBrands
 }: {
-  form: any;
-  setForm: any;
-  brands: any[];
-  errors: any;
-  setErrors: any;
-  loading: any;
-  setLoading: any;
-  uploadedImages: string[];
-  setUploadedImages: (s: string[]) => void;
+  initialBrands: any[];
 }) {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [brands, setBrands] = useState<BrandModel[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+
+  useEffect(() => {
+    async function fetchBrands() {
+      const brandsData = await initialBrands;
+      setBrands(brandsData);
+    }
+    fetchBrands();
+  }, [initialBrands]);
+  
+  const [form, setForm] = useState({
+    brand: "",
+    model: "",
+    description: "",
+    reference: "",
+    serialNumber: "",
+    year: "",
+    size: "",
+    movement: "",
+    glassType: "",
+    limited: "false",
+    box: "false",
+    papers: "false",
+    condition: "5",
+    price: "",
+    braceletType: "",
+    braceletColor: "",
+    dialColor: "",
+    vat: "0",
+    stock: "1",
+    productSafetyInfoId: "",
+  });
 
   function handleChange(
     e: React.ChangeEvent<
