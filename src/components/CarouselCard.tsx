@@ -54,7 +54,7 @@ export const CarouselCard: React.FC<CarouselCardProps> = ({ image }) => {
                   onClick={() =>
                     router.push(`/watches/${brandToSlug(image.brand)}`)
                   }
-                  className="group inline-flex text-2xl font-bold gap-2 cursor-pointer pointer-events-auto text-foreground bg-transparent hover:bg-transparent"
+                  className="group inline-flex text-2xl font-bold gap-2 cursor-pointer pointer-events-auto text-white/90 bg-transparent hover:bg-transparent"
                 >
                   {image.brand}
                   <span
