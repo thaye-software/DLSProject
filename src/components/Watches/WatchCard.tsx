@@ -8,6 +8,7 @@ import { ShoppingCart } from "lucide-react";
 
 import { Product } from "@/app/watches/type";
 import { currencyService } from "@/services/currencyService";
+import AddToCartButton from "./AddToCartButton";
 
 
 export function WatchCard({ product, countryCode }: { product: Product, countryCode: string }) {
@@ -16,31 +17,32 @@ export function WatchCard({ product, countryCode }: { product: Product, countryC
   
   
     return (
-        <Link href={`/watches/view/${product.id}`}>
         
             <Card className="group overflow-hidden transition-all duration-300 hover:shadow-2xl border-0 p-0">
-                <CardHeader className="p-0">
-                    <div className="relative overflow-hidden aspect-4/5 bg-muted">
-                        <Image
-                            src={product.productImages[0]?.imageUrl || "/sadly-no-image.png"}
-                            alt={`${product.watch.brand.name} ${product.name}`}
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                            fill
-                            unoptimized // REMOVE THIS IN PRODUCTION
-                        />
+                <Link href={`/watches/view/${product.watch.slug}`}>
+                    <CardHeader className="p-0">
+                        <div className="relative overflow-hidden aspect-4/5 bg-muted">
+                            <Image
+                                src={product.productImages[0]?.imageUrl || "/sadly-no-image.png"}
+                                alt={`${product.watch.brand.name} ${product.name}`}
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                fill
+                                unoptimized // REMOVE THIS IN PRODUCTION
+                            />
 
-                        <div className="absolute top-4 right-4 flex gap-2">
-                            {product.stock > 0 ? (
-                                <Badge variant="secondary" className="bg-background/95 backdrop-blur-sm shadow-lg">
-                                    In Stock
-                                </Badge>
-                            ): 
-                                <Badge variant="secondary" className="bg-background/95 backdrop-blur-sm shadow-lg">
-                                    Sold out
-                                </Badge>}
+                            <div className="absolute top-4 right-4 flex gap-2">
+                                {product.stock > 0 ? (
+                                    <Badge variant="secondary" className="bg-background/95 backdrop-blur-sm shadow-lg">
+                                        In Stock
+                                    </Badge>
+                                ): 
+                                    <Badge variant="secondary" className="bg-background/95 backdrop-blur-sm shadow-lg">
+                                        Sold out
+                                    </Badge>}
+                            </div>
                         </div>
-                    </div>
-                </CardHeader>
+                    </CardHeader>
+                </Link> 
             
                 <CardContent className="p-6 flex flex-col justify-between h-full">
                     <div className="space-y-2">
@@ -55,7 +57,7 @@ export function WatchCard({ product, countryCode }: { product: Product, countryC
                         </h3>
 
                         {/* Description */}
-                        <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 min-h-[3rem]">
+                        <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 min-h-12">
                             {product.description}
                         </p>
                     </div>
@@ -67,17 +69,15 @@ export function WatchCard({ product, countryCode }: { product: Product, countryC
                         </p>
 
                         <div className="overflow-hidden">
-                            <Button
-                                size="sm"
-                                className="opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0 transition-all duration-700 ease-out whitespace-nowrap"
-                                >
-                                    (to be implemented)
-                                <ShoppingCart className="h-4 w-4" />
-                            </Button>
+                            <AddToCartButton 
+                                product={product}
+                                className="hover:cursor-pointer opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0 transition-all duration-700 ease-out whitespace-nowrap"
+
+                            />
                         </div>
                     </div>
                 </CardContent>
             </Card>
-        </Link>    
+           
   );
 };

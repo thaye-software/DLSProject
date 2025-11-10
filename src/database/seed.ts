@@ -15,33 +15,12 @@ const { loadEnvConfig } = pkg;
 */
 
 async function seedDatabase() {
-//   // Clean tables
-//   await db.execute(sql`TRUNCATE TABLE users, watches, products, product_images, product_safety_info RESTART IDENTITY CASCADE`);
-
-//   await seed(db, {
-//     addresses,
-//     users: {
-//       exclude: ["country"], // we’ll ignore this field for now
-//       relations: {
-//         addressId: { table: addresses }, // automatically assign a random address ID
-//       },
-//       refinements: {
-//         role: () => "user", // example of custom generation
-//       },
-//     },
-//     productSafetyInfo,
-//     brands,
-//     watches,
-//     productImages,
-//     products,
-//   });
 
     await db.execute(sql`
         TRUNCATE TABLE
             addresses,
             users,
             countries,
-            product_safety_info,
             brands,
             products,
             product_images,
@@ -281,7 +260,7 @@ const seededWatches = await db
   .values([
     {
       productId: seededProducts[0].id, // Rolex Submariner
-      slug: "rolex-submariner-124060",
+      slug: rolex.slug + "-submariner-" + seededProducts[0].id,
       brandId: rolex.id,
       model: "Submariner",
       reference: "124060",
@@ -301,7 +280,7 @@ const seededWatches = await db
     },
     {
       productId: seededProducts[1].id, // Omega Speedmaster
-      slug: "omega-speedmaster-moonwatch",
+      slug: omega.slug + "-speedmaster-professional-moonwatch-" + seededProducts[1].id,
       brandId: omega.id,
       model: "Speedmaster Professional Moonwatch",
       reference: "310.30.42.50.01.001",
@@ -321,7 +300,7 @@ const seededWatches = await db
     },
     {
       productId: seededProducts[2].id, // Tag Heuer Monaco
-      slug: "tag-heuer-monaco-caw211p",
+      slug: tagHeuer.slug + "-monaco-" + seededProducts[2].id,
       brandId: tagHeuer.id,
       model: "Monaco",
       reference: "CAW211P.FC6356",
@@ -341,7 +320,7 @@ const seededWatches = await db
     },
     {
       productId: seededProducts[3].id, // Patek Philippe Nautilus
-      slug: "patek-philippe-nautilus-5711",
+      slug: patekPhilippe.slug + "-nautilus-" + seededProducts[3].id,
       brandId: patekPhilippe.id,
       model: "Nautilus",
       reference: "5711/1A-010",
@@ -361,7 +340,7 @@ const seededWatches = await db
     },
     {
       productId: seededProducts[4].id, // Audemars Piguet Royal Oak
-      slug: "audemars-piguet-royal-oak-15500st",
+      slug: audemarsPiguet.slug + "-royal-oak-" + seededProducts[4].id,
       brandId: audemarsPiguet.id,
       model: "Royal Oak",
       reference: "15500ST.OO.1220ST.01",

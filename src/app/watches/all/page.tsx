@@ -1,4 +1,4 @@
-import { WatchesGrid } from "@/components/WatchesGrid";
+import { WatchesGrid } from "@/components/Watches/WatchesGrid";
 
 import { productService } from "@/services/productService";
 

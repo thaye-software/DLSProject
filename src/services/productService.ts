@@ -18,9 +18,9 @@ export const productService = {
     }
   },
 
-  async getAllProducts() {
+  async getAllProducts(): Promise<Product[]> {
     try {
-      const allProducts: any[] = await db.query.products.findMany({
+      const allProducts: Product[] = await db.query.products.findMany({
         with: {
           watch: {
             with: {
@@ -43,7 +43,7 @@ export const productService = {
   async getAllProductsByBrandName(brandName: string): Promise<Product[]> {
     try {
       const brand = await db.query.brands.findFirst({
-        where: eq(brands.name, brandName),
+        where: eq(brands.slug, brandName.toLocaleLowerCase()),
       });
 
       if (!brand) {
@@ -64,26 +64,36 @@ export const productService = {
     }
   },
 
-  async getProductById(watchId: string | number): Promise<any | null> {
+  async getProductBySlug(watchSlug: string): Promise<Product | null> {
+
     try {
-      const watch = await db.query.products.findFirst({
-        where: eq(products.id, Number(watchId)),
-        
+      
+      const watch = await db.query.watches.findFirst({
+        where: eq(watches.slug, watchSlug),
         with: {
-          watch: {
+          product: {
             with: {
-              brand: true,
+              productImages: true,
             },
           },
-          productImages: true,
+          brand: true,
         },
-      })
+      });
 
       if (watch === undefined || watch === null) {
         return null
       }
 
-      return watch;
+      const product: Product = {
+        ...watch.product,
+        watch: {
+          ...watch,
+          brand: watch.brand,
+        },
+        productImages: watch.product.productImages,
+      };
+
+      return product;
 
     } catch(error) {
       console.error(error);

@@ -1,23 +1,38 @@
 import BackButton from "@/components/BackButton";
-import ProductImageSwiper from "@/components/ProductImageSwiper";
+import ProductImageSwiper from "@/components/Watches/ProductImageSwiper";
 import { productService } from "@/services/productService";
 import { notFound } from "next/navigation";
 import { Check, Shield, Package, FileText, Calendar, Gauge, Clock } from "lucide-react";
 import { currencyService } from "@/services/currencyService";
-import ProductSafetyInfo from "@/components/ProductSaftyInfoCard";
-import ContactButton from "@/components/ContactButton";
-import { Button } from "@/components/ui/button";
+import ProductSafetyInfo from "@/components/Watches/ProductSaftyInfoCard";
+import ContactButton from "@/components/Contact/ContactButton";
+import { Product } from "../../type";
+import AddToCartButton from "@/components/Watches/AddToCartButton";
 
-export default async function ViewWatchPage({ params }: { params: Promise<{ watchId: string }> }) {
-    const watchId = (await params).watchId;
+export default async function ViewWatchPage({ params }: { params: Promise<{ watchSlug: string }> }) {
+    const watchSlug = (await params).watchSlug;
 
-    const product = await productService.getProductById(watchId);
+    const product: Product | null = await productService.getProductBySlug(watchSlug);
     if (!product) {
         notFound();
     }
 
     const brandName = product.watch.brand.name;
-    const productSaftyInfo = product.watch.brand.productSafetyInfo;
+
+    const productSaftyInfo = {
+        id: product.watch.brand.id,
+        name: product.watch.brand.name,
+        country: product.watch.brand.country,
+        address: product.watch.brand.addressLine1,
+        address2: product.watch.brand.addressLine2,
+        zipCode: product.watch.brand.zipCode,
+        city: product.watch.brand.city,
+        stateProvince: product.watch.brand.stateProvince,
+        phoneNumber: product.watch.brand.phoneNumber,
+        email: product.watch.brand.email,
+        website: product.watch.brand.website,
+
+    }
 
     //TODO use either headers/cookies to find out location of user to display correct currency.
     const formattedPrice = await currencyService.convertPrice(product.priceDkk, "dkk")
@@ -83,7 +98,6 @@ export default async function ViewWatchPage({ params }: { params: Promise<{ watc
                                 <SpecItem label="Glass" value={product.watch.glassType || "Not specified"} />
                                 <SpecItem label="Dial Color" value={product.watch.dialColor || "Not specified"} />
                                 <SpecItem label="Bracelet" value={`${product.watch.braceletType} (${product.watch.braceletColor})` || "Not specified"} />
-                                <SpecItem label="Serial Number" value={product.watch.serialNumber || "Not specified"} />
                                 <SpecItem label="Condition" value={`${product.watch.condition}/10` || "Not specified"} />
                             </div>
                         </div>
@@ -112,7 +126,7 @@ export default async function ViewWatchPage({ params }: { params: Promise<{ watc
 
                         {/* Limited Edition Badge */}
                         {product.watch.limited && (
-                            <div className="bg-gradient-to-r from-[#773D0E]/20 to-[#5E561C]/20 border border-[#773D0E]/50 rounded-lg p-4">
+                            <div className="bg-linear-to-r from-[#773D0E]/20 to-[#5E561C]/20 border border-[#773D0E]/50 rounded-lg p-4">
                                 <div className="flex items-center gap-2 text-[#773D0E] font-semibold">
                                     <Shield size={20} />
                                     Limited Edition
@@ -137,12 +151,11 @@ export default async function ViewWatchPage({ params }: { params: Promise<{ watc
 
                         {/* CTA Buttons */}
                         <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                            <Button 
+                            <AddToCartButton 
+                                product={product}
                                 className="hover:cursor-pointer h-12 flex-1 bg-[#1A1A1A] hover:bg-[#244B5A] text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                                disabled={product.stock === 0}
-                            >
-                                {product.stock > 0 ? "Add to Cart (to be implemented)" : "Notify When Available (to be implemented)"}
-                            </Button>
+                            />
+
                             <ContactButton className="hover:cursor-pointer h-12 flex-1 bg-white hover:bg-[#F5F3EE] text-[#1A1A1A] font-semibold py-4 px-8 rounded-lg border-2 border-[#D3C6A3] transition-all" />
                         </div>
 
@@ -164,7 +177,7 @@ export default async function ViewWatchPage({ params }: { params: Promise<{ watc
                     // either way this should never be optional anyways
                     <ProductSafetyInfo brandName={brandName} safetyInfo={productSaftyInfo} />
                 ) : (
-                    <h1 className="text-lg">
+                    <h1 className="flex justify-center text-lg">
                         Product Safty Information not available
                     </h1>
                 )}
@@ -174,7 +187,8 @@ export default async function ViewWatchPage({ params }: { params: Promise<{ watc
     );
 }
 
-// Helper Components
+// --------------------------------------- Helper Components --------------------------------------- 
+
 function SpecItem({ icon, label, value }: { icon?: React.ReactNode; label: string; value: string }) {
     return (
         <div className="bg-white border border-[#D3C6A3] rounded-lg p-3 shadow-sm">
@@ -190,7 +204,7 @@ function SpecItem({ icon, label, value }: { icon?: React.ReactNode; label: strin
 function IncludedItem({ included, text }: { included: boolean; text: string }) {
     return (
         <div className="flex items-center gap-3">
-            <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${
+            <div className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${
                 included ? "bg-[#2D4330]/20 text-[#2D4330]" : "bg-[#D3C6A3] text-[#5E561C]"
             }`}>
                 {included && <Check size={14} />}
