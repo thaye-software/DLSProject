@@ -33,6 +33,8 @@ jobs:
 
 
     build-and-push:
+        needs: [migrate-dev, migrate-prod]
+        if: always() && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')
         runs-on: ubuntu-latest
 
         permissions:
