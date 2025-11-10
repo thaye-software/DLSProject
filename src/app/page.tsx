@@ -33,7 +33,7 @@ export default function Home() {
           <Carousel direction="left" duration={70} images={images} />
         </div>
         <div className="absolute inset-x-0 z-10 transform -translate-y-9">
-          <h1 className="text-white mx-auto text-6xl font-bold text-center drop-shadow-lg hover:scale-105 transition-transform duration-300">
+          <h1 className="text-white mx-auto text-6xl font-bold text-center drop-shadow-lg hover:scale-105 transition-transform duration-300 cursor-default">
             Limited Watches
           </h1>
         </div>

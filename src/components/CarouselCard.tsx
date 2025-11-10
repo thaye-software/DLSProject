@@ -3,14 +3,21 @@ import Image from "next/image";
 import React from "react";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { ArrowRight } from "lucide-react";
+import { Button } from "./ui/button";
 
 interface CarouselCardProps {
   image: { id: number; src: string; brand: string };
-  
 }
 
 export const CarouselCard: React.FC<CarouselCardProps> = ({ image }) => {
+  const router = useRouter();
   const [showOverlay, setShowOverlay] = useState(false);
+
+  const brandToSlug = (brand: string) => {
+    return brand.toLowerCase().replace(/\s+/g, "-");
+  };
 
   return (
     <>
@@ -42,7 +49,20 @@ export const CarouselCard: React.FC<CarouselCardProps> = ({ image }) => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
               >
-                <span>{image.brand}</span>
+                <Button
+                  
+                  onClick={() =>
+                    router.push(`/watches/${brandToSlug(image.brand)}`)
+                  }
+                  className="group inline-flex text-2xl font-bold gap-2 cursor-pointer pointer-events-auto text-foreground bg-transparent hover:bg-transparent"
+                >
+                  {image.brand}
+                  <span
+                    className="transition-transform duration-300 transform group-hover:translate-x-2"
+                  >
+                    <ArrowRight className=" inline items-center mb-1" />
+                  </span>
+                </Button>
               </motion.h1>
             </motion.div>
           )}
