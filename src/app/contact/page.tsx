@@ -1,47 +1,20 @@
-"use client"
+import { Mail, Phone, Clock, Calendar } from "lucide-react";
 
-import { useState } from 'react';
-import { Mail, Phone, Clock, Calendar } from 'lucide-react';
+import ContactForm  from "@/components/contact/ContactForm"
+import { Button } from "@/components/ui/button";
+
+
 
 export default function ContactPage() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    message: ''
-  });
-  const [submitStatus, setSubmitStatus] = useState('');
-
-  const handleSubmit = () => {
-    if (!formData.name || !formData.email || !formData.message) {
-      return;
-    }
-    setSubmitStatus('sending');
-    
-    // Simulate form submission
-    setTimeout(() => {
-      setSubmitStatus('success');
-      setFormData({ name: '', email: '', phone: '', message: '' });
-      setTimeout(() => setSubmitStatus(''), 3000);
-    }, 1500);
-  };
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[#F5F3EE] dark:bg-stone-800">
       {/* Header */}
-      <div className="bg-slate-900 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4">
-          <h1 className="text-4xl font-serif mb-3">Contact Us</h1>
-          <p className="text-slate-300 text-lg">We're here to assist you with your timepiece journey</p>
-        </div>
+      <div className="max-w-7xl mx-auto px-4 mt-12">
+        <h1 className="text-4xl font-serif mb-3">Contact Us</h1>
+        <p className="dark:text-slate-300 text-lg">We take pride in offering personalized assistance to help you select and care for your distinguished timepiece.</p>
       </div>
+
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-12">
@@ -50,72 +23,12 @@ export default function ContactPage() {
           {/* Contact Form - Takes 2 columns */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-sm p-8">
-              <h2 className="text-2xl font-serif mb-6 text-slate-900">Send Us a Message</h2>
+              <h2 className="text-2xl font-serif text-slate-900">Send Us a Message</h2>
+              <p className="text-sm text-gray-600 dark:text-zinc-300">We respond within 1-3 bussines days.</p>
+              <p className="text-sm text-gray-600 dark:text-zinc-300 mb-6">Labels marked with * are required.</p>
               
               <div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Your Name *
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-slate-300 rounded-md focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Email Address *
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-slate-300 rounded-md focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition"
-                    />
-                  </div>
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-md focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition"
-                  />
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Your Message *
-                  </label>
-                  <textarea
-                    name="message"
-                    value={formData.message}
-                    onChange={handleChange}
-                    rows={6}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-md focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition resize-none"
-                  ></textarea>
-                </div>
-
-                <button
-                  onClick={handleSubmit}
-                  disabled={submitStatus === 'sending'}
-                  className="w-full bg-slate-900 text-white py-4 rounded-md font-medium hover:bg-slate-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {submitStatus === 'sending' ? 'Sending...' : 
-                   submitStatus === 'success' ? 'Message Sent!' : 
-                   'Send Message'}
-                </button>
+                <ContactForm />
               </div>
             </div>
           </div>
@@ -123,11 +36,11 @@ export default function ContactPage() {
           {/* Contact Information Sidebar */}
           <div className="space-y-6">
             
-            {/* Opening Hours */}
+            {/* Phone Support Hours */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center mb-4">
                 <Clock className="w-5 h-5 text-slate-900 mr-2" />
-                <h3 className="text-lg font-semibold text-slate-900">Opening Hours</h3>
+                <h3 className="text-lg font-semibold text-slate-900">Phone Support Hours</h3>
               </div>
               <div className="space-y-2 text-sm text-slate-600">
                 <div className="flex justify-between">
@@ -155,7 +68,7 @@ export default function ContactPage() {
                   <div>
                     <p className="text-sm font-medium text-slate-700">Phone</p>
                     <a href="tel:+12125551234" className="text-slate-600 hover:text-slate-900 transition">
-                      +1 (212) 555-1234
+                      +45 12 34 56 78 
                     </a>
                   </div>
                 </div>
@@ -179,11 +92,11 @@ export default function ContactPage() {
                 <h3 className="text-lg font-semibold">Private Viewing</h3>
               </div>
               <p className="text-slate-300 text-sm mb-4">
-                Schedule a personal appointment to experience our timepieces in an exclusive setting.
+                Schedule a personal appointment to experience our timepieces in person.
               </p>
-              <button className="w-full bg-white text-slate-900 py-3 rounded-md font-medium hover:bg-slate-100 transition">
-                Book Appointment
-              </button>
+              <Button className="w-full bg-white text-slate-900 py-3 rounded-md font-medium hover:bg-slate-100 transition cursor-pointer">
+                Book Appointment (to be implemented)
+              </Button>
             </div>
 
           </div>
