@@ -18,7 +18,7 @@ export default function LoginPage() {
   const [isLogin, setIsLogin] = useState<boolean>(true);
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
+    <div className="grid min-h-screen lg:grid-cols-2 bg-background text-foreground">
       <div className="flex flex-col gap-4 p-6 md:p-10">
         <div className="flex justify-between items-center gap-2">
           <BackButton />

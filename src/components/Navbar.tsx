@@ -27,7 +27,7 @@ export function Navbar() {
       <NavigationMenu>
         <NavigationMenuList className="flex-wrap">
           <NavigationMenuItem className="hidden md:block">
-            <NavigationMenuTrigger className="font-bold">
+            <NavigationMenuTrigger className="font-bold transition-colors duration-300">
               Watches
             </NavigationMenuTrigger>
             <NavigationMenuContent>
