@@ -42,6 +42,12 @@ jobs:
             packages: write
 
         steps:
+            - name: Fail if migration failed
+              if: needs.migrate-dev.result == 'failure' || needs.migrate-prod.result == 'failure'
+              run: |
+                echo "Migration failed — aborting pipeline."
+                exit 1
+
             - name: Checkout repository
               uses: actions/checkout@v4
 
