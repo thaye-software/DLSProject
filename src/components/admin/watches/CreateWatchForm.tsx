@@ -1,0 +1,396 @@
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { createWatch } from "@/app/admin/watches/new/actions";
+import { createNewWatchSchema } from "@/app/admin/watches/new/validation";
+import { z } from "zod";
+import constants from "@/lib/constants";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import CustomSelect from "@/components/CustomSelect";
+import MultiImageUpload from "../MultiImageUpload";
+
+export default function CreateWatchForm({
+  form,
+  setForm,
+  brands,
+  errors,
+  setErrors,
+  loading,
+  setLoading,
+  uploadedImages,
+  setUploadedImages,
+}: {
+  form: any;
+  setForm: any;
+  brands: any[];
+  errors: any;
+  setErrors: any;
+  loading: any;
+  setLoading: any;
+  uploadedImages: string[];
+  setUploadedImages: (s: string[]) => void;
+}) {
+  const router = useRouter();
+
+  function handleChange(
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setErrors({});
+
+    // client-side zod validation (same schema used previously)
+    const result = createNewWatchSchema.safeParse(form);
+    if (!result.success) {
+      const issues = result.error.issues;
+      const fieldErrors: Record<string, string> = {};
+      issues.forEach((issue: z.ZodIssue) => {
+        if (
+          issue.path &&
+          issue.path.length > 0 &&
+          typeof issue.path[0] === "string"
+        ) {
+          const key = issue.path[0] as string;
+          if (!fieldErrors[key]) fieldErrors[key] = issue.message;
+        }
+      });
+      setErrors({
+        ...fieldErrors,
+        submitList: issues.map((i) => i.message).join("|"),
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Build FormData for server action (action expects FormData)
+    const fd = new FormData();
+    fd.append("brandId", form.brand);
+    fd.append("model", form.model ?? "");
+    fd.append("reference", form.reference ?? "");
+    fd.append("serialNumber", form.serialNumber ?? "");
+    fd.append("year", form.year ?? "");
+    fd.append("condition", String(form.condition ?? ""));
+    fd.append("box", String(form.box ?? "false"));
+    fd.append("papers", String(form.papers ?? "false"));
+    fd.append("limited", String(form.limited ?? "false"));
+    fd.append("glassType", form.glassType ?? "");
+    fd.append("braceletType", form.braceletType ?? "");
+    fd.append("braceletColor", form.braceletColor ?? "");
+    fd.append("dialColor", form.dialColor ?? "");
+    fd.append("vat", String(form.vat ?? ""));
+    fd.append("size", form.size ?? "");
+    fd.append("movement", form.movement ?? "");
+    // Map product fields expected by action
+    fd.append("productName", form.model ?? "");
+    fd.append("description", form.description ?? "");
+    fd.append("price", String(form.price ?? "0"));
+    // default stock if not present
+    fd.append("stock", String(form.stock ?? "1"));
+    // imageUrls as comma separated string (action splits)
+    fd.append("imageUrls", uploadedImages.join(","));
+
+    try {
+      const res = await createWatch(fd);
+      if (res?.success) {
+        const watchId = res?.data?.watch?.id ?? res?.data?.id;
+        if (watchId) {
+          router.push(`/admin/watches/${watchId}`);
+          return;
+        }
+      }
+      // If not successful, set an error
+      setErrors({ submit: res?.error ?? "Failed to create watch" });
+    } catch (err) {
+      console.error("Error creating watch:", err);
+      setErrors({ submit: (err as Error).message ?? "Unknown error" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div>
+      <form onSubmit={handleSubmit} className="grid gap-6 max-w-3xl">
+        <Field>
+          <FieldLabel>Brand</FieldLabel>
+          <FieldContent>
+            <CustomSelect
+              placeholderText={"Select a brand"}
+              array={brands}
+              value={form.brand}
+              onValueChange={(val) =>
+                setForm((prev) => ({ ...prev, brand: val }))
+              }
+            />
+            <FieldDescription>Brand of the watch</FieldDescription>
+            {errors.brand && <FieldError>{errors.brand}</FieldError>}
+          </FieldContent>
+        </Field>
+
+        <Field>
+          <FieldLabel>Model</FieldLabel>
+          <FieldContent>
+            <Input name="model" value={form.model} onChange={handleChange} />
+            {errors.model && <FieldError>{errors.model}</FieldError>}
+          </FieldContent>
+        </Field>
+
+        <Field>
+          <FieldLabel>Reference</FieldLabel>
+          <FieldContent>
+            <Input
+              name="reference"
+              value={form.reference}
+              onChange={handleChange}
+            />
+            {errors.reference && <FieldError>{errors.reference}</FieldError>}
+          </FieldContent>
+        </Field>
+
+        <Field>
+          <FieldLabel>Serial Number</FieldLabel>
+          <FieldContent>
+            <Input
+              name="serialNumber"
+              value={form.serialNumber}
+              onChange={handleChange}
+            />
+            {errors.serialNumber && (
+              <FieldError>{errors.serialNumber}</FieldError>
+            )}
+          </FieldContent>
+        </Field>
+
+        <Field>
+          <FieldLabel>Description</FieldLabel>
+          <FieldContent>
+            <Textarea
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+            />
+            {errors.description && (
+              <FieldError>{errors.description}</FieldError>
+            )}
+          </FieldContent>
+        </Field>
+
+        <div className="grid grid-cols-3 gap-4">
+          <Field>
+            <FieldLabel>Year</FieldLabel>
+            <FieldContent>
+              <Input
+                name="year"
+                value={form.year}
+                onChange={handleChange}
+                type="number"
+              />
+              {errors.year && <FieldError>{errors.year}</FieldError>}
+            </FieldContent>
+          </Field>
+
+          <Field>
+            <FieldLabel>
+              Size<span className="text-xs text-muted-foreground mt-1">mm</span>
+            </FieldLabel>
+            <FieldContent>
+              <Input name="size" value={form.size} onChange={handleChange} />
+            </FieldContent>
+          </Field>
+
+          <Field>
+            <FieldLabel>Movement</FieldLabel>
+            <FieldContent>
+              <CustomSelect
+                placeholderText={"Select a movement"}
+                array={constants.MOVEMENT_OPTIONS}
+                value={form.movement}
+                onValueChange={(val) =>
+                  setForm((prev) => ({ ...prev, movement: val }))
+                }
+              />
+            </FieldContent>
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          <Field>
+            <FieldLabel>Glass Type</FieldLabel>
+            <FieldContent>
+              <CustomSelect
+                placeholderText={"Select a glass type"}
+                array={constants.GLASS_OPTIONS}
+                value={form.glassType}
+                onValueChange={(val) =>
+                  setForm((prev) => ({ ...prev, glassType: val }))
+                }
+              />
+            </FieldContent>
+          </Field>
+
+          <Field>
+            <FieldLabel>Condition</FieldLabel>
+            <FieldContent>
+              <Input
+                name="condition"
+                value={form.condition}
+                onChange={handleChange}
+                type="number"
+              />
+              {errors.condition && <FieldError>{errors.condition}</FieldError>}
+            </FieldContent>
+          </Field>
+
+          <Field>
+            <FieldLabel>VAT (DKK)</FieldLabel>
+            <FieldContent>
+              <Input
+                name="vat"
+                // value={form.vat}
+                defaultValue={20}
+                onChange={handleChange}
+                type="number"
+              />
+            </FieldContent>
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          <Field>
+            <FieldLabel>Box</FieldLabel>
+            <FieldContent>
+              <Checkbox
+                name="box"
+                checked={form.box === "true"}
+                onCheckedChange={(checked) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    box: checked ? "true" : "false",
+                  }));
+                }}
+              />
+            </FieldContent>
+          </Field>
+
+          <Field>
+            <FieldLabel>Papers</FieldLabel>
+            <FieldContent>
+              <Checkbox
+                name="papers"
+                checked={form.papers === "true"}
+                onCheckedChange={(checked) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    papers: checked ? "true" : "false",
+                  }));
+                }}
+              />
+            </FieldContent>
+          </Field>
+
+          <Field>
+            <FieldLabel>Limited</FieldLabel>
+            <FieldContent>
+              <Checkbox
+                name="limited"
+                checked={form.limited === "true"}
+                onCheckedChange={(checked) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    limited: checked ? "true" : "false",
+                  }));
+                }}
+              />
+            </FieldContent>
+          </Field>
+        </div>
+
+        <Field>
+          <FieldLabel>Price (DKK)</FieldLabel>
+          <FieldContent>
+            <Input name="price" value={form.price} onChange={handleChange} />
+            {errors.price && <FieldError>{errors.price}</FieldError>}
+          </FieldContent>
+        </Field>
+
+        <Field>
+          <FieldLabel>Bracelet Type</FieldLabel>
+          <FieldContent>
+            <CustomSelect
+              placeholderText={"Select a bracelet type"}
+              array={constants.BRACELET_OPTIONS}
+              value={form.braceletType}
+              onValueChange={(val) =>
+                setForm((prev) => ({ ...prev, braceletType: val }))
+              }
+            />
+            {errors.braceletType && (
+              <FieldError>{errors.braceletType}</FieldError>
+            )}
+          </FieldContent>
+        </Field>
+
+        <Field>
+          <FieldLabel>Bracelet Color</FieldLabel>
+          <FieldContent>
+            <Input
+              name="braceletColor"
+              value={form.braceletColor}
+              onChange={handleChange}
+            />
+            {errors.braceletColor && (
+              <FieldError>{errors.braceletColor}</FieldError>
+            )}
+          </FieldContent>
+        </Field>
+
+        <Field>
+          <FieldLabel>Dial Color</FieldLabel>
+          <FieldContent>
+            <Input
+              name="dialColor"
+              value={form.dialColor}
+              onChange={handleChange}
+            />
+            {errors.dialColor && <FieldError>{errors.dialColor}</FieldError>}
+          </FieldContent>
+        </Field>
+        <MultiImageUpload
+          onComplete={(items) => {
+            // prefer publicUrl, fallback to path
+            const urls = items.map((i) => i.publicUrl ?? i.path);
+            setUploadedImages(urls.filter(Boolean) as string[]);
+          }}
+        />
+
+        <div className="flex gap-2">
+          <Button type="submit" disabled={loading}>
+            {loading ? "Saving..." : "Create watch"}
+          </Button>
+          <Button
+            variant="ghost"
+            type="button"
+            onClick={() => router.push("/admin/watches")}
+          >
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}

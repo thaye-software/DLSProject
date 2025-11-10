@@ -1,6 +1,7 @@
 import { db } from "@/database/drizzle";
-import { watches, products, productImages } from "@/database/schema";
+import { watches, brands, products, productImages } from "@/database/schema";
 import { NewWatchModel, NewProductModel } from "@/database/types";
+import { eq } from "drizzle-orm";
 
 export const watchService = {
 
@@ -10,7 +11,7 @@ export const watchService = {
    * @returns 
    */
   async createWatchWithProductAndImages(opts: {
-    watchData: Omit<NewWatchModel, "id">;
+    watchData: Omit<NewWatchModel, "id" | "productId" | "slug">;
     productData: Omit<NewProductModel, "id" | "createdAt">;
     imageUrls?: string[]; // array of image URLs to insert
   }): Promise<{ success: boolean; data?: any; error?: string }> {
@@ -30,12 +31,23 @@ export const watchService = {
           .returning();
         let createdProduct = prodRes[0];
 
-        watchData.productId = createdProduct.id;
+        const brand = await tx
+          .select()
+          .from(brands)
+          .where(eq(brands.id, watchData.brandId))
+          .limit(1)
+          .then((res) => res[0]);
 
         // 2) create watch
+        const watchToInsert = {
+          ...watchData,
+          productId: createdProduct.id,
+          slug: `${brand.name.toLowerCase().replace(/\s+/g, "-")}-${watchData.model.toLowerCase().replace(/\s+/g, "-")}-${createdProduct.id}`,
+        };
+
         const watchInsert = await tx
           .insert(watches)
-          .values(watchData)
+          .values(watchToInsert)
           .returning();
         const createdWatch = watchInsert[0];
 

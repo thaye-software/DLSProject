@@ -76,6 +76,7 @@ export const brands = pgTable(
   "brands",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
+    slug: text("slug").notNull().unique(),
     name: varchar("name", { length: 255 }).notNull().unique(),
     country: varchar("country", { length: 255 })
       .notNull()
@@ -131,6 +132,7 @@ export const watches = pgTable(
       .notNull()
       .references(() => brands.id, { onDelete: "cascade" }),
     model: varchar("model", { length: 255 }).notNull(),
+    slug: text("slug").notNull().unique(), // should be constructed from brand+model+id
     reference: varchar("reference", { length: 255 }).notNull(),
     serialNumber: varchar("serial_number", { length: 255 }).notNull(),
     year: integer("year").notNull(),

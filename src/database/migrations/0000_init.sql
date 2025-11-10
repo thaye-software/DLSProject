@@ -122,7 +122,7 @@ CREATE TABLE "users" (
 --> statement-breakpoint
 CREATE TABLE "watches" (
 	"id" bigserial PRIMARY KEY NOT NULL,
-	"brand" varchar(255) NOT NULL,
+	"brand" bigint NOT NULL,
 	"model" varchar(255) NOT NULL,
 	"reference" varchar(255) NOT NULL,
 	"serial_number" varchar(255) NOT NULL,

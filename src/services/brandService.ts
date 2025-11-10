@@ -3,6 +3,23 @@ import { brands } from "@/database/schema";
 import { eq } from "drizzle-orm";
 
 export const brandService = {
+  async getBrandById(id: number) {
+    try {
+      const brand = await db.query.brands.findFirst({
+        where: eq(brands.id, id),
+      });
+
+      if (!brand) {
+        return { success: false, error: "Brand not found" };
+      }
+
+      return { success: true, data: brand };
+    } catch (error) {
+      console.error("Error fetching brand by ID:", error);
+      return { success: false, error: "Failed to fetch brand" };
+    }
+  },
+  
   async getAllBrands() {
     try {
       const allBrands = await db.query.brands.findMany();
@@ -13,7 +30,7 @@ export const brandService = {
       return { success: false, error: "Failed to fetch brands" };
     }
   },
-  
+
   async createBrand(
     data: {
       name: string;
@@ -28,11 +45,13 @@ export const brandService = {
       website?: string;
     }
   ) {
+    const slug = data.name.toLowerCase().replace(/\s+/g, "-");
+
     try {
       console.log("Creating brand with data:", data);
       const result = await db
         .insert(brands)
-        .values(data)
+        .values({ ...data, slug })
         .returning();
       return { data: result[0] };
     } catch (error) {
