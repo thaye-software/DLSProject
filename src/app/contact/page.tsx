@@ -1,6 +1,6 @@
 import { Mail, Phone, Clock, Calendar } from "lucide-react";
 
-import ContactForm  from "@/components/Contact/ContactForm"
+import ContactForm  from "@/components/asdasda/ContactForm"
 import { Button } from "@/components/ui/button";
 
 

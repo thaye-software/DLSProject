@@ -3,7 +3,7 @@
 import { z } from "zod"
 import { Resend } from "resend";
 
-import { contactFormSchema } from "@/components/Contact/ContactForm";
+import { contactFormSchema } from "@/components/asdasda/ContactForm";
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
 const originEmail = process.env.RESEND_ORIGIN_EMAIL as string;
