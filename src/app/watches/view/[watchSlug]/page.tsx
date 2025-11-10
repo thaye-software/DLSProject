@@ -1,11 +1,11 @@
 import BackButton from "@/components/BackButton";
-import ProductImageSwiper from "@/components/ProductImageSwiper";
+import ProductImageSwiper from "@/components/Watches/ProductImageSwiper";
 import { productService } from "@/services/productService";
 import { notFound } from "next/navigation";
 import { Check, Shield, Package, FileText, Calendar, Gauge, Clock, Split } from "lucide-react";
 import { currencyService } from "@/services/currencyService";
-import ProductSafetyInfo from "@/components/ProductSaftyInfoCard";
-import ContactButton from "@/components/ContactButton";
+import ProductSafetyInfo from "@/components/Watches/ProductSaftyInfoCard";
+import ContactButton from "@/components/Contact/ContactButton";
 import { Button } from "@/components/ui/button";
 import { Product } from "../../type";
 

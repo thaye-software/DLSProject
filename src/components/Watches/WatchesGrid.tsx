@@ -1,6 +1,6 @@
-import { WatchCard } from "@/components/WatchCard";
+import { WatchCard } from "@/components/Watches/WatchCard";
 
-import { Product } from "../app/watches/type";
+import { Product } from "../../app/watches/type";
 
 export async function WatchesGrid({watches, countryCode}: {watches: Product[], countryCode: string}) {
   return (

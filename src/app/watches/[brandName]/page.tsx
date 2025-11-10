@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 
 import { Spinner } from "@/components/ui/spinner";
-import { WatchesGrid } from "@/components/WatchesGrid";
+import { WatchesGrid } from "@/components/Watches/WatchesGrid";
 
 import { productService } from "@/services/productService";
 import { Product } from "../type";
