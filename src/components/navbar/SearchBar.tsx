@@ -4,13 +4,11 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Search } from "lucide-react";
 import { SearchResultsDialog } from "./SearchResultsDialog";
+import { AnimatePresence } from "framer-motion";
+import { Spinner } from "../ui/spinner";
 
-export default function SearchBar({
-  initialResults,
-}: {
-  initialResults?: any[];
-}) {
-  const [results, setResults] = useState(initialResults || []);
+export default function SearchBar() {
+  const [results, setResults] = useState([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -38,7 +36,7 @@ export default function SearchBar({
       setLoading(true);
       try {
         const res = await fetch(
-          `/api/search?q=${encodeURIComponent(query)}&limit=12`,
+          `/api/search?q=${encodeURIComponent(query)}`,
           {
             signal: controller.signal,
           }
@@ -86,32 +84,15 @@ export default function SearchBar({
       />
       <div className="pointer-events-none absolute -translate-y-6.5 translate-x-2 select-none">
         {loading ? (
-          <svg
-            className="animate-spin h-4 w-4 text-muted-foreground"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            ></circle>
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-            ></path>
-          </svg>
+          <Spinner className="w-4 h-4" />
         ) : (
           <Search className="size-4 opacity-50" />
         )}
       </div>
       <div className="absolute left-0 top-full mt-2 z-50">
-        <SearchResultsDialog
+        <AnimatePresence>
+          {isFocused && (
+            <SearchResultsDialog
           open={isFocused}
           onClose={() => setIsFocused(false)}
           results={results}
@@ -122,7 +103,10 @@ export default function SearchBar({
               inputRef.current.blur();
             }
           }}
-        />
+          />
+          )}
+        
+          </AnimatePresence>
       </div>
     </div>
   );
