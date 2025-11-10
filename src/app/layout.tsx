@@ -6,9 +6,9 @@ import { Open_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Logo from "@/components/Logo";
-import { Navbar } from "@/components/Navbar";
+import { Navbar } from "@/components/navbar/Navbar";
 import { Footer } from "@/components/Footer";
-import { ModeToggle } from "@/components/ModeToggle";
+import { ModeToggle } from "@/components/navbar/ModeToggle";
 import { usePathname, redirect } from "next/navigation";
 
 const theSeasons = theSeasonsFont({
@@ -92,34 +92,35 @@ export default function RootLayout({
       className={`${theSeasons.variable} ${centuryGothic.variable} ${openSans.variable}`}
       suppressHydrationWarning
     >
-      <body className="antialiased min-h-screen flex flex-col bg-[#F5F3EE]">
+      <body className="antialiased min-h-screen flex flex-col">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-       
           {!hideRootShell && (
             <nav className="container mx-auto">
               <header>
-              <div className="flex items-center justify-between w-full px-4">
-                <div></div>
-                <div className="pt-4 pb-4">
-                  
-                  <div onClick={() => redirect('/')} className="flex flex-col items-center justify-center gap-2 cursor-pointer">
-                  <div className="">
+                <div className="flex items-center justify-between w-full px-4">
+                  <div></div>
+                  <div className="pt-4 pb-4">
+                    <div
+                      onClick={() => redirect("/")}
+                      className="flex flex-col items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <div className="">
                         <Logo className="h-12 w-12 dark:text-white" />
+                      </div>
+                      <h1 className="text-2xl font-bold">Limited Watches</h1>
                     </div>
-                  <h1 className="text-2xl font-bold">Limited Watches</h1>
+                  </div>
+
+                  <div className="w-20 flex justify-end">
+                    <ModeToggle />
                   </div>
                 </div>
-
-                <div className="w-20 flex justify-end">
-                  <ModeToggle />
-                </div>
-              </div>
-            </header>
+              </header>
               <Navbar />
             </nav>
           )}
@@ -130,9 +131,7 @@ export default function RootLayout({
             // and not show the navbar and footer.
             <div className="min-h-screen w-full">{children}</div>
           ) : (
-            <main className="pt-5 pb-5">
-              {children}
-            </main>
+            <main className="min-h-screen pt-5 pb-5">{children}</main>
           )}
 
           {!hideRootShell && <Footer />}

@@ -1,7 +1,5 @@
-"use client";
-
 import Link from "next/link";
-import { User as UserIcon, LogOut } from "lucide-react";
+import { User as UserIcon } from "lucide-react";
 import Image from "next/image";
 import { useSupabaseAuth } from "@/lib/useSupabaseAuth";
 
@@ -14,9 +12,10 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import { UserNavbarDropdown } from "./UserNavbarDropdown";
-
+import SearchBar from "./SearchBar";
+import { productService } from "@/services/productService";
 
 export function Navbar() {
   const { user, isLoggedIn, loading, role } = useSupabaseAuth();
@@ -27,7 +26,7 @@ export function Navbar() {
       <NavigationMenu>
         <NavigationMenuList className="flex-wrap">
           <NavigationMenuItem className="hidden md:block">
-            <NavigationMenuTrigger className="font-bold">
+            <NavigationMenuTrigger className="font-bold transition-colors duration-300">
               Watches
             </NavigationMenuTrigger>
             <NavigationMenuContent>
@@ -54,7 +53,10 @@ export function Navbar() {
               <ul className="grid w-[200px] gap-4">
                 <li>
                   <NavigationMenuLink asChild>
-                    <Link href="/watches/cartier" className="flex-row items-center gap-2">
+                    <Link
+                      href="/watches/cartier"
+                      className="flex-row items-center gap-2"
+                    >
                       <Image
                         src="/brands/cartier.svg"
                         alt="Cartier Logo"
@@ -65,7 +67,10 @@ export function Navbar() {
                     </Link>
                   </NavigationMenuLink>
                   <NavigationMenuLink asChild>
-                    <Link href="/watches/omega" className="flex-row items-center gap-2">
+                    <Link
+                      href="/watches/omega"
+                      className="flex-row items-center gap-2"
+                    >
                       <Image
                         src="/brands/omega.svg"
                         alt="Omega Logo"
@@ -76,7 +81,10 @@ export function Navbar() {
                     </Link>
                   </NavigationMenuLink>
                   <NavigationMenuLink asChild>
-                    <Link href="/watches/jaeger" className="flex-row items-center gap-2">
+                    <Link
+                      href="/watches/jaeger"
+                      className="flex-row items-center gap-2"
+                    >
                       <Image
                         src="/brands/jaeger.svg"
                         alt="Jaeger LeCoultre Logo"
@@ -127,22 +135,13 @@ export function Navbar() {
 
       {/* Right side login */}
       <div className="ml-auto flex items-center gap-2">
+        <div className="w-60 mr-10">
+          <SearchBar />
+        </div>
         {loading ? (
           <div className="text-sm text-muted-foreground">Checking...</div>
         ) : isLoggedIn && user ? (
           <UserNavbarDropdown />
-          // <div className="flex items-center gap-2">
-          //   <UserIcon className="h-4 w-4" />
-          //   <span className="font-bold">{user.user_metadata.display_name}</span>
-          //     <Button
-          //       variant="ghost"
-          //     onClick={() => handleSignOut()}
-              
-          //   >
-          //     <LogOut className="h-4 w-4" />
-          //     <span className="font-bold">Sign out</span>
-          //   </Button>
-          // </div>
         ) : (
           <Link href="/login">
             <Button variant="ghost">

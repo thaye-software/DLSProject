@@ -1,5 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { redirect } from "next/navigation";
 
 const teamMembers = [
@@ -88,7 +89,7 @@ export default function AboutPage() {
           {teamMembers.map((member, i) => (
             <div
               key={i}
-              className="flex flex-col items-center text-center p-4 rounded-lg bg-card shadow hover:shadow-lg hover:bg-accent transition-all"
+              className="flex flex-col items-center text-center p-4 rounded-lg hover:shadow-lg transition-all"
             >
               <div className="h-28 w-28 rounded-full overflow-hidden bg-slate-200 mb-4 flex items-center justify-center">
                 <span className="text-muted-foreground">Photo</span>
@@ -104,16 +105,16 @@ export default function AboutPage() {
       </section>
 
       {/* CTA */}
-      <section className="mb-12 rounded-lg p-8 bg-gradient-to-r from-champagne to-champagne/80 text-center">
-        <h3 className="text-xl font-semibold mb-2">Join our newsletter</h3>
+      <section className="mb-12 rounded-lg p-8 bg-linear-to-r from-champagne to-amber-100/80 text-center">
+        <h3 className="text-xl font-semibold mb-2">Get first access to rare finds</h3>
         <p className="text-foreground/80 mb-4">
-          Get curated drops, rare finds and member-only events.
+          Receive curated drop alerts, VIP previews and member-only invitations — delivered straight to your inbox.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <input className="input" placeholder="Email address" />
-          <button className="inline-flex items-center rounded-md bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-amber-600">
-            Subscribe
-          </button>
+          <Input className="w-xl" placeholder="Enter your email" />
+          <Button className="inline-flex items-center rounded-md px-4 py-2 text-sm font-mediumshadow-sm">
+            Get early access
+          </Button>
         </div>
       </section>
     </div>

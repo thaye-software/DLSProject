@@ -11,7 +11,7 @@ import { useSupabaseAuth } from "@/lib/useSupabaseAuth";
 import { LogOut, Settings, Truck, User } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Avatar } from "./ui/avatar";
+import { Avatar } from "../ui/avatar";
 import { AvatarImage } from "@radix-ui/react-avatar";
 
 export function UserNavbarDropdown() {
