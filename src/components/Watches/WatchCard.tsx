@@ -55,7 +55,7 @@ export function WatchCard({ product, countryCode }: { product: Product, countryC
                         </h3>
 
                         {/* Description */}
-                        <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 min-h-[3rem]">
+                        <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 min-h-12">
                             {product.description}
                         </p>
                     </div>

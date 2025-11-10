@@ -128,7 +128,7 @@ export default async function ViewWatchPage({ params }: { params: Promise<{ watc
 
                         {/* Limited Edition Badge */}
                         {product.watch.limited && (
-                            <div className="bg-gradient-to-r from-[#773D0E]/20 to-[#5E561C]/20 border border-[#773D0E]/50 rounded-lg p-4">
+                            <div className="bg-linear-to-r from-[#773D0E]/20 to-[#5E561C]/20 border border-[#773D0E]/50 rounded-lg p-4">
                                 <div className="flex items-center gap-2 text-[#773D0E] font-semibold">
                                     <Shield size={20} />
                                     Limited Edition
@@ -207,7 +207,7 @@ function SpecItem({ icon, label, value }: { icon?: React.ReactNode; label: strin
 function IncludedItem({ included, text }: { included: boolean; text: string }) {
     return (
         <div className="flex items-center gap-3">
-            <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${
+            <div className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${
                 included ? "bg-[#2D4330]/20 text-[#2D4330]" : "bg-[#D3C6A3] text-[#5E561C]"
             }`}>
                 {included && <Check size={14} />}
