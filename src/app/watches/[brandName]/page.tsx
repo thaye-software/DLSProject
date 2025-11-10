@@ -1,18 +1,17 @@
 import { Suspense } from "react";
 
 import { Spinner } from "@/components/ui/spinner";
-
-import { WatchCard } from "@/components/WatchCard";
+import { WatchesGrid } from "@/components/WatchesGrid";
 
 import { productService } from "@/services/productService";
 import { Product } from "../type";
-import { resolve } from "path";
-import { WatchesGrid } from "@/components/WatchesGrid";
 
 
 export default async function BrandWatchesPage({ params }: { params: Promise<{ brandName: string }> }) {
 
-  const brandName = (await params).brandName;
+  let brandName = (await params).brandName;
+  brandName = capitalizeFirstLetter(brandName)
+
   const allWatches: Product[] = await productService.getAllProductsByBrandName(brandName);
   // to be implemented 
   // get user country and convert price accordingly
@@ -22,11 +21,7 @@ export default async function BrandWatchesPage({ params }: { params: Promise<{ b
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-2">Branded watches</h1>
-      <p className="text-muted-foreground mb-8">This is the page that lists all branded watches.</p>
-      <p>
-        {brandName}
-      </p>
+      <h1 className="text-4xl font-bold mb-12">{brandName} watches</h1>
 
       <div className="flex justify-center">
         <Suspense fallback={<Spinner className="w-8 h-8" />}>
@@ -36,4 +31,13 @@ export default async function BrandWatchesPage({ params }: { params: Promise<{ b
 
     </div>
   );
+}
+
+
+
+// ---------------------------- helper functions ----------------------------
+function capitalizeFirstLetter(brandName: string): string {
+  const capitalFirstLetter = brandName.substring(0, 1).toLocaleUpperCase();
+  const formatedBrandName = capitalFirstLetter + brandName.slice(1, brandName.length)
+  return formatedBrandName;
 }

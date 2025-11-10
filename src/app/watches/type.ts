@@ -11,6 +11,7 @@ export interface Product {
 
   watch: {
     id: number;
+    slug: string;
     productId: number;
     brandId: number;
     model: string;
@@ -32,8 +33,8 @@ export interface Product {
       id: number;
       name: string;  
       country: string | null;
-      address: string | null;
-      address2: string | null;
+      addressLine1: string | null;
+      addressLine2: string | null;
       zipCode: string | null;
       city: string | null;
       stateProvince: string | null;

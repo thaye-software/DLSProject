@@ -16,7 +16,7 @@ export function WatchCard({ product, countryCode }: { product: Product, countryC
   
   
     return (
-        <Link href={`/watches/view/${product.id}`}>
+        <Link href={`/watches/view/${product.watch.slug}`}>
         
             <Card className="group overflow-hidden transition-all duration-300 hover:shadow-2xl border-0 p-0">
                 <CardHeader className="p-0">

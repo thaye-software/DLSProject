@@ -5,15 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 interface ProductSafetyInfo {
   id: number | string;
-  country: string;
-  address: string;
-  address2: string;
-  zipCode: string;
-  city: string;
-  stateProvince: string;
-  phoneNumber: string;
-  email: string;
-  website: string;
+  country: string | null;
+  address: string | null;
+  address2: string | null;
+  zipCode: string | null;
+  city: string | null;
+  stateProvince: string | null;
+  phoneNumber: string | null;
+  email: string | null;
+  website: string | null;
 }
 
 interface ProductSafetyInfoProps {

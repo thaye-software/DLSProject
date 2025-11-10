@@ -2,22 +2,38 @@ import BackButton from "@/components/BackButton";
 import ProductImageSwiper from "@/components/ProductImageSwiper";
 import { productService } from "@/services/productService";
 import { notFound } from "next/navigation";
-import { Check, Shield, Package, FileText, Calendar, Gauge, Clock } from "lucide-react";
+import { Check, Shield, Package, FileText, Calendar, Gauge, Clock, Split } from "lucide-react";
 import { currencyService } from "@/services/currencyService";
 import ProductSafetyInfo from "@/components/ProductSaftyInfoCard";
 import ContactButton from "@/components/ContactButton";
 import { Button } from "@/components/ui/button";
+import { Product } from "../../type";
 
-export default async function ViewWatchPage({ params }: { params: Promise<{ watchId: string }> }) {
-    const watchId = (await params).watchId;
+export default async function ViewWatchPage({ params }: { params: Promise<{ watchSlug: string }> }) {
+    const watchSlug = (await params).watchSlug;
 
-    const product = await productService.getProductById(watchId);
+    const product: Product | null = await productService.getProductBySlug(watchSlug);
+    console.log("øæøæå",watchSlug)
     if (!product) {
         notFound();
     }
 
     const brandName = product.watch.brand.name;
-    const productSaftyInfo = product.watch.brand.productSafetyInfo;
+
+    const productSaftyInfo = {
+        id: product.watch.brand.id,
+        name: product.watch.brand.name,
+        country: product.watch.brand.country,
+        address: product.watch.brand.addressLine1,
+        address2: product.watch.brand.addressLine2,
+        zipCode: product.watch.brand.zipCode,
+        city: product.watch.brand.city,
+        stateProvince: product.watch.brand.stateProvince,
+        phoneNumber: product.watch.brand.phoneNumber,
+        email: product.watch.brand.email,
+        website: product.watch.brand.website,
+
+    }
 
     //TODO use either headers/cookies to find out location of user to display correct currency.
     const formattedPrice = await currencyService.convertPrice(product.priceDkk, "dkk")
@@ -164,7 +180,7 @@ export default async function ViewWatchPage({ params }: { params: Promise<{ watc
                     // either way this should never be optional anyways
                     <ProductSafetyInfo brandName={brandName} safetyInfo={productSaftyInfo} />
                 ) : (
-                    <h1 className="text-lg">
+                    <h1 className="flex justify-center text-lg">
                         Product Safty Information not available
                     </h1>
                 )}
@@ -174,7 +190,8 @@ export default async function ViewWatchPage({ params }: { params: Promise<{ watc
     );
 }
 
-// Helper Components
+// --------------------------------------- Helper Components --------------------------------------- 
+
 function SpecItem({ icon, label, value }: { icon?: React.ReactNode; label: string; value: string }) {
     return (
         <div className="bg-white border border-[#D3C6A3] rounded-lg p-3 shadow-sm">
