@@ -20,7 +20,7 @@ export const productService = {
 
   async getAllProducts() {
     try {
-      const allProducts: Product[] = await db.query.products.findMany({
+      const allProducts: any[] = await db.query.products.findMany({
         with: {
           watch: {
             with: {

@@ -17,9 +17,6 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product } from '@/app/watches/type';
 
 
-
-
-
 export default function ProductSwiper({product}: {product: Product}) {
     const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
     const [activeIndex, setActiveIndex] = useState(0);
@@ -27,7 +24,7 @@ export default function ProductSwiper({product}: {product: Product}) {
     const productImages = product.productImages.filter((image, index, self) =>
                         index === self.findIndex((img) => img.imageUrl === image.imageUrl)
                     );
-    console.log(productImages)
+    console.log(productImages);
     return (
         <div className="flex flex-col items-center justify-center">
             <div className="w-full max-w-4xl rounded-lg">
@@ -60,7 +57,7 @@ export default function ProductSwiper({product}: {product: Product}) {
                         <SwiperSlide key={image.id}>
                             <div className="aspect-square bg-gray-100 relative">
                             <Image
-                                src={image.imageUrl}
+                                src={image.imageUrl || ''}
                                 alt={`Picture of ${product.watch.brand.name} - ${product.watch.model}`}
                                 className="w-full h-full object-cover"
                                 fill
@@ -121,7 +118,7 @@ export default function ProductSwiper({product}: {product: Product}) {
                             }`}
                         >
                             <img
-                                src={image.imageUrl}
+                                src={image.imageUrl || ''}
                                 alt={`${index + 1}: Picture of ${product.watch.brand.name} - ${product.watch.model}`}
                                 className="w-full aspect-square object-cover"
                             />

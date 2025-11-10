@@ -7,25 +7,25 @@ on:
     workflow_dispatch:
 
 jobs:
-    # migrate-dev:
-    #     if: github.ref == 'refs/heads/dev'
-    #     uses: ./.github/workflows/migrations.yml
-    #     with:
-    #         environment: "dev"
-    #         node-version: "24"
-    #         npm-script: "db:migrate:dev"
-    #     secrets:
-    #         database-url: ${{ secrets.DATABASE_URL_DEV }}
+    migrate-dev:
+        if: github.ref == 'refs/heads/dev'
+        uses: ./.github/workflows/migrations.yml
+        with:
+            environment: "dev"
+            node-version: "24"
+            npm-script: "db:migrate:dev"
+        secrets:
+            database-url: ${{ secrets.DATABASE_URL_DEV }}
   
-    # migrate-prod:
-    #     if: github.ref == 'refs/heads/main'
-    #     uses: ./.github/workflows/migrations.yml
-    #     with:
-    #         environment: "prod"
-    #         node-version: "24"
-    #         npm-script: "db:migrate:prod"
-    #     secrets:
-    #         database-url: ${{ secrets.DATABASE_URL_PROD }}
+    migrate-prod:
+        if: github.ref == 'refs/heads/main'
+        uses: ./.github/workflows/migrations.yml
+        with:
+            environment: "prod"
+            node-version: "24"
+            npm-script: "db:migrate:prod"
+        secrets:
+            database-url: ${{ secrets.DATABASE_URL_PROD }}
 
 
 
@@ -33,6 +33,8 @@ jobs:
 
 
     build-and-push:
+        needs: [migrate-dev, migrate-prod]
+        if: always() && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')
         runs-on: ubuntu-latest
 
         permissions:
@@ -40,6 +42,12 @@ jobs:
             packages: write
 
         steps:
+            - name: Fail if migration failed
+              if: needs.migrate-dev.result == 'failure' || needs.migrate-prod.result == 'failure'
+              run: |
+                echo "Migration failed — aborting pipeline."
+                exit 1
+
             - name: Checkout repository
               uses: actions/checkout@v4
 

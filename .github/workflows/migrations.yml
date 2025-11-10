@@ -39,9 +39,25 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      - name: Run migrations
+
+      - name: Run migrations (develop)
+        if: github.ref == 'refs/heads/dev'
         env:
-          DATABASE_URL: ${{ secrets.database-url }}
+          DATABASE_URL_DEV: ${{ secrets.database-url }}
+        run: |
+          set -e
+          OUTPUT=$(npm run ${{ inputs.npm-script }} 2>&1) || true
+          echo "$OUTPUT"
+          if echo "$OUTPUT" | grep -q "Error"; then
+            echo "Migration failed for ${{ inputs.environment }}"
+            exit 1
+          fi
+          echo "Migration completed successfully for ${{ inputs.environment }}"
+      
+      - name: Run migrations (production)
+        if: github.ref == 'refs/heads/main'
+        env:
+          DATABASE_URL_PROD: ${{ secrets.database-url }}
         run: |
           set -e
           OUTPUT=$(npm run ${{ inputs.npm-script }} 2>&1) || true
