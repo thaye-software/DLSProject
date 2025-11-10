@@ -4,6 +4,7 @@ import { z } from "zod";
 export const createNewWatchSchema = z.object({
   brand: z.coerce.number().int().min(1, "Brand is required"),
   model: z.string().min(2, "Model is required"),
+  description: z.string().min(10, "Description is required"),
   reference: z.string().min(2, "Reference is required"),
   serialNumber: z.string().min(2, "Serial number is required"),
   year: z.coerce

@@ -92,6 +92,27 @@
       "when": 1762765433505,
       "tag": "0012_combine-brands-and-productsafetyinfo",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1762766193079,
+      "tag": "0013_add-description-to-watches",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1762769042082,
+      "tag": "0014_add-slug-to-brands-and-watches",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1762769312368,
+      "tag": "0015_remove description from watches",
+      "breakpoints": true
     }
   ]
 }

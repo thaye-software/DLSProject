@@ -1,6 +1,5 @@
 ALTER TABLE "product_safety_info" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
 DROP TABLE "product_safety_info" CASCADE;--> statement-breakpoint
-ALTER TABLE "brands" DROP CONSTRAINT "brands_product_safety_info_id_product_safety_info_id_fk";
 --> statement-breakpoint
 DROP INDEX "idx_brands_slug";--> statement-breakpoint
 ALTER TABLE "brands" ADD COLUMN "country" varchar(255) DEFAULT '' NOT NULL;--> statement-breakpoint
