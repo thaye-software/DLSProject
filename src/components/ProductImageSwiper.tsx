@@ -64,6 +64,7 @@ export default function ProductSwiper({product}: {product: Product}) {
                                 alt={`Picture of ${product.watch.brand.name} - ${product.watch.model}`}
                                 className="w-full h-full object-cover"
                                 fill
+                                unoptimized
                             />
                             </div>
                         </SwiperSlide>

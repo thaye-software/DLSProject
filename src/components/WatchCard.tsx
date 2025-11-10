@@ -12,19 +12,21 @@ import { currencyService } from "@/services/currencyService";
 
 export function WatchCard({ product, countryCode }: { product: Product, countryCode: string }) {
     
-    const formatedPrice = currencyService.convertPrice(product.priceDkk, countryCode);
-
+  const formatedPrice = currencyService.convertPrice(product.priceDkk, countryCode);
+  
+  
     return (
         <Link href={`/watches/view/${product.id}`}>
         
             <Card className="group overflow-hidden transition-all duration-300 hover:shadow-2xl border-0 p-0">
                 <CardHeader className="p-0">
-                    <div className="relative overflow-hidden aspect-[4/5] bg-muted">
+                    <div className="relative overflow-hidden aspect-4/5 bg-muted">
                         <Image
                             src={product.productImages[0]?.imageUrl || "/sadly-no-image.png"}
                             alt={`${product.watch.brand.name} ${product.name}`}
                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                             fill
+                            unoptimized // REMOVE THIS IN PRODUCTION
                         />
 
                         <div className="absolute top-4 right-4 flex gap-2">

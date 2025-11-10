@@ -3,7 +3,6 @@ import {
   countries,
   addresses,
   productImages,
-  productSafetyInfo,
   watches,
   brands,
   users,
@@ -34,9 +33,6 @@ export type NewAddressModel = InferInsertModel<typeof addresses>;
 
 export type ProductImageModel = InferSelectModel<typeof productImages>;
 export type NewProductImageModel = InferInsertModel<typeof productImages>;
-
-export type ProductSafetyInfoModel = InferSelectModel<typeof productSafetyInfo>;
-export type NewProductSafetyInfoModel = InferInsertModel<typeof productSafetyInfo>;
 
 export type WatchModel = InferSelectModel<typeof watches>;
 export type NewWatchModel = InferInsertModel<typeof watches>;

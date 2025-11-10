@@ -42,5 +42,4 @@ export const createNewWatchSchema = z.object({
   braceletColor: z.string().optional(),
   dialColor: z.string().optional(),
   vat: z.coerce.number().min(0, "VAT must be a positive number").optional(),
-  productSafetyInfoId: z.coerce.number().int().min(0).optional(),
 });

@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import constants from "@/lib/constants";
 import CustomSelect from "@/components/CustomSelect";
 import { BrandModel } from "@/database/types";
-import MultiImageUpload from "@/components/MultiImageUpload";
+import MultiImageUpload from "@/components/admin/MultiImageUpload";
 import { createNewWatchSchema } from "./validation";
 import { z } from "zod";
 
@@ -121,8 +121,6 @@ export default function NewWatchPage() {
       braceletColor: parsed.braceletColor || null,
       dialColor: parsed.dialColor || null,
       vat: parsed.vat,
-      productSafetyInfoId: parsed.productSafetyInfoId,
-      // productData that will be created and linked to the watch
       productData: {
         productType: "watch",
         name: `${parsed.model}`,

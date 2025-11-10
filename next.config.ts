@@ -9,7 +9,15 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    domains: ["example.com", "images.unsplash.com", "unsplash.com"]
+    remotePatterns: [
+      {
+        protocol: "http",
+        hostname: "127.0.0.1",
+        port: "54321",
+        pathname: "/storage/**",
+      },
+    ],
+    domains: ["example.com", "images.unsplash.com", "unsplash.com", "127.0.0.1"]
   },
 
 };

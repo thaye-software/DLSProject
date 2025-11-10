@@ -57,6 +57,7 @@ export async function POST(request: Request) {
 
     const watchData: Omit<NewWatchModel, "id"> = {
       brandId: brand as number,
+      productId: undefined as any, // will be set in transactional flow if needed
       model,
       reference,
       serialNumber,
