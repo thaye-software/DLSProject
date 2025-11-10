@@ -43,7 +43,7 @@ jobs:
       - name: Run migrations (develop)
         if: github.ref == 'refs/heads/dev'
         env:
-          DATABASE_URL_DEV: ${{ secrets.DATABASE_URL_DEV }}
+          DATABASE_URL_DEV: ${{ secrets.database-url }}
         run: |
           set -e
           OUTPUT=$(npm run ${{ inputs.npm-script }} 2>&1) || true
@@ -57,7 +57,7 @@ jobs:
       - name: Run migrations (production)
         if: github.ref == 'refs/heads/main'
         env:
-          DATABASE_URL_PROD: ${{ secrets.DATABASE_URL_PROD }}
+          DATABASE_URL_PROD: ${{ secrets.database-url }}
         run: |
           set -e
           OUTPUT=$(npm run ${{ inputs.npm-script }} 2>&1) || true
