@@ -7,25 +7,25 @@ on:
     workflow_dispatch:
 
 jobs:
-    # migrate-dev:
-    #     if: github.ref == 'refs/heads/dev'
-    #     uses: ./.github/workflows/migrations.yml
-    #     with:
-    #         environment: "dev"
-    #         node-version: "24"
-    #         npm-script: "db:migrate:dev"
-    #     secrets:
-    #         database-url: ${{ secrets.DATABASE_URL_DEV }}
+    migrate-dev:
+        if: github.ref == 'refs/heads/dev'
+        uses: ./.github/workflows/migrations.yml
+        with:
+            environment: "dev"
+            node-version: "24"
+            npm-script: "db:migrate:dev"
+        secrets:
+            database-url: ${{ secrets.DATABASE_URL_DEV }}
   
-    # migrate-prod:
-    #     if: github.ref == 'refs/heads/main'
-    #     uses: ./.github/workflows/migrations.yml
-    #     with:
-    #         environment: "prod"
-    #         node-version: "24"
-    #         npm-script: "db:migrate:prod"
-    #     secrets:
-    #         database-url: ${{ secrets.DATABASE_URL_PROD }}
+    migrate-prod:
+        if: github.ref == 'refs/heads/main'
+        uses: ./.github/workflows/migrations.yml
+        with:
+            environment: "prod"
+            node-version: "24"
+            npm-script: "db:migrate:prod"
+        secrets:
+            database-url: ${{ secrets.DATABASE_URL_PROD }}
 
 
 
