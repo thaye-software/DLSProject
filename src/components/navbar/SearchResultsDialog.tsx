@@ -40,28 +40,33 @@ export function SearchResultsDialog({
                     onClose();
                     router.push(`/watches/view/${r.watch?.id}`);
                   }}
-                  className="flex flex-col items-start gap-2 rounded-md border p-3 text-left hover:shadow-md transition-shadow"
+                  className="group flex flex-col items-start gap-2 rounded-md p-2 text-left transition-all cursor-pointer"
                 >
                   {img ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={img}
-                      alt={title}
-                      className="h-32 w-full object-cover rounded"
-                    />
+                    <div className="relative w-full h-40 overflow-hidden rounded">
+                      
+                      <Image
+                        src={img}
+                        alt={title}
+                        fill
+                        unoptimized
+                        className="absolute inset-0 w-full h-full object-cover transform transition-transform duration-500 group-hover:scale-105"
+                      />
+                    </div>
                   ) : (
-                    <div className="flex h-32 w-full items-center justify-center rounded bg-muted text-sm text-muted-foreground">
+                    <div className="w-full h-40 flex items-center justify-center rounded bg-muted text-sm text-muted-foreground">
                       No image
                     </div>
                   )}
                   <div className="w-full">
-                    <div className="font-medium truncate">{title}</div>
+                    <div className="font-bold truncate">{title}</div>
                     <div className="text-sm text-muted-foreground">{brand}</div>
                     {reference && (
                       <div className="text-sm text-muted-foreground">
                         Ref: {reference}
                       </div>
                     )}
+                    <div>{r.priceDkk} Kr.</div>
                   </div>
                 </button>
               );

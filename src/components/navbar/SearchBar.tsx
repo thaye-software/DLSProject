@@ -13,7 +13,7 @@ export default function SearchBar({
   const [results, setResults] = useState(initialResults || []);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isFocused, setIsFocused] = useState(true);
+  const [isFocused, setIsFocused] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -69,7 +69,7 @@ export default function SearchBar({
       ref={wrapperRef}
       onFocus={() => setIsFocused(true)}
       onBlur={(e) => {
-        // setIsFocused(false);
+        setIsFocused(false);
       }}
       className="relative"
     >
