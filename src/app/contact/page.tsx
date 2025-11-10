@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 
 export default function ContactPage() {
 
-
   return (
     <div className="min-h-screen bg-[#F5F3EE] dark:bg-stone-800">
       {/* Header */}
