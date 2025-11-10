@@ -2,18 +2,17 @@ import BackButton from "@/components/BackButton";
 import ProductImageSwiper from "@/components/Watches/ProductImageSwiper";
 import { productService } from "@/services/productService";
 import { notFound } from "next/navigation";
-import { Check, Shield, Package, FileText, Calendar, Gauge, Clock, Split } from "lucide-react";
+import { Check, Shield, Package, FileText, Calendar, Gauge, Clock } from "lucide-react";
 import { currencyService } from "@/services/currencyService";
 import ProductSafetyInfo from "@/components/Watches/ProductSaftyInfoCard";
 import ContactButton from "@/components/Contact/ContactButton";
-import { Button } from "@/components/ui/button";
 import { Product } from "../../type";
+import AddToCartButton from "@/components/Watches/AddToCartButton";
 
 export default async function ViewWatchPage({ params }: { params: Promise<{ watchSlug: string }> }) {
     const watchSlug = (await params).watchSlug;
 
     const product: Product | null = await productService.getProductBySlug(watchSlug);
-    console.log("øæøæå",watchSlug)
     if (!product) {
         notFound();
     }
@@ -99,7 +98,6 @@ export default async function ViewWatchPage({ params }: { params: Promise<{ watc
                                 <SpecItem label="Glass" value={product.watch.glassType || "Not specified"} />
                                 <SpecItem label="Dial Color" value={product.watch.dialColor || "Not specified"} />
                                 <SpecItem label="Bracelet" value={`${product.watch.braceletType} (${product.watch.braceletColor})` || "Not specified"} />
-                                <SpecItem label="Serial Number" value={product.watch.serialNumber || "Not specified"} />
                                 <SpecItem label="Condition" value={`${product.watch.condition}/10` || "Not specified"} />
                             </div>
                         </div>
@@ -153,12 +151,11 @@ export default async function ViewWatchPage({ params }: { params: Promise<{ watc
 
                         {/* CTA Buttons */}
                         <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                            <Button 
+                            <AddToCartButton 
+                                product={product}
                                 className="hover:cursor-pointer h-12 flex-1 bg-[#1A1A1A] hover:bg-[#244B5A] text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                                disabled={product.stock === 0}
-                            >
-                                {product.stock > 0 ? "Add to Cart (to be implemented)" : "Notify When Available (to be implemented)"}
-                            </Button>
+                            />
+
                             <ContactButton className="hover:cursor-pointer h-12 flex-1 bg-white hover:bg-[#F5F3EE] text-[#1A1A1A] font-semibold py-4 px-8 rounded-lg border-2 border-[#D3C6A3] transition-all" />
                         </div>
 
