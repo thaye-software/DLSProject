@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/tailwindUtils";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,21 +25,31 @@ function toggleLoginState(
 export function LoginForm({
   isLogin,
   setIsLogin,
+  redirectUrl,
   className,
   ...props
 }: React.ComponentProps<"form"> & {
   isLogin: boolean;
   setIsLogin: (isLogin: boolean) => void;
+  redirectUrl?: string;
 }) {
+  const router = useRouter();
   const initialState: LoginFormState = {};
   const [state, formAction] = useActionState(login, initialState);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-  // whenever the action state changes, stop the loading spinner
-  // this covers success and error cases (server returned)
-  setLoading(false);
-}, [state]);
+    // whenever the action state changes, stop the loading spinner
+    // this covers success and error cases (server returned)
+    setLoading(false);
+    
+    // if login succeeded and redirectUrl is provided, redirect
+    if (redirectUrl) {
+      console.log("Did you call me??")
+      router.refresh();
+      router.push(redirectUrl);
+    }
+  }, [state, redirectUrl, router]);
 
   return (
     <form
@@ -54,6 +65,11 @@ export function LoginForm({
             Enter your email below to login to your account
           </p>
         </div>
+        
+        {redirectUrl && (
+          <input type="hidden" name="redirectUrl" value={redirectUrl} />
+        )}
+        
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
           <Input

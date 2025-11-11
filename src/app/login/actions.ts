@@ -25,6 +25,7 @@ export type LoginFormState = {
   values?: {
     email?: string;
     password?: string;
+    redirectUrl?: string
   };
   success?: boolean;
 };
@@ -35,9 +36,11 @@ export async function login(
 ): Promise<LoginFormState> {
   const supabase = await createClient();
 
+  const redirectUrl = formData.get("redirectUrl")?.toString();
+
   const raw = {
     email: formData.get("email"),
-    password: formData.get("password"),
+    password: formData.get("password")
   };
 
   const parsed = LoginSchema.safeParse(raw);
@@ -91,9 +94,16 @@ export async function login(
     // ignore avatar fetch failures — don't block sign-in
     console.error("Failed to fetch avatar:", fetchErr);
   }
+  
+  
+  if (redirectUrl) {
+    revalidatePath(redirectUrl, "layout");
+    redirect(redirectUrl);
 
-  revalidatePath("/", "layout");
-  redirect("/");
+  } else {
+    revalidatePath("/", "layout");
+    redirect("/");
+  }
 }
 
 export async function register(
