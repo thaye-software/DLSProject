@@ -7,7 +7,7 @@ import { currencyService } from "@/services/currencyService";
 import ProductSafetyInfo from "@/components/Watches/ProductSaftyInfoCard";
 import ContactButton from "@/components/Contact/ContactButton";
 import { Product } from "../../type";
-import AddToCartButton from "@/components/Watches/AddToCartButton";
+import AddToCartButton from "@/components/Watches/BuyButton";
 
 export default async function ViewWatchPage({ params }: { params: Promise<{ watchSlug: string }> }) {
     const watchSlug = (await params).watchSlug;

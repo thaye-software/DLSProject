@@ -12,8 +12,8 @@ import { Input } from "@/components/ui/input";
 
 import { register, type RegisterFormState } from "@/app/login/actions";
 import { useActionState } from "react";
-import { Spinner } from "./ui/spinner";
-import { ConfirmDialog } from "./ConfirmDialog";
+import { Spinner } from "../ui/spinner";
+import { ConfirmDialog } from "../ConfirmDialog";
 
 function toggleLoginState(
   isLogin: boolean,

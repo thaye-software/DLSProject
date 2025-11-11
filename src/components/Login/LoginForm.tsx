@@ -9,7 +9,7 @@ import {
   FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Spinner } from "./ui/spinner";
+import { Spinner } from "../ui/spinner";
 
 import { login, type LoginFormState } from "@/app/login/actions";
 import { useActionState } from "react";

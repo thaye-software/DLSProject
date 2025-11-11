@@ -1,13 +1,12 @@
 import { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
-import { createClient } from "@/database/supabase/server";
 import { userService } from "@/services/userService";
-import { Truck, Users, Watch } from "lucide-react";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
+
+import { getSignedInUser } from "@/lib/utils/serverutils/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -19,11 +18,10 @@ export default async function AdminLayout({
   
   // Server-side auth + role check
   try {
-    const supabase = await createClient();
     const {
       data: { user },
       error,
-    } = await supabase.auth.getUser();
+    } = await getSignedInUser();
 
     if (error || !user || !user.email) {
       // Not signed in - send to login

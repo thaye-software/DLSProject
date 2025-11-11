@@ -1,14 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { LoginForm } from "@/components/LoginForm";
-import { RegisterForm } from "@/components/RegisterForm";
+import { LoginForm, RegisterForm } from "@/components/Login";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import "swiper/css";
 import { AnimatePresence, motion } from "framer-motion";
 
-import Image from "next/image";
 import Logo from "@/components/Logo";
 import BackButton from "@/components/BackButton";
 
