@@ -11,11 +11,12 @@ import { Footer } from "@/components/Footer";
 import { ModeToggle } from "@/components/navbar/ModeToggle";
 import { usePathname, redirect } from "next/navigation";
 import { useState } from "react";
-import { FloatingChatButton } from "@/components/FloatingChatButton";
-import { ChatPanel } from "@/components/ChatPanel";
+import { FloatingChatButton } from "@/components/chat/FloatingChatButton";
+import { ChatPanel } from "@/components/chat/ChatPanel";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "framer-motion";
+import ChatBox from "@/components/chat/ChatBox";
 
 const theSeasons = theSeasonsFont({
   src: [
@@ -154,28 +155,7 @@ export default function RootLayout({
 
               {chatOpen && (
                 <AnimatePresence>
-                  <motion.div
-                    initial={{ opacity: 0, y: 50 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 50 }}
-                    transition={{ duration: 0.3 }}
-                    className="fixed bottom-24 right-6 z-50 w-[340px] max-w-full h-[480px] rounded-lg bg-card shadow-xl overflow-hidden flex flex-col"
-                  >
-                    <div className="flex items-center justify-between p-2 border-b border-border">
-                      <div className="font-semibold">Live Chat</div>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => setChatOpen(false)}
-                        className="text-sm text-muted-foreground"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="flex-1">
-                      <ChatPanel onClose={() => setChatOpen(false)} />
-                    </div>
-                  </motion.div>
+                  <ChatBox setChatOpen={setChatOpen} />
                 </AnimatePresence>
               )}
             </>
