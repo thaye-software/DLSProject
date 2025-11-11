@@ -1,4 +1,4 @@
-import { db } from "@/database/drizzle"
+import { db } from "@/database/drizzle";
 import { conversations } from "@/database/schema";
 import { eq } from "drizzle-orm";
 
@@ -9,11 +9,12 @@ export const conversationService = {
       with: {
         messages: {
           with: {
-            sender: true
-          }
-        }
-      }
-    })
+            sender: true,
+          },
+        },
+        product: true,
+      },
+    });
     return conversationsResult;
-  }
-}
+  },
+};
