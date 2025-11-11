@@ -8,7 +8,7 @@ import { ShoppingCart } from "lucide-react";
 
 import { Product } from "@/app/watches/type";
 import { currencyService } from "@/services/currencyService";
-import AddToCartButton from "./AddToCartButton";
+import AddToCartButton from "./BuyButton";
 
 
 export function WatchCard({ product, countryCode }: { product: Product, countryCode: string }) {

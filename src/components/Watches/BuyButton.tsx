@@ -1,21 +1,24 @@
 "use client"
 
-import { ShoppingCart } from "lucide-react";
-
 import { Button } from "../ui/button";
 
 import { Product } from "@/app/watches/type";
+import Link from "next/link";
 
 export default function AddToCartButton({product, className}: {product: Product, className: string}) {
   return(
-    <Button className={className} disabled={product.stock === 0}>
+    <div>
       { product.stock > 0 ? (
-          <>
-            TODO Add <ShoppingCart />
-          </>
+        <Link href={"/orders/info"}>
+          <Button className={className}>
+            Buy
+          </Button>
+        </Link>
         ) : 
-          "Notify When Available (to be implemented)"
+        <Button>
+          Notify When Available TODO 
+        </Button>
       }
-    </Button>
+    </div>
   );
 }

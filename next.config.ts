@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
         pathname: "/storage/**",
       },
     ],
-    domains: ["example.com", "images.unsplash.com", "unsplash.com", "127.0.0.1"]
+    domains: ["example.com", "images.unsplash.com", "unsplash.com", "127.0.0.1", "i.imgur.com"]
   },
 
 };
