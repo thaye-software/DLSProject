@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/tailwindUtils";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,12 +26,15 @@ function toggleLoginState(
 export function RegisterForm({
   isLogin,
   setIsLogin,
+  redirectUrl,
   className,
   ...props
 }: React.ComponentProps<"form"> & {
   isLogin: boolean;
   setIsLogin: (isLogin: boolean) => void;
+  redirectUrl?: string;
 }) {
+  const router = useRouter();
   const initialState: RegisterFormState = {};
   const [state, formAction] = useActionState(register, initialState);
   const [loading, setLoading] = useState(false);
@@ -41,8 +45,18 @@ export function RegisterForm({
     // this covers success and error cases (server returned)
     setLoading(false);
     // open dialog if registration succeeded
-    if (state?.success) setDialogOpen(true);
+    if (state?.success) {
+      setDialogOpen(true);
+    }
   }, [state]);
+
+  // Handle redirect after dialog is closed
+  const handleDialogClose = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open && state?.success && redirectUrl) {
+      router.push(redirectUrl);
+    }
+  };
 
   return (
     <>
@@ -148,7 +162,7 @@ export function RegisterForm({
           </Field>
         </FieldGroup>
       </form>
-      <ConfirmDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <ConfirmDialog open={dialogOpen} onOpenChange={handleDialogClose} />
     </>
   );
 }
