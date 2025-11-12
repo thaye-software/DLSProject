@@ -30,7 +30,7 @@ async function seedDatabase() {
         `);
 
     await seed();
-    await seedCurrencies();
+    // await seedCurrencies();
 }
 
 
@@ -60,13 +60,42 @@ async function seedCurrencies() {
 async function seed() {
   console.log("🌱 Starting seed...");
 
+  const [danishCurrency] = await db.insert(currencies).values(
+    {
+      code: "DKK",
+      exchangeRate: "1.000000",
+      isActive: true,
+      updatedAt: new Date(),
+    }
+  ).returning();
+
+  const [euroCurrency] = await db.insert(currencies).values(
+    {
+      code: "EUR",
+      exchangeRate: "0.134000", // Example rate: 1 DKK = 0.134 EUR
+      isActive: true,
+      updatedAt: new Date(),
+    }   
+  ).returning();
+
+ 
+
   // 1. Countries
   const [denmark] = await db
     .insert(countries)
     .values({
       name: "Denmark",
       abbreviation: "DK",
-      currency: "DKK",
+      currencyId: danishCurrency.id
+    })
+    .returning();
+    
+    const [germany] = await db
+    .insert(countries)
+    .values({
+      name: "Germany",
+      abbreviation: "DE",
+      currencyId: euroCurrency.id
     })
     .returning();
 
@@ -370,7 +399,7 @@ const seededWatches = await db
     password: "hashed_password_here", // use bcrypt in production
     emailConfirmed: true,
     role: "customer",
-    country: denmark.id,
+    countryId: denmark.id,
     addressId: address.id,
     avatarUrl: "https://example.com/avatar.jpg",
   });

@@ -387,7 +387,7 @@ export const countriesRelations = relations(countries, ({ many, one }) => ({
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   country: one(countries, {
-    fields: [users.country],
+    fields: [users.countryId],
     references: [countries.id],
   }),
   address: one(addresses, {
