@@ -4,25 +4,20 @@ import { ArrowLeft, X } from "lucide-react";
 import { ChatPanel } from "./ChatPanel";
 import { useEffect, useState } from "react";
 
-export interface Room {
-  id: string;
-  customerId: string;
-  productId: string;
-  lastMessage?: string;
-}
-
 export default function ChatBox({
   setChatOpen,
 }: {
   setChatOpen: (open: boolean) => void;
 }) {
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
+  const [rooms, setRooms] = useState<any[]>([]);
+  const [selectedRoom, setSelectedRoom] = useState<any | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     // Fetch conversations for the authenticated user from our API
     let mounted = true;
     async function loadConversations() {
+      setLoading(true);
       try {
         const res = await fetch("/api/chat/conversations");
         if (!mounted) return;
@@ -33,23 +28,20 @@ export default function ChatBox({
         }
         const payload = await res.json();
         console.log("Fetched conversations:", payload);
-        const convs = payload.conversations ?? [];
-        const mapped: Room[] = convs.map((c: any) => ({
-          id: String(c.id),
-          customerId: String(c.customer_id),
-          productId: String(c.product_id),
-          lastMessage: c.last_message ?? undefined,
-        }));
-        setRooms(mapped);
+        const conversations = payload.conversations ?? [];
+        setRooms(conversations);
       } catch (err) {
         // on error, fallback to empty list
         setRooms([]);
       }
     }
+    console.log("selected room", selectedRoom);
     void loadConversations();
     return () => {
       mounted = false;
     };
+
+    
   }, []);
 
   return (
@@ -73,7 +65,7 @@ export default function ChatBox({
               </Button>
             </div>
             <div className="font-bold justify-start">
-              <h1 className="justify-start">{selectedRoom}</h1>
+              <h1 className="justify-start">{selectedRoom.product.model}</h1>
             </div>
             <div>
               <Button

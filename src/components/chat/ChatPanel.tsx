@@ -1,18 +1,21 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { RealtimeChat } from "./RealtimeChat";
 import { useSupabaseAuth } from "@/lib/useSupabaseAuth";
 import { Item } from "../ui/item";
-import { Room } from "./ChatBox";
 
 export const ChatPanel: React.FC<{
-  rooms: Room[];
+  rooms: any[];
   selectedRoom: string | null;
   setSelectedRoom: (roomId: string | null) => void;
   onClose?: () => void;
 }> = ({ rooms, selectedRoom, setSelectedRoom, onClose }) => {
   const { user } = useSupabaseAuth();
+
+  useEffect(() => {
+    console.log("ChatPanel selectedRoom:", selectedRoom);
+  }, [selectedRoom]);
 
   // UI: if no room selected show the rooms list full-width; if selected show the room full-width with back button
   if (!selectedRoom) {
@@ -23,10 +26,10 @@ export const ChatPanel: React.FC<{
             {rooms.map((room) => (
               <Item
                 key={room.id}
-                onClick={() => setSelectedRoom(room.id)}
+                onClick={() => setSelectedRoom(room)}
                 className="text-left w-full text-sm cursor-pointer hover:bg-accent"
               >
-                <div className="font-medium">{room.productId}</div>
+                <div className="font-medium">{room.product.model}</div>
                 {room.lastMessage ? (
                   <div className="text-xs text-muted-foreground">
                     {room.lastMessage}

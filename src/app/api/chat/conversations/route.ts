@@ -13,9 +13,6 @@ export async function GET() {
       data: { user },
       error: userErr,
     } = await supabase.auth.getUser();
-    console.log("Supabase auth user:", user);
-    
-    
 
     if (userErr || !user || !user.id || !user.email) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
