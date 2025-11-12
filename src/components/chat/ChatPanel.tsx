@@ -5,7 +5,6 @@ import { RealtimeChat } from "./RealtimeChat";
 import { useSupabaseAuth } from "@/lib/useSupabaseAuth";
 import { Item } from "../ui/item";
 import Image from "next/image";
-import { userService } from "@/services/userService";
 
 export const ChatPanel: React.FC<{
   rooms: any[];
@@ -13,7 +12,8 @@ export const ChatPanel: React.FC<{
   setSelectedRoom: (roomId: string | null) => void;
   onClose?: () => void;
 }> = ({ rooms, selectedRoom, setSelectedRoom, onClose }) => {
-  const { user } = useSupabaseAuth();
+  const { user, username } = useSupabaseAuth();
+  console.log("User in ChatPanel:", user);
 
   useEffect(() => {
     console.log("ChatPanel selectedRoom:", selectedRoom);
@@ -51,11 +51,8 @@ export const ChatPanel: React.FC<{
                   <div>
                     {room.messages && room.messages.length > 0 ? (
                       <div className="text-xs text-foreground/70">
-                        {/* TODO: fix this so it displays correctly. we need userid from supabase for it to work */}
-                        {room.messages[0].sender?.senderId === user?.id ? (
+                        {room.messages[0].sender?.id === user?.id && (
                           <span className="font-bold">You: </span>
-                        ) : (
-                          <span className="font-bold">Seller: </span>
                         )}
                         <span
                           className="inline-block align-middle max-w-45 truncate"
@@ -82,8 +79,8 @@ export const ChatPanel: React.FC<{
       <div className="flex-1">
         <RealtimeChat
           roomName={selectedRoom}
-          // userId={user?.id ?? "guest"}
-          username={user?.email ?? "guest"}
+          userId={user?.id ?? "guest"}
+          username={username ?? "guest"}
           messages={selectedRoom.messages}
         />
       </div>

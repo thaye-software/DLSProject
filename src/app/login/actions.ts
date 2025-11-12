@@ -151,6 +151,11 @@ export async function register(
 
   const createUserResponse = await userService.createUser(newUser)
 
+  // set display name in supabase auth user metadata
+  const { error } = await supabase.auth.updateUser({
+    data: { display_name: username }
+  });
+
   if (!createUserResponse.success) {
     let errorMsg = "Failed to create user";
     try {

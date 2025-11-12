@@ -1,22 +1,21 @@
-'use client'
+"use client";
 
-import { cn } from '@/lib/utils'
-import { ChatMessageItem } from '@/components/chat/ChatMessage'
-import { useChatScroll } from '@/hooks/use-chat-scroll'
-import {
-  type ChatMessage,
-  useRealtimeChat,
-} from '@/hooks/use-realtime-chat'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Send } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { cn } from "@/lib/utils";
+import { ChatMessageItem } from "@/components/chat/ChatMessage";
+import { useChatScroll } from "@/hooks/use-chat-scroll";
+import { type ChatMessage, useRealtimeChat } from "@/hooks/use-realtime-chat";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Send } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSupabaseAuth } from "@/lib/useSupabaseAuth";
 
 interface RealtimeChatProps {
-  roomName: string
-  username: string
-  onMessage?: (messages: ChatMessage[]) => void
-  messages?: ChatMessage[]
+  roomName: string;
+  userId: string | null;
+  username: string;
+  onMessage?: (messages: ChatMessage[]) => void;
+  messages?: ChatMessage[];
 }
 
 /**
@@ -29,11 +28,12 @@ interface RealtimeChatProps {
  */
 export const RealtimeChat = ({
   roomName,
+  userId,
   username,
   onMessage,
   messages: initialMessages = [],
 }: RealtimeChatProps) => {
-  const { containerRef, scrollToBottom } = useChatScroll()
+  const { containerRef, scrollToBottom } = useChatScroll();
 
   const {
     messages: realtimeMessages,
@@ -42,43 +42,53 @@ export const RealtimeChat = ({
   } = useRealtimeChat({
     roomName,
     username,
-  })
-  const [newMessage, setNewMessage] = useState('')
+  });
+  const [newMessage, setNewMessage] = useState("");
 
   // Merge realtime messages with initial messages
   const allMessages = useMemo(() => {
-    const mergedMessages = [...initialMessages, ...realtimeMessages]
-    // Remove duplicates based on message id
-    const uniqueMessages = mergedMessages.filter(
-      (message, index, self) => index === self.findIndex((m) => m.id === message.id)
-    )
-    // Sort by creation date
-    const sortedMessages = uniqueMessages.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    const mergedMessages = [...initialMessages, ...realtimeMessages];
 
-    return sortedMessages
-  }, [initialMessages, realtimeMessages])
+    // Normalize id to string when present
+    const seen = new Set<string>();
+    const uniqueMessages = [] as typeof mergedMessages;
+
+    for (const m of mergedMessages) {
+      // use id if present, otherwise fallback to createdAt+content as dedupe key
+      const key = m.id ?? `${m.createdAt}:${m.content}`;
+      if (!seen.has(String(key))) {
+        seen.add(String(key));
+        uniqueMessages.push(m);
+      }
+    }
+
+    // Sort by creation date (ISO strings sort lexicographically)
+    uniqueMessages.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+
+    return uniqueMessages;
+  }, [initialMessages, realtimeMessages]);
 
   useEffect(() => {
     if (onMessage) {
-      onMessage(allMessages)
+      onMessage(allMessages);
     }
-  }, [allMessages, onMessage])
+  }, [allMessages, onMessage]);
 
   useEffect(() => {
     // Scroll to bottom whenever messages change
-    scrollToBottom()
-  }, [allMessages, scrollToBottom])
+    scrollToBottom();
+  }, [allMessages, scrollToBottom]);
 
   const handleSendMessage = useCallback(
     (e: React.FormEvent) => {
-      e.preventDefault()
-      if (!newMessage.trim() || !isConnected) return
+      e.preventDefault();
+      if (!newMessage.trim() || !isConnected) return;
 
-      sendMessage(newMessage)
-      setNewMessage('')
+      sendMessage(newMessage);
+      setNewMessage("");
     },
     [newMessage, isConnected, sendMessage]
-  )
+  );
 
   return (
     <div className="flex flex-col h-full w-full antialiased">
@@ -91,8 +101,10 @@ export const RealtimeChat = ({
         ) : null}
         <div className="space-y-1">
           {allMessages.map((message, index) => {
-            const prevMessage = index > 0 ? allMessages[index - 1] : null
-            const showHeader = !prevMessage || prevMessage.sender.username !== message.sender.username
+            const prevMessage = index > 0 ? allMessages[index - 1] : null;
+            const showHeader =
+              !prevMessage ||
+              prevMessage.sender.username !== message.sender.username;
 
             return (
               <div
@@ -101,20 +113,23 @@ export const RealtimeChat = ({
               >
                 <ChatMessageItem
                   message={message}
-                  isOwnMessage={message.sender.username === username}
+                  isOwnMessage={String(message.sender.id) === String(userId)}
                   showHeader={showHeader}
                 />
               </div>
-            )
+            );
           })}
         </div>
       </div>
 
-      <form onSubmit={handleSendMessage} className="flex w-full gap-2 border-t border-border p-4">
+      <form
+        onSubmit={handleSendMessage}
+        className="flex w-full gap-2 border-t border-border p-4"
+      >
         <Input
           className={cn(
-            'rounded-full bg-background text-sm transition-all duration-300',
-            isConnected && newMessage.trim() ? 'w-[calc(100%-36px)]' : 'w-full'
+            "rounded-full bg-background text-sm transition-all duration-300",
+            isConnected && newMessage.trim() ? "w-[calc(100%-36px)]" : "w-full"
           )}
           type="text"
           value={newMessage}
@@ -133,5 +148,5 @@ export const RealtimeChat = ({
         )}
       </form>
     </div>
-  )
-}
+  );
+};
