@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/database/supabase/server";
 import { db } from "@/database/drizzle";
-import { conversationService } from "@/services/conversationService";
 import { userService } from "@/services/userService";
+import { getAllConversations, getConversationsByCustomerId } from "@/services/conversationService";
 
 export async function GET() {
   try {
@@ -25,9 +25,9 @@ export async function GET() {
     let data;
 
     if (tempUser.data?.role === 'admin') {
-      data = await conversationService.getAllConversations();
+      data = await getAllConversations();
     } else {
-      data = await conversationService.getConversationsByCustomerId(tempUser.data.id);
+      data = await getConversationsByCustomerId(tempUser.data.id);
     }
 
     if (!data) {
