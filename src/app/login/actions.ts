@@ -161,10 +161,10 @@ export async function register(
   //   body: JSON.stringify({ username, email, password }),
   // });
 
-  if (!createUserResponse.ok) {
+  if (!createUserResponse.success) {
     let errorMsg = "Failed to create user";
     try {
-      const res = await createUserResponse.json();
+      const res = await createUserResponse;
       errorMsg = res.error || errorMsg;
     } catch {}
     return { formError: errorMsg };
