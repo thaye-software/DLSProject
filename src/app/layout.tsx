@@ -10,6 +10,7 @@ import { Navbar } from "@/components/navbar/Navbar";
 import { Footer } from "@/components/Footer";
 import { ModeToggle } from "@/components/navbar/ModeToggle";
 import { usePathname, redirect } from "next/navigation";
+import { toast, Toaster } from "sonner";
 
 const theSeasons = theSeasonsFont({
   src: [
@@ -93,6 +94,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="antialiased min-h-screen flex flex-col">
+        <Toaster/>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

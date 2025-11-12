@@ -394,8 +394,8 @@ const seededWatches = await db
 
   // 8. Users
   await db.insert(users).values({
-    username: "john_doe",
-    email: "john@example.com",
+    username: "Chris",
+    email: "chye0001@stud.ek.dk",
     password: "hashed_password_here", // use bcrypt in production
     emailConfirmed: true,
     role: "customer",

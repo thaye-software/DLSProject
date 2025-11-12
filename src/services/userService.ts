@@ -3,7 +3,27 @@ import { users } from "@/database/schema";
 import { eq } from "drizzle-orm";
 import { UserModel, NewUserModel } from "@/database/types";
 
-export interface Costumer {
+export interface CustomerInfo {
+  id: number;
+  email: string;
+  country: {
+    id: number;
+    name: string;
+    abbreviation: string;
+    currency: {
+      code: string;
+    }
+  } | null;
+  address: {
+    address1: string;
+    address2: string | null;
+    city: string;
+    zipCode: string;
+    stateProvince: string | null;
+  } | null;
+} 
+
+export interface User {
   id: number;
   username: string;
   email: string;
@@ -11,7 +31,7 @@ export interface Costumer {
   avatarUrl: string | null;
   emailConfirmed: boolean;
   role: string;
-  country: number | null;
+  countryId: number | null;
   addressId: number | null;
 }
 
@@ -49,13 +69,57 @@ export const userService = {
     }
   },
 
-  async getUserByEmail(email: string): Promise<Costumer> {
+  async getUserByEmail(email: string): Promise<User> {
     try {
       const user = await db.select().from(users).where(eq(users.email, email));
       return user[0];
 
     } catch (error) {
       console.error("Error fetching user by email:", error);
+      throw error;
+    }
+  },
+
+  async getCostumerInfoByEmail(email: string): Promise<CustomerInfo | undefined> {
+    try {
+      // Get user with country and currency info
+      const customerInfo = await db.query.users.findFirst({
+        where: eq(users.email, email),
+        columns: {
+          id: true,
+          email: true,
+        },
+        with: {
+          country: {
+            columns: {
+              id: true,
+              name: true,
+              abbreviation: true,
+            },
+            with: {
+              currency: { // ✅ Now you can nest currency
+                columns: {
+                  code: true,
+                },
+              },
+            },
+          },
+          address: {
+            columns: {
+              address1: true,
+              address2: true,
+              city: true,
+              zipCode: true,
+              stateProvince: true,
+            },
+          },
+        },
+      })
+
+      return customerInfo;
+
+    }catch(error) {
+      console.error(error)
       throw error;
     }
   },
