@@ -28,13 +28,13 @@ export default async function AdminLayout({
       redirect("/login");
     }
 
-    const result = await userService.getUserByEmail(user.email);
-    if (!result.success || !result.data) {
+    const costumer = await userService.getUserByEmail(user.email);
+    if (!costumer) {
       // No matching application user
       redirect("/");
     }
 
-    if (result.data.role !== "admin") {
+    if (costumer.role !== "admin") {
       // Not an admin
       redirect("/");
     }

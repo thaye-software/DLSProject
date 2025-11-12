@@ -3,6 +3,18 @@ import { users } from "@/database/schema";
 import { eq } from "drizzle-orm";
 import { UserModel, NewUserModel } from "@/database/types";
 
+export interface Costumer {
+  id: number;
+  username: string;
+  email: string;
+  password: string;
+  avatarUrl: string | null;
+  emailConfirmed: boolean;
+  role: string;
+  country: number | null;
+  addressId: number | null;
+}
+
 export const userService = {
   async getAllUsers() {
     try {
@@ -37,13 +49,14 @@ export const userService = {
     }
   },
 
-  async getUserByEmail(email: string) {
+  async getUserByEmail(email: string): Promise<Costumer> {
     try {
       const user = await db.select().from(users).where(eq(users.email, email));
-      return { success: true, data: user[0] || null };
+      return user[0];
+
     } catch (error) {
       console.error("Error fetching user by email:", error);
-      return { success: false, error: "Failed to fetch user by email" };
+      throw error;
     }
   },
 

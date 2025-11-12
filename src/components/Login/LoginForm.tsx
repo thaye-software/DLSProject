@@ -43,13 +43,7 @@ export function LoginForm({
     // this covers success and error cases (server returned)
     setLoading(false);
     
-    // if login succeeded and redirectUrl is provided, redirect
-    if (redirectUrl) {
-      console.log("Did you call me??")
-      router.refresh();
-      router.push(redirectUrl);
-    }
-  }, [state, redirectUrl, router]);
+  }, [state]);
 
   return (
     <form

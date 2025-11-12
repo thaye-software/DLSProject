@@ -12,15 +12,15 @@ export async function GET(request: Request) {
     );
   }
 
-  const result = await userService.getUserByEmail(email);
+  try {
+    const costumer = await userService.getUserByEmail(email);
+    if(!costumer) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
 
-  if (!result.success) {
-    return NextResponse.json({ error: result.error }, { status: 500 });
+    return NextResponse.json({ avatarUrl: costumer.avatarUrl ?? null });
+
+  } catch (error) {
+    return NextResponse.json({ error }, { status: 500 });
   }
-
-  if (!result.data) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
-  }
-
-  return NextResponse.json({ avatarUrl: result.data.avatarUrl ?? null });
 }
