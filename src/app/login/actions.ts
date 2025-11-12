@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/database/supabase/server";
 import { RegisterSchema, LoginSchema } from "./validation";
+import { userService } from "@/services/userService";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
@@ -142,14 +143,23 @@ export async function register(
     return { formError: response.error.message };
   }
 
-  // Create application user first
-  const createUserResponse = await fetch(`${baseUrl}/api/users`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ username, email, password }),
-  });
+  const newUser = {
+    id: response.data.user?.id!,
+    username,
+    email,
+    role: "customer",
+  }
+
+  const createUserResponse = await userService.createUser(newUser)
+
+  // // Create application user first
+  // const createUserResponse = await fetch(`${baseUrl}/api/users`, {
+  //   method: "POST",
+  //   headers: {
+  //     "Content-Type": "application/json",
+  //   },
+  //   body: JSON.stringify({ username, email, password }),
+  // });
 
   if (!createUserResponse.ok) {
     let errorMsg = "Failed to create user";

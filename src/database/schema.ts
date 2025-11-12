@@ -9,6 +9,8 @@ import {
   text,
   timestamp,
   check,
+  uuid,
+  decimal
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 
@@ -30,7 +32,7 @@ export const addresses = pgTable(
   "addresses",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
-    userId: bigint("user_id", { mode: "number" }).notNull(),
+    userId: uuid("user_id").notNull(),
     address1: varchar("address_line_1", { length: 255 }).notNull(),
     address2: varchar("address_line_2", { length: 255 }),
     city: varchar("city", { length: 255 }).notNull(),
@@ -94,7 +96,7 @@ export const brands = pgTable(
 export const users = pgTable(
   "users",
   {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
+    id: uuid("id").primaryKey(),
     username: varchar("username", { length: 255 }).notNull().unique(),
     email: varchar("email", { length: 255 }).notNull().unique(),
     password: varchar("password", { length: 255 }).notNull(),
@@ -171,9 +173,7 @@ export const orders = pgTable(
   "orders",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
-    userId: bigint("user_id", { mode: "number" })
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
     totalPrice: bigint("total_price", { mode: "number" }).notNull(),
     status: varchar("status", { length: 50 }).notNull(),
     currency: varchar("currency", { length: 10 }).notNull().default("DKK"),
@@ -240,7 +240,7 @@ export const blogPosts = pgTable(
     id: bigserial("id", { mode: "number" }).primaryKey(),
     title: varchar("title", { length: 255 }).notNull(),
     content: text("content").notNull(),
-    authorId: bigint("author_id", { mode: "number" }).references(
+    authorId: uuid("author_id").references(
       () => users.id,
       { onDelete: "set null" }
     ),
@@ -334,10 +334,6 @@ export const messages = pgTable(
     ),
   ]
 );
-
-import { decimal } from "drizzle-orm/pg-core";
-
-// Add these tables after your existing tables
 
 export const currencies = pgTable(
   "currencies",

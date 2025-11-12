@@ -1,6 +1,6 @@
 CREATE TABLE "addresses" (
 	"id" bigserial PRIMARY KEY NOT NULL,
-	"user_id" bigint NOT NULL,
+	"user_id" uuid NOT NULL,
 	"address_line_1" varchar(255) NOT NULL,
 	"address_line_2" varchar(255),
 	"city" varchar(255) NOT NULL,
@@ -26,13 +26,13 @@ CREATE TABLE "blog_posts" (
 	"id" bigserial PRIMARY KEY NOT NULL,
 	"title" varchar(255) NOT NULL,
 	"content" text NOT NULL,
-	"author_id" bigint,
+	"author_id" uuid,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "conversations" (
 	"id" bigserial PRIMARY KEY NOT NULL,
-	"customer_id" bigint NOT NULL,
+	"customer_id" uuid NOT NULL,
 	"product_id" bigint NOT NULL,
 	"status" text DEFAULT 'open',
 	"created_at" timestamp DEFAULT now(),
@@ -50,7 +50,7 @@ CREATE TABLE "countries" (
 CREATE TABLE "messages" (
 	"id" bigserial PRIMARY KEY NOT NULL,
 	"conversation_id" bigint NOT NULL,
-	"sender_id" bigint NOT NULL,
+	"sender_id" uuid NOT NULL,
 	"sender_type" text NOT NULL,
 	"content" text NOT NULL,
 	"is_read" boolean DEFAULT false,
@@ -67,7 +67,7 @@ CREATE TABLE "order_items" (
 --> statement-breakpoint
 CREATE TABLE "orders" (
 	"id" bigserial PRIMARY KEY NOT NULL,
-	"user_id" bigint NOT NULL,
+	"user_id" uuid NOT NULL,
 	"total_price" bigint NOT NULL,
 	"status" varchar(50) NOT NULL,
 	"currency" varchar(10) DEFAULT 'DKK' NOT NULL,
@@ -108,12 +108,10 @@ CREATE TABLE "products" (
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
-	"id" bigserial PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
 	"username" varchar(255) NOT NULL,
 	"email" varchar(255) NOT NULL,
-	"password" varchar(255) NOT NULL,
 	"avatar_url" varchar(255),
-	"email_confirmed" boolean DEFAULT false NOT NULL,
 	"country" bigint,
 	"address" bigint,
 	CONSTRAINT "users_username_unique" UNIQUE("username"),
