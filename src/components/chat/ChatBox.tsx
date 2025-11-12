@@ -54,7 +54,7 @@ export default function ChatBox({
       transition={{ duration: 0.3 }}
       className="fixed bottom-24 right-6 z-50 w-[340px] max-w-full h-[480px] rounded-lg bg-card shadow-xl overflow-hidden flex flex-col"
     >
-      <div className="flex items-center justify-between p-2 border-b border-border">
+      <div className="sticky top-0 z-30 bg-card flex items-center justify-between p-2 border-b border-border">
         {selectedRoom ? (
           <div className="flex items-center justify-between w-full">
             <div>
@@ -94,7 +94,7 @@ export default function ChatBox({
           </>
         )}
       </div>
-      <div className="flex-1">
+      <div className="flex-1 overflow-hidden min-h-0">
         <ChatPanel
           rooms={rooms}
           selectedRoom={selectedRoom}

@@ -21,8 +21,8 @@ export const ChatPanel: React.FC<{
   // UI: if no room selected show the rooms list full-width; if selected show the room full-width with back button
   if (!selectedRoom) {
     return (
-      <div className="flex h-full w-full flex-col bg-background">
-        <div className="flex-1 overflow-y-auto">
+      <div className="flex h-full w-full flex-col bg-background min-h-0">
+        <div className="flex-1 overflow-y-auto min-h-0">
           <div className="flex flex-col mt-2 px-2">
             {rooms.map((room) => (
               <Item
@@ -74,8 +74,8 @@ export const ChatPanel: React.FC<{
   }
 
   return (
-    <div className="flex h-full w-full flex-col bg-background">
-      <div className="flex-1">
+    <div className="flex h-full w-full flex-col bg-background min-h-0">
+      <div className="flex-1 min-h-0">
         <RealtimeChat
           roomName={selectedRoom}
           userId={user?.id ?? "guest"}

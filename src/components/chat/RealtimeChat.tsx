@@ -33,7 +33,7 @@ export const RealtimeChat = ({
   onMessage,
   messages: initialMessages = [],
 }: RealtimeChatProps) => {
-  const { containerRef, scrollToBottom } = useChatScroll();
+  const { containerRef, scrollToBottom, autoScrollEnabled, setAutoScrollEnabled } = useChatScroll();
 
   const {
     messages: realtimeMessages,
@@ -75,9 +75,11 @@ export const RealtimeChat = ({
   }, [allMessages, onMessage]);
 
   useEffect(() => {
-    // Scroll to bottom whenever messages change
-    scrollToBottom();
-  }, [allMessages, scrollToBottom]);
+    // Scroll to bottom when messages change only if auto-scroll is enabled.
+    if (autoScrollEnabled) {
+      scrollToBottom()
+    }
+  }, [allMessages, autoScrollEnabled, scrollToBottom])
 
   const handleSendMessage = useCallback(
     (e: React.FormEvent) => {
@@ -89,6 +91,12 @@ export const RealtimeChat = ({
     },
     [newMessage, isConnected, sendMessage]
   );
+
+  // helper to let the user manually jump back to bottom
+  const handleScrollToBottomClick = () => {
+    setAutoScrollEnabled(true)
+    scrollToBottom()
+  }
 
   return (
     <div className="flex flex-col h-full w-full antialiased">
@@ -147,6 +155,14 @@ export const RealtimeChat = ({
           </Button>
         )}
       </form>
+      {/* scroll-to-bottom button when auto-scroll is disabled */}
+      {!autoScrollEnabled && (
+        <div className="absolute right-4 bottom-[84px] z-40">
+          <Button size="sm" onClick={handleScrollToBottomClick}>
+            Scroll to bottom
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
