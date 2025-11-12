@@ -96,7 +96,7 @@ export const RealtimeChat = ({
       <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         {allMessages.length === 0 ? (
           <div className="text-center text-sm">
-            No messages yet. Start the conversation!
+            No messages yet. Ask a question!
           </div>
         ) : null}
         <div className="space-y-1">

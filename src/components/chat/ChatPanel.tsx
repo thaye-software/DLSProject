@@ -13,7 +13,6 @@ export const ChatPanel: React.FC<{
   onClose?: () => void;
 }> = ({ rooms, selectedRoom, setSelectedRoom, onClose }) => {
   const { user, username } = useSupabaseAuth();
-  console.log("User in ChatPanel:", user);
 
   useEffect(() => {
     console.log("ChatPanel selectedRoom:", selectedRoom);

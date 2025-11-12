@@ -5,7 +5,7 @@ import { products, brands, watches } from "@/database/schema.ts";
 import { NewProductModel } from "@/database/types";
 
 import { Product } from "../app/watches/type";
-import { eq, like, or } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 export async function getProductBySlug(
   watchSlug: string

@@ -15,12 +15,13 @@ import {
 } from "lucide-react";
 // import { currencyService } from "@/services/currencyService";
 import ProductSafetyInfo from "@/components/Watches/ProductSafetyInfoCard";
-import ContactButton from "@/components/Contact/ContactButton";
 import { Product } from "../../type";
 import AddToCartButton from "@/components/Watches/AddToCartButton";
 import { Button } from "@/components/ui/button";
 import { useChatContext } from "@/context/ChatContext";
 import { useEffect, useState } from "react";
+import { useSupabaseAuth } from "@/lib/useSupabaseAuth";
+import { createConversation } from "@/services/conversationService";
 
 export default function ViewWatchPage({
   params,
@@ -28,17 +29,31 @@ export default function ViewWatchPage({
   params: Promise<{ watchSlug: string }>;
 }) {
   const [product, setProduct] = useState<Product | null>(null);
-  const { setChatOpen } = useChatContext();
-  // const getWatchSlug = async () => {
-  //   const p = await params;
-  //   return p.watchSlug;
-  // }
+  const { setChatOpen, setInitialRoom } = useChatContext();
+  const { user } = useSupabaseAuth();
 
   async function getProduct() {
     const p = await params;
     console.log("Fetching product for slug:", p);
     const slug = p.watchSlug;
     return await getProductBySlug(slug);
+  }
+
+  async function createNewConversation() {
+    const productId = product ? product.id : null;
+    const customerId = user ? user.id : null;
+    if (!productId || !customerId) {
+      console.error("Product ID or Customer ID is not available.");
+      return;
+    }
+    const conversation = await createConversation(customerId, productId);
+    console.log("Created conversation:", conversation);
+    setInitialRoom(conversation);
+  }
+
+  async function handleContactClick() {
+    await createNewConversation();
+    setChatOpen(true);
   }
 
   useEffect(() => {
@@ -238,7 +253,7 @@ export default function ViewWatchPage({
               />
 
               <Button
-                onClick={() => setChatOpen(true)}
+                onClick={() => handleContactClick()}
                 className="hover:cursor-pointer h-12 flex-1 bg-white hover:bg-[#F5F3EE] text-[#1A1A1A] font-semibold py-4 px-8 rounded-lg border-2 border-[#D3C6A3] transition-all"
               >
                 Contact

@@ -6,11 +6,13 @@ import { useEffect, useState } from "react";
 
 export default function ChatBox({
   setChatOpen,
+  initialRoom
 }: {
-  setChatOpen: (open: boolean) => void;
+    setChatOpen: (open: boolean) => void;
+    initialRoom?: any;
   }) {
   const [rooms, setRooms] = useState<any[]>([]);
-  const [selectedRoom, setSelectedRoom] = useState<any | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<any | null>(initialRoom);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -27,7 +29,6 @@ export default function ChatBox({
           return;
         }
         const payload = await res.json();
-        console.log("Fetched conversations:", payload);
         const conversations = payload.conversations ?? [];
         setRooms(conversations);
       } catch (err) {
@@ -35,7 +36,8 @@ export default function ChatBox({
         setRooms([]);
       }
     }
-    console.log("selected room", selectedRoom);
+    console.log("Initial room in ChatBox:", initialRoom);
+    console.log("selectedRoom in ChatBox:", selectedRoom);
     void loadConversations();
     return () => {
       mounted = false;
