@@ -1,6 +1,6 @@
 import { WatchesGrid } from "@/components/Watches/WatchesGrid";
 
-import { productService } from "@/services/productService";
+import { getAllProducts } from "@/services/productService";
 
 import { Product } from "../type";
 import { Suspense } from "react";
@@ -14,7 +14,7 @@ export default async function AllWatches() {
   // const countryCode = getUserCountryCode(); // placeholder function
   // use header/cookies to get userId / countrty id etc.
   const countryCode = "DKK";
-  const watches: Product[] = await productService.getAllProducts();
+  const watches: Product[] = await getAllProducts();
 
   return (
     <div className="container mx-auto px-4 py-8">

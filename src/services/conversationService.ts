@@ -3,6 +3,8 @@ import { conversations } from "@/database/schema";
 import { UUID } from "crypto";
 import { desc, eq } from "drizzle-orm";
 
+
+
 export async function getAllConversations() {
   const conversationsResult = await db.query.conversations.findMany({
     with: {

@@ -101,7 +101,7 @@ export function useRealtimeChat({ roomName, username }: UseRealtimeChatProps) {
       }
 
       // Persist message to backend
-      const result = await persistMessage(messageToPersist);
+      await persistMessage(messageToPersist);
     },
     [channel, isConnected, username, user?.id]
   );

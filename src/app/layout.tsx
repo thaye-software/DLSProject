@@ -10,7 +10,8 @@ import { Navbar } from "@/components/navbar/Navbar";
 import { Footer } from "@/components/Footer";
 import { ModeToggle } from "@/components/navbar/ModeToggle";
 import { usePathname, redirect } from "next/navigation";
-import { useState } from "react";
+import {} from "react";
+import { ChatProvider, useChatContext } from "@/context/ChatContext";
 import { FloatingChatButton } from "@/components/chat/FloatingChatButton";
 import { ChatPanel } from "@/components/chat/ChatPanel";
 import { X } from "lucide-react";
@@ -93,7 +94,7 @@ export default function RootLayout({
     pathname?.startsWith("/admin") ||
     pathname?.startsWith("/login/");
 
-  const [chatOpen, setChatOpen] = useState(false);
+  // chat state is provided by ChatProvider via context
 
   return (
     <html
@@ -102,66 +103,74 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="antialiased min-h-screen flex flex-col">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {!hideRootShell && (
-            <nav className="container mx-auto">
-              <header>
-                <div className="flex items-center justify-between w-full px-4">
-                  <div></div>
-                  <div className="pt-4 pb-4">
-                    <div
-                      onClick={() => redirect("/")}
-                      className="flex flex-col items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <div className="">
-                        <Logo className="h-12 w-12 dark:text-white" />
+        <ChatProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {!hideRootShell && (
+              <nav className="container mx-auto">
+                <header>
+                  <div className="flex items-center justify-between w-full px-4">
+                    <div></div>
+                    <div className="pt-4 pb-4">
+                      <div
+                        onClick={() => redirect("/")}
+                        className="flex flex-col items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <div className="">
+                          <Logo className="h-12 w-12 dark:text-white" />
+                        </div>
+                        <h1 className="text-2xl font-bold">Limited Watches</h1>
                       </div>
-                      <h1 className="text-2xl font-bold">Limited Watches</h1>
+                    </div>
+
+                    <div className="w-20 flex justify-end">
+                      <ModeToggle />
                     </div>
                   </div>
+                </header>
+                <Navbar />
+              </nav>
+            )}
 
-                  <div className="w-20 flex justify-end">
-                    <ModeToggle />
-                  </div>
-                </div>
-              </header>
-              <Navbar />
-            </nav>
-          )}
+            {/* main content area */}
+            {hideRootShell ? (
+              // For the auth page (login) we want the page to take full height
+              // and not show the navbar and footer.
+              <div className="min-h-screen w-full">{children}</div>
+            ) : (
+              <main className="min-h-screen pt-5 pb-5">{children}</main>
+            )}
 
-          {/* main content area */}
-          {hideRootShell ? (
-            // For the auth page (login) we want the page to take full height
-            // and not show the navbar and footer.
-            <div className="min-h-screen w-full">{children}</div>
-          ) : (
-            <main className="min-h-screen pt-5 pb-5">{children}</main>
-          )}
+            {!hideRootShell && <Footer />}
 
-          {!hideRootShell && <Footer />}
-
-          {/* Floating chat button + panel (visible on all non-admin/login pages) */}
-          {!hideRootShell && (
-            <>
-              <FloatingChatButton
-                onClick={() => setChatOpen((s) => !s)}
-                open={chatOpen}
-              />
-
-              {chatOpen && (
-                <AnimatePresence>
-                  <ChatBox setChatOpen={setChatOpen} />
-                </AnimatePresence>
-              )}
-            </>
-          )}
-        </ThemeProvider>
+            {/* Floating chat button + panel (visible on all non-admin/login pages) */}
+            {!hideRootShell && <LayoutChatControls />}
+          </ThemeProvider>
+        </ChatProvider>
       </body>
     </html>
+  );
+}
+
+function LayoutChatControls() {
+  const { chatOpen, setChatOpen } = useChatContext();
+
+  return (
+    <>
+      <FloatingChatButton
+        onClick={() => setChatOpen((s) => !s)}
+        open={chatOpen}
+      />
+
+      {chatOpen && (
+        <AnimatePresence>
+          <ChatBox setChatOpen={setChatOpen} />
+        </AnimatePresence>
+      )}
+    </>
   );
 }
