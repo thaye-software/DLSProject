@@ -10,7 +10,7 @@ import {
   timestamp,
   check,
   uuid,
-  decimal
+  decimal,
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 
@@ -170,7 +170,9 @@ export const orders = pgTable(
   "orders",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
-    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     totalPrice: bigint("total_price", { mode: "number" }).notNull(),
     status: varchar("status", { length: 50 }).notNull(),
     currency: varchar("currency", { length: 10 }).notNull().default("DKK"),
@@ -237,10 +239,9 @@ export const blogPosts = pgTable(
     id: bigserial("id", { mode: "number" }).primaryKey(),
     title: varchar("title", { length: 255 }).notNull(),
     content: text("content").notNull(),
-    authorId: uuid("author_id").references(
-      () => users.id,
-      { onDelete: "set null" }
-    ),
+    authorId: uuid("author_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [
@@ -312,7 +313,7 @@ export const messages = pgTable(
     conversationId: bigint("conversation_id", { mode: "number" })
       .notNull()
       .references(() => conversations.id, { onDelete: "cascade" }),
-    senderId: bigint("sender_id", { mode: "number" })
+    senderId: uuid("sender_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     senderType: text("sender_type").notNull(), // 'customer' or 'seller'
