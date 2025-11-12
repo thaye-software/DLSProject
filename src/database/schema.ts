@@ -109,7 +109,6 @@ export const users = pgTable(
       () => addresses.id,
       { onDelete: "set null" }
     ),
-    testColumn: varchar("test_column", { length: 255 }),
   },
   (table) => [
     index("idx_users_country").on(table.country),
