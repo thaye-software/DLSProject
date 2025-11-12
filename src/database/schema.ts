@@ -18,7 +18,9 @@ export const countries = pgTable(
     id: bigserial("id", { mode: "number" }).primaryKey(),
     name: varchar("name", { length: 255 }).notNull(),
     abbreviation: varchar("abbreviation", { length: 10 }).notNull(),
-    currency: varchar("currency", { length: 50 }).notNull(),
+    currencyId: bigint("currency_id", { mode: "number" })
+      .notNull()
+      .references(() => currencies.id, { onDelete: "cascade" }),
   },
   (table) => [
     index("idx_countries_name").on(table.name),
@@ -105,17 +107,17 @@ export const users = pgTable(
     avatarUrl: text("avatar_url"),
     emailConfirmed: boolean("email_confirmed").notNull().default(false),
     role: varchar("role", { length: 50 }).notNull().default("customer"),
-    country: bigint("country", { mode: "number" }).references(
+    countryId: bigint("country_id", { mode: "number" }).references(
       () => countries.id,
       { onDelete: "set null" }
     ),
-    addressId: bigint("address", { mode: "number" }).references(
+    addressId: bigint("address_id", { mode: "number" }).references(
       () => addresses.id,
       { onDelete: "set null" }
     ),
   },
   (table) => [
-    index("idx_users_country").on(table.country),
+    index("idx_users_country").on(table.countryId),
     index("idx_users_address").on(table.addressId),
     index("idx_users_email_confirmed").on(table.emailConfirmed),
   ]
@@ -331,8 +333,6 @@ export const messages = pgTable(
 
 import { decimal } from "drizzle-orm/pg-core";
 
-// Add these tables after your existing tables
-
 export const currencies = pgTable(
   "currencies",
   {
@@ -377,8 +377,12 @@ export const currencyHistory = pgTable(
 
 
 
-export const countriesRelations = relations(countries, ({ many }) => ({
+export const countriesRelations = relations(countries, ({ many, one }) => ({
   users: many(users),
+  currency: one(currencies, {
+    fields: [countries.currencyId],
+    references: [currencies.id],
+  }),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -526,6 +530,7 @@ export const messagesRelations = relations(messages, ({ one }) => ({
 export const currenciesRelations = relations(currencies, ({ many }) => ({
   history: many(currencyHistory),
   orders: many(orders),
+  countries: many(countries),
 }));
 
 export const currencyHistoryRelations = relations(currencyHistory, ({ one }) => ({
