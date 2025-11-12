@@ -19,8 +19,16 @@ export async function GET() {
     }
 
     const tempUser = await userService.getUserByEmail(user.email)
+    if (!tempUser.success || !tempUser.data) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+    let data;
 
-    const data = await conversationService.getConversationsByCustomerId(parseInt(tempUser.data.id));
+    if (tempUser.data?.role === 'admin') {
+      data = await conversationService.getAllConversations();
+    } else {
+      data = await conversationService.getConversationsByCustomerId(tempUser.data.id);
+    }
 
     if (!data) {
       return NextResponse.json({ error: "Failed to fetch conversations" }, { status: 500 });

@@ -5,10 +5,11 @@ import { RealtimeChat } from "./RealtimeChat";
 import { useSupabaseAuth } from "@/lib/useSupabaseAuth";
 import { Item } from "../ui/item";
 import Image from "next/image";
+import { userService } from "@/services/userService";
 
 export const ChatPanel: React.FC<{
   rooms: any[];
-  selectedRoom: string | null;
+  selectedRoom: any | null;
   setSelectedRoom: (roomId: string | null) => void;
   onClose?: () => void;
 }> = ({ rooms, selectedRoom, setSelectedRoom, onClose }) => {
@@ -81,7 +82,9 @@ export const ChatPanel: React.FC<{
       <div className="flex-1">
         <RealtimeChat
           roomName={selectedRoom}
+          // userId={user?.id ?? "guest"}
           username={user?.email ?? "guest"}
+          messages={selectedRoom.messages}
         />
       </div>
     </div>

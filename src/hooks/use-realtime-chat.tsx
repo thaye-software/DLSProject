@@ -10,8 +10,14 @@ interface UseRealtimeChatProps {
 
 export interface ChatMessage {
   id: string
-  roomId?: string
+  conversationId?: string
   senderId?: string
+  sender: {
+    username: string
+    email: string
+    country: string
+    role: 'customer' | 'seller'
+  }
   senderType?: 'customer' | 'seller'
   content: string
   isRead?: boolean
@@ -54,8 +60,14 @@ export function useRealtimeChat({ roomName, username }: UseRealtimeChatProps) {
 
       const message: ChatMessage = {
         id: crypto.randomUUID(),
-        roomId: roomName,
+        conversationId: roomName,
         senderId: username,
+        sender: {
+          username,
+          email: '',
+          country: '',
+          role: 'customer',
+        },
         senderType: 'customer',
         content,
         createdAt: new Date().toISOString(),

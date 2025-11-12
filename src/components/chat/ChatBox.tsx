@@ -65,7 +65,7 @@ export default function ChatBox({
               </Button>
             </div>
             <div className="font-bold justify-start">
-              <h1 className="justify-start">{selectedRoom.product.model}</h1>
+              <h1>{selectedRoom.product.name}</h1>
             </div>
             <div>
               <Button

@@ -129,6 +129,19 @@ export async function register(
 
   const { username, email, password } = parsed.data;
 
+  // Create Supabase auth user
+  const response = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { display_name: username } },
+  });
+
+  console.log("supabase auth response:",response);
+
+  if (response.error) {
+    return { formError: response.error.message };
+  }
+
   // Create application user first
   const createUserResponse = await fetch(`${baseUrl}/api/users`, {
     method: "POST",
@@ -145,17 +158,6 @@ export async function register(
       errorMsg = res.error || errorMsg;
     } catch {}
     return { formError: errorMsg };
-  }
-
-  // Create Supabase auth user
-  const response = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { display_name: username } },
-  });
-
-  if (response.error) {
-    return { formError: response.error.message };
   }
 
   return { success: true };
