@@ -137,12 +137,11 @@ export async function register(
     options: { data: { display_name: username } },
   });
 
-  console.log("supabase auth response:",response);
-
   if (response.error) {
     return { formError: response.error.message };
   }
 
+  // Create user in our own database with auth id
   const newUser = {
     id: response.data.user?.id!,
     username,
@@ -151,15 +150,6 @@ export async function register(
   }
 
   const createUserResponse = await userService.createUser(newUser)
-
-  // // Create application user first
-  // const createUserResponse = await fetch(`${baseUrl}/api/users`, {
-  //   method: "POST",
-  //   headers: {
-  //     "Content-Type": "application/json",
-  //   },
-  //   body: JSON.stringify({ username, email, password }),
-  // });
 
   if (!createUserResponse.success) {
     let errorMsg = "Failed to create user";
@@ -171,7 +161,4 @@ export async function register(
   }
 
   return { success: true };
-  // // Success: redirect to home
-  // revalidatePath("/", "layout");
-  // redirect("/");
 }

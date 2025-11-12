@@ -109,6 +109,7 @@ export const users = pgTable(
       () => addresses.id,
       { onDelete: "set null" }
     ),
+    testColumn: varchar("test_column", { length: 255 }),
   },
   (table) => [
     index("idx_users_country").on(table.country),
@@ -283,7 +284,7 @@ export const conversations = pgTable(
   "conversations",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
-    customerId: bigint("customer_id", { mode: "number" })
+    customerId: uuid("customer_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     productId: bigint("product_id", { mode: "number" })

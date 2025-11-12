@@ -74,7 +74,7 @@ async function seed() {
   const [address] = await db
     .insert(addresses)
     .values({
-      userId: 1, // temporary placeholder, will be updated later if needed
+      userId: crypto.randomUUID(), 
       address1: "Strandgade 12",
       city: "Copenhagen",
       zipCode: "1401",
@@ -365,10 +365,9 @@ const seededWatches = await db
 
   // 8. Users
   await db.insert(users).values({
+    id: crypto.randomUUID(),
     username: "john_doe",
     email: "john@example.com",
-    password: "hashed_password_here", // use bcrypt in production
-    emailConfirmed: true,
     role: "customer",
     country: denmark.id,
     addressId: address.id,

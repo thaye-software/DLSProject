@@ -113,6 +113,13 @@
       "when": 1762769312368,
       "tag": "0015_remove description from watches",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1762957845530,
+      "tag": "0016_change-customerid-to-uuid",
+      "breakpoints": true
     }
   ]
 }
