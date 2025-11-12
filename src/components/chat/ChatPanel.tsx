@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import { RealtimeChat } from "./RealtimeChat";
 import { useSupabaseAuth } from "@/lib/useSupabaseAuth";
 import { Item } from "../ui/item";
+import Image from "next/image";
 
 export const ChatPanel: React.FC<{
   rooms: any[];
@@ -20,21 +21,53 @@ export const ChatPanel: React.FC<{
   // UI: if no room selected show the rooms list full-width; if selected show the room full-width with back button
   if (!selectedRoom) {
     return (
-      <div className="flex h-full w-full flex-col bg-background p-4">
+      <div className="flex h-full w-full flex-col bg-background">
         <div className="flex-1 overflow-y-auto">
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col mt-2 px-2">
             {rooms.map((room) => (
               <Item
                 key={room.id}
                 onClick={() => setSelectedRoom(room)}
-                className="text-left w-full text-sm cursor-pointer hover:bg-accent"
+                className="flex p-0 text-left w-full rounded-2xl text-sm cursor-pointer hover:bg-accent"
               >
-                <div className="font-medium">{room.product.model}</div>
-                {room.lastMessage ? (
-                  <div className="text-xs text-muted-foreground">
-                    {room.lastMessage}
+                <Image
+                  src={
+                    room.product.productImages[0].imageUrl ||
+                    "/images/placeholder.png"
+                  }
+                  alt={room.product.name}
+                  width={80}
+                  height={80}
+                  className="rounded-2xl h-full aspect-square object-cover"
+                  unoptimized
+                />
+                <div className="gap-2 flex flex-col justify-center flex-1">
+                  <div>
+                    <span className="font-bold text-lg mr-1">{room.product.name}</span>
+                    <span className="text-xs text-muted-foreground">ref: {room.product.watch.reference}</span>
                   </div>
-                ) : null}
+                  
+                  <div>
+                    {room.messages && room.messages.length > 0 ? (
+                      <div className="text-xs text-foreground/70">
+                        {/* TODO: fix this so it displays correctly. we need userid from supabase for it to work */}
+                        {room.messages[0].sender?.senderId === user?.id ? (
+                          <span className="font-bold">You: </span>
+                        ) : (
+                          <span className="font-bold">Seller: </span>
+                        )}
+                        <span
+                          className="inline-block align-middle max-w-45 truncate"
+                          title={String(room.messages[0]?.content ?? "")}
+                        >
+                          {room.messages[0]?.content}
+                        </span>
+                      </div>
+                    ) : (
+                      <div />
+                    )}
+                  </div>
+                </div>
               </Item>
             ))}
           </div>

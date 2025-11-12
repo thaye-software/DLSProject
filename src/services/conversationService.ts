@@ -1,6 +1,6 @@
 import { db } from "@/database/drizzle";
 import { conversations } from "@/database/schema";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 export const conversationService = {
   async getConversationsByCustomerId(customerId: number) {
@@ -11,8 +11,14 @@ export const conversationService = {
           with: {
             sender: true,
           },
+          orderBy: [desc(conversations.createdAt)],
         },
-        product: true,
+        product: {
+          with: {
+            productImages: true,
+            watch: true,
+          },
+        },
       },
     });
     return conversationsResult;

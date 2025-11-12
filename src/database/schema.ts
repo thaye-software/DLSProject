@@ -78,9 +78,7 @@ export const brands = pgTable(
     id: bigserial("id", { mode: "number" }).primaryKey(),
     slug: text("slug").notNull().unique(),
     name: varchar("name", { length: 255 }).notNull().unique(),
-    country: varchar("country", { length: 255 })
-      .notNull()
-      .default(""),
+    country: varchar("country", { length: 255 }).notNull().default(""),
     addressLine1: varchar("address_line_1", { length: 255 }),
     addressLine2: varchar("address_line_2", { length: 255 }),
     zipCode: varchar("zip_code", { length: 50 }),
@@ -90,9 +88,7 @@ export const brands = pgTable(
     email: varchar("email", { length: 255 }),
     website: varchar("website", { length: 255 }),
   },
-  (table) => [
-    index("idx_brands_name").on(table.name),
-  ]
+  (table) => [index("idx_brands_name").on(table.name)]
 );
 
 export const users = pgTable(
@@ -183,11 +179,21 @@ export const orders = pgTable(
     currency: varchar("currency", { length: 10 }).notNull().default("DKK"),
 
     // Currency fields
-    currencyCode: varchar("currency_code", { length: 3 }).notNull().default("DKK"),
-    exchangeRateUsed: decimal("exchange_rate_used", { precision: 10, scale: 6 }).notNull().default("1.000000"),
-    totalPriceDkk: decimal("total_price_dkk", { precision: 12, scale: 2 }).notNull(),
-    totalPriceCurrency: decimal("total_price_currency", { precision: 12, scale: 2 }).notNull(),
-    
+    currencyCode: varchar("currency_code", { length: 3 })
+      .notNull()
+      .default("DKK"),
+    exchangeRateUsed: decimal("exchange_rate_used", { precision: 10, scale: 6 })
+      .notNull()
+      .default("1.000000"),
+    totalPriceDkk: decimal("total_price_dkk", {
+      precision: 12,
+      scale: 2,
+    }).notNull(),
+    totalPriceCurrency: decimal("total_price_currency", {
+      precision: 12,
+      scale: 2,
+    }).notNull(),
+
     deliveryAddressId: bigint("delivery_address_id", {
       mode: "number",
     }).references(() => orderAddresses.id, { onDelete: "set null" }),
@@ -285,7 +291,7 @@ export const conversations = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     productId: bigint("product_id", { mode: "number" })
       .notNull()
-      .references(() => watches.id, { onDelete: "cascade" }),
+      .references(() => products.id, { onDelete: "cascade" }),
     status: text("status").default("open"), // open, closed, pending
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
@@ -338,7 +344,10 @@ export const currencies = pgTable(
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
     code: varchar("code", { length: 3 }).notNull().unique(),
-    exchangeRate: decimal("exchange_rate", { precision: 10, scale: 6 }).notNull(),
+    exchangeRate: decimal("exchange_rate", {
+      precision: 10,
+      scale: 6,
+    }).notNull(),
     isActive: boolean("is_active").notNull().default(true),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -355,7 +364,10 @@ export const currencyHistory = pgTable(
     currencyId: bigint("currency_id", { mode: "number" })
       .notNull()
       .references(() => currencies.id, { onDelete: "cascade" }),
-    exchangeRate: decimal("exchange_rate", { precision: 10, scale: 6 }).notNull(),
+    exchangeRate: decimal("exchange_rate", {
+      precision: 10,
+      scale: 6,
+    }).notNull(),
     changedAt: timestamp("changed_at").notNull().defaultNow(),
     changedBy: varchar("changed_by", { length: 255 }),
   },
@@ -365,17 +377,7 @@ export const currencyHistory = pgTable(
   ]
 );
 
-
-
-
-
-
 //----------------------------------------------------------------  Relations --------------------------------------------------------------------
-
-
-
-
-
 
 export const countriesRelations = relations(countries, ({ many }) => ({
   users: many(users),
@@ -425,7 +427,6 @@ export const watchesRelations = relations(watches, ({ one, many }) => ({
   auctions: many(auctions),
   conversations: many(conversations),
 }));
-
 
 export const productImagesRelations = relations(productImages, ({ one }) => ({
   product: one(products, {
@@ -504,9 +505,9 @@ export const conversationsRelations = relations(
       fields: [conversations.customerId],
       references: [users.id],
     }),
-    product: one(watches, {
+    product: one(products, {
       fields: [conversations.productId],
-      references: [watches.id],
+      references: [products.id],
     }),
     messages: many(messages),
   })
@@ -528,9 +529,12 @@ export const currenciesRelations = relations(currencies, ({ many }) => ({
   orders: many(orders),
 }));
 
-export const currencyHistoryRelations = relations(currencyHistory, ({ one }) => ({
-  currency: one(currencies, {
-    fields: [currencyHistory.currencyId],
-    references: [currencies.id],
-  }),
-}));
+export const currencyHistoryRelations = relations(
+  currencyHistory,
+  ({ one }) => ({
+    currency: one(currencies, {
+      fields: [currencyHistory.currencyId],
+      references: [currencies.id],
+    }),
+  })
+);

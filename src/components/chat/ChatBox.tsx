@@ -8,7 +8,7 @@ export default function ChatBox({
   setChatOpen,
 }: {
   setChatOpen: (open: boolean) => void;
-}) {
+  }) {
   const [rooms, setRooms] = useState<any[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
