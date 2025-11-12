@@ -99,9 +99,7 @@ export const users = pgTable(
     id: uuid("id").primaryKey(),
     username: varchar("username", { length: 255 }).notNull().unique(),
     email: varchar("email", { length: 255 }).notNull().unique(),
-    password: varchar("password", { length: 255 }).notNull(),
     avatarUrl: text("avatar_url"),
-    emailConfirmed: boolean("email_confirmed").notNull().default(false),
     role: varchar("role", { length: 50 }).notNull().default("customer"),
     country: bigint("country", { mode: "number" }).references(
       () => countries.id,
@@ -115,7 +113,6 @@ export const users = pgTable(
   (table) => [
     index("idx_users_country").on(table.country),
     index("idx_users_address").on(table.addressId),
-    index("idx_users_email_confirmed").on(table.emailConfirmed),
   ]
 );
 

@@ -185,7 +185,6 @@ CREATE INDEX "idx_products_created_at" ON "products" USING btree ("created_at");
 CREATE INDEX "idx_products_price_dkk" ON "products" USING btree ("price_dkk");--> statement-breakpoint
 CREATE INDEX "idx_users_country" ON "users" USING btree ("country");--> statement-breakpoint
 CREATE INDEX "idx_users_address" ON "users" USING btree ("address");--> statement-breakpoint
-CREATE INDEX "idx_users_email_confirmed" ON "users" USING btree ("email_confirmed");--> statement-breakpoint
 CREATE INDEX "idx_watches_brand" ON "watches" USING btree ("brand");--> statement-breakpoint
 CREATE INDEX "idx_watches_reference" ON "watches" USING btree ("reference");--> statement-breakpoint
 CREATE INDEX "idx_watches_year" ON "watches" USING btree ("year");--> statement-breakpoint
