@@ -1,4 +1,4 @@
-import { productService } from "@/services/productService";
+import { searchProducts } from "@/services/productService";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -7,7 +7,7 @@ export async function GET(req: Request) {
   if (!query) {
     return new Response("Missing query", { status: 400 });
   }
-  const results = await productService.searchProducts(query);
+  const results = await searchProducts(query);
 
   return new Response(JSON.stringify(results), {
     headers: { "Content-Type": "application/json" },

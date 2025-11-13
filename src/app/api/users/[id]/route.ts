@@ -12,12 +12,7 @@ async function resolveParams(params: any) {
 
 export async function GET(request: NextRequest, context: { params?: any }) {
   const params = await resolveParams(context.params);
-  const id = parseInt(params.id);
-
-  // Validate the ID
-  if (isNaN(id)) {
-    return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
-  }
+  const id = params.id;
 
   const result = await userService.getUserById(id);
 

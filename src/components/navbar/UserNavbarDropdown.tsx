@@ -39,28 +39,22 @@ export function UserNavbarDropdown() {
       <DropdownMenuContent className="w-56" align="end">
         <DropdownMenuGroup>
           {role === "admin" ? (
-            <DropdownMenuItem>
-              <Link href="/admin" className="flex items-center gap-2">
-                <User />
+              <Link href="/admin" className="cursor-pointer hover:bg-accent relative flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
+                <User className="opacity-60" />
                 Admin Panel
               </Link>
-            </DropdownMenuItem>
           ) : null}
-          <DropdownMenuItem>
-            <Link href="/settings" className="flex items-center gap-2">
-              <Settings />
+            <Link href="/settings" className="cursor-pointer hover:bg-accent relative flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
+              <Settings className="opacity-60" />
               Settings
             </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Link href="/orders" className="flex items-center gap-2">
-              <Truck />
+            <Link href="/orders" className="cursor-pointer hover:bg-accent relative flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
+              <Truck className="opacity-60" />
               Order history
             </Link>
-          </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut}>
+        <DropdownMenuItem className="cursor-pointer" onClick={handleSignOut}>
           <LogOut />
           Log out
         </DropdownMenuItem>

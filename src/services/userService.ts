@@ -46,7 +46,7 @@ export const userService = {
     }
   },
 
-  async getUserById(id: number) {
+  async getUserById(id: string) {
     try {
       const user = await db.select().from(users).where(eq(users.id, id));
       return { success: true, data: user[0] || null };

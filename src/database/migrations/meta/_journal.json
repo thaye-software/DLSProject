@@ -117,15 +117,15 @@
     {
       "idx": 16,
       "version": "7",
-      "when": 1762960683292,
-      "tag": "0016_linked-currencies-to-country",
+      "when": 1762957845530,
+      "tag": "0016_change-customerid-to-uuid",
       "breakpoints": true
     },
     {
       "idx": 17,
       "version": "7",
-      "when": 1762961384558,
-      "tag": "0017_renamed-coloums-in-userstable",
+      "when": 1762977219797,
+      "tag": "0017_change int id's to uuid",
       "breakpoints": true
     }
   ]

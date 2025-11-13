@@ -8,6 +8,7 @@ const supabase = createClient();
 
 export function useSupabaseAuth() {
   const [user, setUser] = useState<User | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(() => {
@@ -26,6 +27,7 @@ export function useSupabaseAuth() {
 
         if (!mounted) return;
         setUser(currentUser ?? null);
+        setUsername(currentUser?.user_metadata?.display_name ?? null);
         // fetch avatar and cache it client-side
         if (currentUser?.email && typeof window !== "undefined") {
           void fetch(
@@ -119,6 +121,7 @@ export function useSupabaseAuth() {
 
   return {
     user,
+    username,
     role,
     loading,
     avatarUrl,

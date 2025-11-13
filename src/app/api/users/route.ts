@@ -11,22 +11,22 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
-  const body = await request.json();
-  const { username, email, password } = body;
+// export async function POST(request: Request) {
+//   const body = await request.json();
+//   const { username, email, password } = body;
 
-  if (!username || !email || !password) {
-    return NextResponse.json(
-      { error: "Username, email, and password are required" },
-      { status: 400 }
-    );
-  }
+//   if (!username || !email || !password) {
+//     return NextResponse.json(
+//       { error: "Username, email, and password are required" },
+//       { status: 400 }
+//     );
+//   }
 
-  const result = await userService.createUser({ username, email, password });
+//   const result = await userService.createUser({ id, username, email });
 
-  if (result.success) {
-    return NextResponse.json(result.data, { status: 201 });
-  } else {
-    return NextResponse.json({ error: result.error }, { status: 500 });
-  }
-}
+//   if (result.success) {
+//     return NextResponse.json(result.data, { status: 201 });
+//   } else {
+//     return NextResponse.json({ error: result.error }, { status: 500 });
+//   }
+// }

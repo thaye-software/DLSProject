@@ -1,6 +1,6 @@
 {
-  "id": "72d13a64-0cdd-436d-8790-d19a6224861d",
-  "prevId": "358166ea-8c2e-4c95-911c-a3f50829e3a2",
+  "id": "d22c631f-8699-4014-9d95-03809f09a12b",
+  "prevId": "5b58c89c-94ae-4560-9d46-bfe150e69a87",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -16,7 +16,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -263,7 +263,7 @@
         },
         "author_id": {
           "name": "author_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -457,7 +457,7 @@
         },
         "customer_id": {
           "name": "customer_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -565,10 +565,10 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "conversations_product_id_watches_id_fk": {
-          "name": "conversations_product_id_watches_id_fk",
+        "conversations_product_id_products_id_fk": {
+          "name": "conversations_product_id_products_id_fk",
           "tableFrom": "conversations",
-          "tableTo": "watches",
+          "tableTo": "products",
           "columnsFrom": [
             "product_id"
           ],
@@ -612,9 +612,9 @@
           "primaryKey": false,
           "notNull": true
         },
-        "currency_id": {
-          "name": "currency_id",
-          "type": "bigint",
+        "currency": {
+          "name": "currency",
+          "type": "varchar(50)",
           "primaryKey": false,
           "notNull": true
         }
@@ -651,21 +651,7 @@
           "with": {}
         }
       },
-      "foreignKeys": {
-        "countries_currency_id_currencies_id_fk": {
-          "name": "countries_currency_id_currencies_id_fk",
-          "tableFrom": "countries",
-          "tableTo": "currencies",
-          "columnsFrom": [
-            "currency_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -863,7 +849,7 @@
         },
         "sender_id": {
           "name": "sender_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -1158,7 +1144,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -1548,7 +1534,7 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigserial",
+          "type": "uuid",
           "primaryKey": true,
           "notNull": true
         },
@@ -1564,24 +1550,11 @@
           "primaryKey": false,
           "notNull": true
         },
-        "password": {
-          "name": "password",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true
-        },
         "avatar_url": {
           "name": "avatar_url",
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "email_confirmed": {
-          "name": "email_confirmed",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         },
         "role": {
           "name": "role",
@@ -1590,14 +1563,14 @@
           "notNull": true,
           "default": "'customer'"
         },
-        "country_id": {
-          "name": "country_id",
+        "country": {
+          "name": "country",
           "type": "bigint",
           "primaryKey": false,
           "notNull": false
         },
-        "address_id": {
-          "name": "address_id",
+        "address": {
+          "name": "address",
           "type": "bigint",
           "primaryKey": false,
           "notNull": false
@@ -1608,7 +1581,7 @@
           "name": "idx_users_country",
           "columns": [
             {
-              "expression": "country_id",
+              "expression": "country",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1623,22 +1596,7 @@
           "name": "idx_users_address",
           "columns": [
             {
-              "expression": "address_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_users_email_confirmed": {
-          "name": "idx_users_email_confirmed",
-          "columns": [
-            {
-              "expression": "email_confirmed",
+              "expression": "address",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1651,12 +1609,12 @@
         }
       },
       "foreignKeys": {
-        "users_country_id_countries_id_fk": {
-          "name": "users_country_id_countries_id_fk",
+        "users_country_countries_id_fk": {
+          "name": "users_country_countries_id_fk",
           "tableFrom": "users",
           "tableTo": "countries",
           "columnsFrom": [
-            "country_id"
+            "country"
           ],
           "columnsTo": [
             "id"
@@ -1664,12 +1622,12 @@
           "onDelete": "set null",
           "onUpdate": "no action"
         },
-        "users_address_id_addresses_id_fk": {
-          "name": "users_address_id_addresses_id_fk",
+        "users_address_addresses_id_fk": {
+          "name": "users_address_addresses_id_fk",
           "tableFrom": "users",
           "tableTo": "addresses",
           "columnsFrom": [
-            "address_id"
+            "address"
           ],
           "columnsTo": [
             "id"

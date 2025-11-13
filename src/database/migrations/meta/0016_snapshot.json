@@ -1,5 +1,5 @@
 {
-  "id": "358166ea-8c2e-4c95-911c-a3f50829e3a2",
+  "id": "5b58c89c-94ae-4560-9d46-bfe150e69a87",
   "prevId": "748d33b9-de3e-4c3d-953f-6a5a4c23ac85",
   "version": "7",
   "dialect": "postgresql",
@@ -16,7 +16,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -263,7 +263,7 @@
         },
         "author_id": {
           "name": "author_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -457,7 +457,7 @@
         },
         "customer_id": {
           "name": "customer_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -565,10 +565,10 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "conversations_product_id_watches_id_fk": {
-          "name": "conversations_product_id_watches_id_fk",
+        "conversations_product_id_products_id_fk": {
+          "name": "conversations_product_id_products_id_fk",
           "tableFrom": "conversations",
-          "tableTo": "watches",
+          "tableTo": "products",
           "columnsFrom": [
             "product_id"
           ],
@@ -612,9 +612,9 @@
           "primaryKey": false,
           "notNull": true
         },
-        "currency_id": {
-          "name": "currency_id",
-          "type": "bigint",
+        "currency": {
+          "name": "currency",
+          "type": "varchar(50)",
           "primaryKey": false,
           "notNull": true
         }
@@ -651,21 +651,7 @@
           "with": {}
         }
       },
-      "foreignKeys": {
-        "countries_currency_id_currencies_id_fk": {
-          "name": "countries_currency_id_currencies_id_fk",
-          "tableFrom": "countries",
-          "tableTo": "currencies",
-          "columnsFrom": [
-            "currency_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -1158,7 +1144,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -1548,7 +1534,7 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigserial",
+          "type": "uuid",
           "primaryKey": true,
           "notNull": true
         },
@@ -1564,24 +1550,11 @@
           "primaryKey": false,
           "notNull": true
         },
-        "password": {
-          "name": "password",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true
-        },
         "avatar_url": {
           "name": "avatar_url",
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "email_confirmed": {
-          "name": "email_confirmed",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         },
         "role": {
           "name": "role",
@@ -1624,21 +1597,6 @@
           "columns": [
             {
               "expression": "address",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_users_email_confirmed": {
-          "name": "idx_users_email_confirmed",
-          "columns": [
-            {
-              "expression": "email_confirmed",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
