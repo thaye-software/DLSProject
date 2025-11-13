@@ -7,13 +7,13 @@ import { Button } from "@/components/ui/button";
 import { ShoppingCart } from "lucide-react";
 
 import { Product } from "@/app/watches/type";
-import { currencyService } from "@/services/currencyService";
+import { convertPrice } from "@/services/currencyService";
 import AddToCartButton from "./BuyButton";
 
 
 export function WatchCard({ product, countryCode }: { product: Product, countryCode: string }) {
     
-  const formatedPrice = currencyService.convertPrice(product.priceDkk, countryCode);
+  const formatedPrice = convertPrice(product.priceDkk, countryCode);
   
   
     return (

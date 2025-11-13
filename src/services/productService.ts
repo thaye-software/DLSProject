@@ -38,7 +38,7 @@ export async function getProductBySlug(
 
     return product;
   } catch (error) {
-    console.error(error);
+    console.error("(server) Unexpected error getting product...",error);
     throw error;
   }
 }

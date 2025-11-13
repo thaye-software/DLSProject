@@ -9,7 +9,7 @@ export default function AddToCartButton({product, className}: {product: Product,
   return(
     <div>
       { product.stock > 0 ? (
-        <Link href={"/orders/info"}>
+        <Link href={`/orders/info?product=${product.watch.slug}`}>
           <Button className={className}>
             Buy
           </Button>

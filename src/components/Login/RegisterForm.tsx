@@ -74,6 +74,10 @@ export function RegisterForm({
             </p>
           </div>
 
+          {redirectUrl && (
+            <input type="hidden" name="redirectUrl" value={redirectUrl} />
+          )}
+
           <Field>
             <FieldLabel htmlFor="username">Username</FieldLabel>
             <Input
@@ -83,6 +87,7 @@ export function RegisterForm({
               required
               disabled={loading}
               defaultValue={state?.values?.username || ""}
+              placeholder="your username"
             />
             {state?.fieldErrors?.username && (
               <p className="text-sm text-destructive mt-1">
@@ -108,15 +113,7 @@ export function RegisterForm({
             )}
           </Field>
           <Field>
-            <div className="flex items-center">
-              <FieldLabel htmlFor="password">Password</FieldLabel>
-              <a
-                href="#"
-                className="ml-auto text-sm underline-offset-4 hover:underline"
-              >
-                Forgot your password?
-              </a>
-            </div>
+            <FieldLabel htmlFor="password">Password</FieldLabel>
             <Input
               name="password"
               id="password"

@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/tailwindUtils'
 import type { ChatMessage } from '@/hooks/use-realtime-chat'
 
 interface ChatMessageItemProps {

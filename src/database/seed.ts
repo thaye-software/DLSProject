@@ -395,8 +395,8 @@ const seededWatches = await db
   // 8. Users
   await db.insert(users).values({
     id: crypto.randomUUID(),
-    username: "john_doe",
-    email: "john@example.com",
+    username: "Chris",
+    email: "chye0001@stud.ek.dk",
     role: "customer",
     countryId: denmark.id,
     addressId: address.id,
