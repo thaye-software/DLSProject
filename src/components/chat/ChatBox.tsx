@@ -6,11 +6,11 @@ import { useEffect, useState } from "react";
 
 export default function ChatBox({
   setChatOpen,
-  initialRoom
+  initialRoom,
 }: {
-    setChatOpen: (open: boolean) => void;
-    initialRoom?: any;
-  }) {
+  setChatOpen: (open: boolean) => void;
+  initialRoom?: any;
+}) {
   const [rooms, setRooms] = useState<any[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<any | null>(initialRoom);
   const [loading, setLoading] = useState(false);
@@ -42,9 +42,7 @@ export default function ChatBox({
     return () => {
       mounted = false;
     };
-
-    
-  }, []);
+  }, [selectedRoom]);
 
   return (
     <motion.div

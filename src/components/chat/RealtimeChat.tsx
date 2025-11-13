@@ -6,13 +6,13 @@ import { useChatScroll } from "@/hooks/use-chat-scroll";
 import { type ChatMessage, useRealtimeChat } from "@/hooks/use-realtime-chat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send } from "lucide-react";
+import { ArrowDown, Send } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSupabaseAuth } from "@/lib/useSupabaseAuth";
+import { markAsRead } from "@/services/messageService";
 
 interface RealtimeChatProps {
-  roomName: string;
-  userId: string | null;
+  room: any;
+  userId: string;
   username: string;
   onMessage?: (messages: ChatMessage[]) => void;
   messages?: ChatMessage[];
@@ -27,20 +27,25 @@ interface RealtimeChatProps {
  * @returns The chat component
  */
 export const RealtimeChat = ({
-  roomName,
+  room,
   userId,
   username,
   onMessage,
   messages: initialMessages = [],
 }: RealtimeChatProps) => {
-  const { containerRef, scrollToBottom, autoScrollEnabled, setAutoScrollEnabled } = useChatScroll();
+  const {
+    containerRef,
+    scrollToBottom,
+    autoScrollEnabled,
+    setAutoScrollEnabled,
+  } = useChatScroll();
 
   const {
     messages: realtimeMessages,
     sendMessage,
     isConnected,
   } = useRealtimeChat({
-    roomName,
+    room,
     username,
   });
   const [newMessage, setNewMessage] = useState("");
@@ -77,9 +82,37 @@ export const RealtimeChat = ({
   useEffect(() => {
     // Scroll to bottom when messages change only if auto-scroll is enabled.
     if (autoScrollEnabled) {
-      scrollToBottom()
+      scrollToBottom();
     }
-  }, [allMessages, autoScrollEnabled, scrollToBottom])
+  }, [allMessages, autoScrollEnabled, scrollToBottom]);
+
+  // set message.isRead to true for all messages where isOwnMessage is false when component mounts
+  useEffect(() => {
+    const markMessagesAsRead = async () => {
+      console.log("markMessagesAsRead called");
+      console.log("room:", room);
+      console.log("userId:", userId);
+      try {
+        if (!room || !room.id || !userId) { 
+          console.log("markMessagesAsRead: missing room.conversationId or userId");
+          return;
+        } 
+
+        // ensure conversationId is a number when calling the server
+        const convId =
+          typeof room.id === "string"
+            ? Number(room.id)
+            : room.id;
+        if (Number.isNaN(convId)) return;
+
+        await markAsRead(convId, userId);
+      } catch (err) {
+        console.error("markAsRead failed", err);
+      }
+    };
+    // run when room or userId becomes available
+    markMessagesAsRead();
+  }, [room, userId]);
 
   const handleSendMessage = useCallback(
     (e: React.FormEvent) => {
@@ -94,9 +127,9 @@ export const RealtimeChat = ({
 
   // helper to let the user manually jump back to bottom
   const handleScrollToBottomClick = () => {
-    setAutoScrollEnabled(true)
-    scrollToBottom()
-  }
+    setAutoScrollEnabled(true);
+    scrollToBottom();
+  };
 
   return (
     <div className="flex flex-col h-full w-full antialiased">
@@ -157,9 +190,9 @@ export const RealtimeChat = ({
       </form>
       {/* scroll-to-bottom button when auto-scroll is disabled */}
       {!autoScrollEnabled && (
-        <div className="absolute right-4 bottom-[84px] z-40">
-          <Button size="sm" onClick={handleScrollToBottomClick}>
-            Scroll to bottom
+        <div className="absolute left-2 bottom-[75px] z-40 cursor-pointer">
+          <Button size="icon" onClick={handleScrollToBottomClick}>
+            <ArrowDown />
           </Button>
         </div>
       )}

@@ -43,10 +43,14 @@ export const ChatPanel: React.FC<{
                 />
                 <div className="gap-2 flex flex-col justify-center flex-1">
                   <div>
-                    <span className="font-bold text-lg mr-1">{room.product.name}</span>
-                    <span className="text-xs text-muted-foreground">ref: {room.product.watch.reference}</span>
+                    <span className="font-bold text-lg mr-1">
+                      {room.product.name}
+                    </span>
+                    {/* <span className="text-xs text-muted-foreground">
+                      ref: {room.product.watch.reference}
+                    </span> */}
                   </div>
-                  
+
                   <div>
                     {room.messages && room.messages.length > 0 ? (
                       <div className="text-xs text-foreground/70">
@@ -54,8 +58,8 @@ export const ChatPanel: React.FC<{
                           <span className="font-bold">You: </span>
                         )}
                         <span
-                          className="inline-block align-middle max-w-45 truncate"
-                          title={String(room.messages[0]?.content ?? "")}
+                          className={`${!room.messages[0].isRead && room.messages[0].sender?.id !== user?.id ? "font-bold" : ""} inline-block align-middle max-w-45 truncate`}
+                          // title={String(room.messages[0]?.content ?? "")}
                         >
                           {room.messages[0]?.content}
                         </span>
@@ -77,7 +81,7 @@ export const ChatPanel: React.FC<{
     <div className="flex h-full w-full flex-col bg-background min-h-0">
       <div className="flex-1 min-h-0">
         <RealtimeChat
-          roomName={selectedRoom}
+          room={selectedRoom}
           userId={user?.id ?? "guest"}
           username={username ?? "guest"}
           messages={selectedRoom.messages}
