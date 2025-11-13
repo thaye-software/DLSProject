@@ -18,6 +18,7 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "framer-motion";
 import ChatBox from "@/components/chat/ChatBox";
+import { useSupabaseAuth } from "@/lib/useSupabaseAuth";
 
 const theSeasons = theSeasonsFont({
   src: [
@@ -88,7 +89,6 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const pathname = usePathname();
-
   const hideRootShell =
     pathname === "/login" ||
     pathname?.startsWith("/admin") ||
@@ -158,6 +158,7 @@ export default function RootLayout({
 
 function LayoutChatControls() {
   const { chatOpen, setChatOpen, initialConversation } = useChatContext();
+  const { user, role } = useSupabaseAuth();
 
   return (
     <>
@@ -168,7 +169,12 @@ function LayoutChatControls() {
 
       {chatOpen && (
         <AnimatePresence>
-          <ChatBox setChatOpen={setChatOpen} initialConversation={initialConversation} />
+          <ChatBox
+            setChatOpen={setChatOpen}
+            initialConversation={initialConversation}
+            user={user}
+            role={role}
+          />
         </AnimatePresence>
       )}
     </>

@@ -86,7 +86,6 @@ export async function login(
       // - or return it to the client and let the client set localStorage,
       // - or let the client fetch it after redirect via the hook.
       // For now we don't persist it server-side — the value is fetched to ensure it exists.
-      console.log("avatarUrl (server):", avatarUrl);
     }
   } catch (fetchErr) {
     // ignore avatar fetch failures — don't block sign-in

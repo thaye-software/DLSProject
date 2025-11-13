@@ -4,6 +4,17 @@ import { db } from "@/database/drizzle";
 import { conversations } from "@/database/schema";
 import { and, desc, eq, or } from "drizzle-orm";
 
+export async function getConversations(userId: string, role: string) {
+  let conversationsResult;
+  
+  if (role === "admin") {
+    conversationsResult = await getAllConversations();
+  } else {
+    conversationsResult = await getConversationsByCustomerId(userId);
+  }
+  return conversationsResult;
+}
+
 export async function getAllConversations() {
   const conversationsResult = await db.query.conversations.findMany({
     with: {

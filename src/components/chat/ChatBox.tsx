@@ -1,42 +1,47 @@
+"use client";
+
 import { motion } from "framer-motion";
 import { Button } from "../ui/button";
 import { ArrowLeft, X } from "lucide-react";
 import { ChatPanel } from "./ChatPanel";
 import { useEffect, useState } from "react";
+import { getConversations } from "@/services/conversationService";
+import { useSupabaseAuth } from "@/lib/useSupabaseAuth";
 
 export default function ChatBox({
   setChatOpen,
   initialConversation,
+  user,
+  role,
 }: {
   setChatOpen: (open: boolean) => void;
   initialConversation?: any;
+  user: any;
+  role: string | null;
 }) {
   const [conversations, setConversations] = useState<any[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<any | null>(initialConversation);
+  const [selectedConversation, setSelectedConversation] = useState<any | null>(
+    initialConversation
+  );
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Fetch conversations for the authenticated user from our API
     let mounted = true;
     async function loadConversations() {
       setLoading(true);
       try {
-        const res = await fetch("/api/chat/conversations");
-        if (!mounted) return;
-        if (res.status === 401) {
-          // Not authenticated: leave rooms empty (or you could redirect to login)
+        if (!user || !user.id) {
           setConversations([]);
-          return;
         }
-        const payload = await res.json();
-        const conversations = payload.conversations ?? [];
-        setConversations(conversations);
+        const res = await getConversations(user?.id, role || "customer");
+        if (!mounted) return;
+        setConversations(res);
       } catch (err) {
         // on error, fallback to empty list
         setConversations([]);
       }
     }
-    void loadConversations();
+    loadConversations();
     return () => {
       mounted = false;
     };

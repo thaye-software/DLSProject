@@ -24,7 +24,6 @@ export default function ProductSwiper({product}: {product: Product}) {
     const productImages = product.productImages.filter((image, index, self) =>
                         index === self.findIndex((img) => img.imageUrl === image.imageUrl)
                     );
-    console.log(productImages);
     return (
         <div className="flex flex-col items-center justify-center">
             <div className="w-full max-w-4xl rounded-lg">

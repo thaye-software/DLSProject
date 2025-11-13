@@ -54,21 +54,31 @@ export const RealtimeChat = ({
   const allMessages = useMemo(() => {
     const mergedMessages = [...initialMessages, ...realtimeMessages];
 
-    // Normalize id to string when present
+    // Normalize id to string when present and normalize createdAt to ISO strings
     const seen = new Set<string>();
     const uniqueMessages = [] as typeof mergedMessages;
 
-    for (const m of mergedMessages) {
+    for (const orig of mergedMessages) {
+      // normalize createdAt to an ISO string so sorting/comparisons are reliable
+      const createdAtStr =
+        typeof orig.createdAt === "string"
+          ? orig.createdAt
+          : orig.createdAt
+          ? new Date(orig.createdAt).toISOString()
+          : new Date().toISOString();
+
       // use id if present, otherwise fallback to createdAt+content as dedupe key
-      const key = m.id ?? `${m.createdAt}:${m.content}`;
+      const key = orig.id ?? `${createdAtStr}:${orig.content}`;
       if (!seen.has(String(key))) {
         seen.add(String(key));
-        uniqueMessages.push(m);
+        uniqueMessages.push({ ...orig, createdAt: createdAtStr } as any);
       }
     }
-
-    // Sort by creation date (ISO strings sort lexicographically)
-    uniqueMessages.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    // Sort by creation date (use numeric timestamp compare to avoid type issues)
+    uniqueMessages.sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
 
     return uniqueMessages;
   }, [initialMessages, realtimeMessages]);
@@ -90,10 +100,10 @@ export const RealtimeChat = ({
   useEffect(() => {
     const markMessagesAsRead = async () => {
       try {
-        if (!conversation || !conversation.id || !userId) { 
+        if (!conversation || !conversation.id || !userId) {
           console.warn("markMessagesAsRead: missing conversation or userId");
           return;
-        } 
+        }
 
         // ensure conversationId is a number when calling the server
         const convId =

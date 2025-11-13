@@ -55,7 +55,6 @@ export const ChatPanel: React.FC<{
                         )}
                         <span
                           className={`${!conv.messages[0].isRead && conv.messages[0].sender?.id !== user?.id ? "font-bold" : ""} inline-block align-middle max-w-45 truncate`}
-                          // title={String(conv.messages[0]?.content ?? "")}
                         >
                           {conv.messages[0]?.content}
                         </span>
