@@ -375,7 +375,7 @@ export const currencyHistory = pgTable(
 
 //----------------------------------------------------------------  Relations --------------------------------------------------------------------
 
-export const countriesRelations = relations(countries, ({ many }) => ({
+export const countriesRelations = relations(countries, ({ many, one }) => ({
   users: many(users),
   currency: one(currencies, {
     fields: [countries.currencyId],

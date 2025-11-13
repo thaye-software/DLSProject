@@ -16,7 +16,7 @@ import {
 // import { currencyService } from "@/services/currencyService";
 import ProductSafetyInfo from "@/components/Watches/ProductSafetyInfoCard";
 import { Product } from "../../type";
-import AddToCartButton from "@/components/Watches/AddToCartButton";
+import BuyButton from "@/components/Watches/BuyButton";
 import { Button } from "@/components/ui/button";
 import { useChatContext } from "@/context/ChatContext";
 import { useEffect, useState } from "react";
@@ -247,7 +247,7 @@ export default function ViewWatchPage({
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <AddToCartButton
+              <BuyButton
                 product={product}
                 className="hover:cursor-pointer h-12 flex-1 bg-[#1A1A1A] hover:bg-[#244B5A] text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               />

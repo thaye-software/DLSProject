@@ -1,10 +1,12 @@
 import { db } from "@/database/drizzle";
 import { users } from "@/database/schema";
 import { eq } from "drizzle-orm";
-import { UserModel, NewUserModel } from "@/database/types";
+import { NewUserModel } from "@/database/types";
+
+
 
 export interface CustomerInfo {
-  id: number;
+  id: string;
   email: string;
   country: {
     id: number;
@@ -24,12 +26,10 @@ export interface CustomerInfo {
 } 
 
 export interface User {
-  id: number;
+  id: string;
   username: string;
   email: string;
-  password: string;
   avatarUrl: string | null;
-  emailConfirmed: boolean;
   role: string;
   countryId: number | null;
   addressId: number | null;
