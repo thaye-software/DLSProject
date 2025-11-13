@@ -3,7 +3,7 @@
 import BackButton from "@/components/BackButton";
 import ProductImageSwiper from "@/components/Watches/ProductImageSwiper";
 import { getProductBySlug } from "@/services/productService";
-import { notFound } from "next/navigation";
+import { notFound, redirect, useRouter } from "next/navigation";
 import {
   Check,
   Shield,
@@ -27,7 +27,8 @@ export default function ViewWatchPage({
   params,
 }: {
   params: Promise<{ watchSlug: string }>;
-}) {
+  }) {
+  const router = useRouter();
   const [product, setProduct] = useState<Product | null>(null);
   const { setChatOpen, setInitialConversation } = useChatContext();
   const { user } = useSupabaseAuth();
@@ -42,10 +43,16 @@ export default function ViewWatchPage({
   async function createNewConversation() {
     const productId = product ? product.id : null;
     const customerId = user ? user.id : null;
-    if (!productId || !customerId) {
-      console.error("Product ID or Customer ID is not available.");
+    if (!productId) {
+      console.error("Product ID is not available.");
       return;
     }
+    if (!customerId) {
+      console.error("User is not logged in.");
+      router.push("/login");
+      return;
+    }
+
     const conversation = await createConversation(customerId, productId);
     console.log("Created conversation:", conversation);
     setInitialConversation(conversation);

@@ -77,8 +77,8 @@ export const ChatPanel: React.FC<{
       <div className="flex-1 min-h-0">
         <RealtimeChat
           conversation={selectedConversation}
-          userId={user?.id ?? "guest"}
-          username={username ?? "guest"}
+          userId={user?.id || "guest"}
+          username={username || "guest"}
           messages={selectedConversation.messages}
         />
       </div>
