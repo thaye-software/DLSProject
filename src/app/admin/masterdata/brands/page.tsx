@@ -3,13 +3,13 @@ import { BrandTable } from "@/components/admin/BrandTable";
 import { Button } from "@/components/ui/button";
 import { BrandModel } from "@/database/types";
 import { brandService } from "@/services/brandService";
-import { productService } from "@/services/productService";
+import { getAllProducts } from "@/services/productService";
 import Link from "next/link";
 
 export default async function BrandsPage() {
 
   const initialBrands = (await brandService.getAllBrands()).data || [];
-  const initialProducts = (await productService.getAllProducts()) || [];
+  const initialProducts = (await getAllProducts()) || [];
 
   return (
     <div>

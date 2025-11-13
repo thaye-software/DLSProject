@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { WatchesGrid } from "@/components/Watches/WatchesGrid";
 
-import { productService } from "@/services/productService";
+import { getAllProductsByBrandName } from "@/services/productService";
 import { Product } from "../type";
 
 
@@ -12,7 +12,7 @@ export default async function BrandWatchesPage({ params }: { params: Promise<{ b
   let brandName = (await params).brandName;
   brandName = capitalizeFirstLetter(brandName)
 
-  const allWatches: Product[] = await productService.getAllProductsByBrandName(brandName);
+  const allWatches: Product[] = await getAllProductsByBrandName(brandName);
   // to be implemented 
   // get user country and convert price accordingly
   // const countryCode = getUserCountryCode(); // placeholder function
