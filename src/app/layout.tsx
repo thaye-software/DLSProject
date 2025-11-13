@@ -157,7 +157,7 @@ export default function RootLayout({
 }
 
 function LayoutChatControls() {
-  const { chatOpen, setChatOpen, initialRoom } = useChatContext();
+  const { chatOpen, setChatOpen, initialConversation } = useChatContext();
 
   return (
     <>
@@ -168,7 +168,7 @@ function LayoutChatControls() {
 
       {chatOpen && (
         <AnimatePresence>
-          <ChatBox setChatOpen={setChatOpen} initialRoom={initialRoom} />
+          <ChatBox setChatOpen={setChatOpen} initialConversation={initialConversation} />
         </AnimatePresence>
       )}
     </>

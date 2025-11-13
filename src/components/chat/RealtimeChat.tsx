@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { markAsRead } from "@/services/messageService";
 
 interface RealtimeChatProps {
-  room: any;
+  conversation: any;
   userId: string;
   username: string;
   onMessage?: (messages: ChatMessage[]) => void;
@@ -20,14 +20,14 @@ interface RealtimeChatProps {
 
 /**
  * Realtime chat component
- * @param roomName - The name of the room to join. Each room is a unique chat.
+ * @param conversationName - The name of the conversation to join. Each conversation is a unique chat.
  * @param username - The username of the user
  * @param onMessage - The callback function to handle the messages. Useful if you want to store the messages in a database.
  * @param messages - The messages to display in the chat. Useful if you want to display messages from a database.
  * @returns The chat component
  */
 export const RealtimeChat = ({
-  room,
+  conversation,
   userId,
   username,
   onMessage,
@@ -45,7 +45,7 @@ export const RealtimeChat = ({
     sendMessage,
     isConnected,
   } = useRealtimeChat({
-    room,
+    conversation,
     username,
   });
   const [newMessage, setNewMessage] = useState("");
@@ -89,20 +89,17 @@ export const RealtimeChat = ({
   // set message.isRead to true for all messages where isOwnMessage is false when component mounts
   useEffect(() => {
     const markMessagesAsRead = async () => {
-      console.log("markMessagesAsRead called");
-      console.log("room:", room);
-      console.log("userId:", userId);
       try {
-        if (!room || !room.id || !userId) { 
-          console.log("markMessagesAsRead: missing room.conversationId or userId");
+        if (!conversation || !conversation.id || !userId) { 
+          console.warn("markMessagesAsRead: missing conversation or userId");
           return;
         } 
 
         // ensure conversationId is a number when calling the server
         const convId =
-          typeof room.id === "string"
-            ? Number(room.id)
-            : room.id;
+          typeof conversation.id === "string"
+            ? Number(conversation.id)
+            : conversation.id;
         if (Number.isNaN(convId)) return;
 
         await markAsRead(convId, userId);
@@ -110,9 +107,9 @@ export const RealtimeChat = ({
         console.error("markAsRead failed", err);
       }
     };
-    // run when room or userId becomes available
+    // run when conversation or userId becomes available
     markMessagesAsRead();
-  }, [room, userId]);
+  }, [conversation, userId]);
 
   const handleSendMessage = useCallback(
     (e: React.FormEvent) => {

@@ -29,7 +29,7 @@ export default function ViewWatchPage({
   params: Promise<{ watchSlug: string }>;
 }) {
   const [product, setProduct] = useState<Product | null>(null);
-  const { setChatOpen, setInitialRoom } = useChatContext();
+  const { setChatOpen, setInitialConversation } = useChatContext();
   const { user } = useSupabaseAuth();
 
   async function getProduct() {
@@ -48,7 +48,7 @@ export default function ViewWatchPage({
     }
     const conversation = await createConversation(customerId, productId);
     console.log("Created conversation:", conversation);
-    setInitialRoom(conversation);
+    setInitialConversation(conversation);
   }
 
   async function handleContactClick() {

@@ -6,13 +6,13 @@ import { useEffect, useState } from "react";
 
 export default function ChatBox({
   setChatOpen,
-  initialRoom,
+  initialConversation,
 }: {
   setChatOpen: (open: boolean) => void;
-  initialRoom?: any;
+  initialConversation?: any;
 }) {
-  const [rooms, setRooms] = useState<any[]>([]);
-  const [selectedRoom, setSelectedRoom] = useState<any | null>(initialRoom);
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<any | null>(initialConversation);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -25,24 +25,22 @@ export default function ChatBox({
         if (!mounted) return;
         if (res.status === 401) {
           // Not authenticated: leave rooms empty (or you could redirect to login)
-          setRooms([]);
+          setConversations([]);
           return;
         }
         const payload = await res.json();
         const conversations = payload.conversations ?? [];
-        setRooms(conversations);
+        setConversations(conversations);
       } catch (err) {
         // on error, fallback to empty list
-        setRooms([]);
+        setConversations([]);
       }
     }
-    console.log("Initial room in ChatBox:", initialRoom);
-    console.log("selectedRoom in ChatBox:", selectedRoom);
     void loadConversations();
     return () => {
       mounted = false;
     };
-  }, [selectedRoom]);
+  }, [selectedConversation]);
 
   return (
     <motion.div
@@ -53,11 +51,11 @@ export default function ChatBox({
       className="fixed bottom-24 right-6 z-50 w-[340px] max-w-full h-[480px] rounded-lg bg-card shadow-xl overflow-hidden flex flex-col"
     >
       <div className="sticky top-0 z-30 bg-card flex items-center justify-between p-2 border-b border-border">
-        {selectedRoom ? (
+        {selectedConversation ? (
           <div className="flex items-center justify-between w-full">
             <div>
               <Button
-                onClick={() => setSelectedRoom(null)}
+                onClick={() => setSelectedConversation(null)}
                 size="icon"
                 variant="ghost"
               >
@@ -65,7 +63,7 @@ export default function ChatBox({
               </Button>
             </div>
             <div className="font-bold justify-start">
-              <h1>{selectedRoom.product.name}</h1>
+              <h1>{selectedConversation.product.name}</h1>
             </div>
             <div>
               <Button
@@ -94,9 +92,9 @@ export default function ChatBox({
       </div>
       <div className="flex-1 overflow-hidden min-h-0">
         <ChatPanel
-          rooms={rooms}
-          selectedRoom={selectedRoom}
-          setSelectedRoom={setSelectedRoom}
+          conversations={conversations}
+          selectedConversation={selectedConversation}
+          setSelectedConversation={setSelectedConversation}
           onClose={() => setChatOpen(false)}
         />
       </div>

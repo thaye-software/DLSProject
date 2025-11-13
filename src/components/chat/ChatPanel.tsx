@@ -7,35 +7,31 @@ import { Item } from "../ui/item";
 import Image from "next/image";
 
 export const ChatPanel: React.FC<{
-  rooms: any[];
-  selectedRoom: any | null;
-  setSelectedRoom: (roomId: string | null) => void;
+  conversations: any[];
+  selectedConversation: any | null;
+  setSelectedConversation: (convId: string | null) => void;
   onClose?: () => void;
-}> = ({ rooms, selectedRoom, setSelectedRoom, onClose }) => {
+}> = ({ conversations, selectedConversation, setSelectedConversation, onClose }) => {
   const { user, username } = useSupabaseAuth();
 
-  useEffect(() => {
-    console.log("ChatPanel selectedRoom:", selectedRoom);
-  }, [selectedRoom]);
-
-  // UI: if no room selected show the rooms list full-width; if selected show the room full-width with back button
-  if (!selectedRoom) {
+  // UI: if no conv selected show the convs list full-width; if selected show the conv full-width with back button
+  if (!selectedConversation) {
     return (
       <div className="flex h-full w-full flex-col bg-background min-h-0">
         <div className="flex-1 overflow-y-auto min-h-0">
           <div className="flex flex-col mt-2 px-2">
-            {rooms.map((room) => (
+            {conversations.map((conv) => (
               <Item
-                key={room.id}
-                onClick={() => setSelectedRoom(room)}
+                key={conv.id}
+                onClick={() => setSelectedConversation(conv)}
                 className="flex p-0 text-left w-full rounded-2xl text-sm cursor-pointer hover:bg-accent"
               >
                 <Image
                   src={
-                    room.product.productImages[0].imageUrl ||
+                    conv.product.productImages[0].imageUrl ||
                     "/images/placeholder.png"
                   }
-                  alt={room.product.name}
+                  alt={conv.product.name}
                   width={80}
                   height={80}
                   className="rounded-2xl h-full aspect-square object-cover"
@@ -44,24 +40,24 @@ export const ChatPanel: React.FC<{
                 <div className="gap-2 flex flex-col justify-center flex-1">
                   <div>
                     <span className="font-bold text-lg mr-1">
-                      {room.product.name}
+                      {conv.product.name}
                     </span>
                     {/* <span className="text-xs text-muted-foreground">
-                      ref: {room.product.watch.reference}
+                      ref: {conv  .product.watch.reference}
                     </span> */}
                   </div>
 
                   <div>
-                    {room.messages && room.messages.length > 0 ? (
+                    {conv.messages && conv.messages.length > 0 ? (
                       <div className="text-xs text-foreground/70">
-                        {room.messages[0].sender?.id === user?.id && (
+                        {conv.messages[0].sender?.id === user?.id && (
                           <span className="font-bold">You: </span>
                         )}
                         <span
-                          className={`${!room.messages[0].isRead && room.messages[0].sender?.id !== user?.id ? "font-bold" : ""} inline-block align-middle max-w-45 truncate`}
-                          // title={String(room.messages[0]?.content ?? "")}
+                          className={`${!conv.messages[0].isRead && conv.messages[0].sender?.id !== user?.id ? "font-bold" : ""} inline-block align-middle max-w-45 truncate`}
+                          // title={String(conv.messages[0]?.content ?? "")}
                         >
-                          {room.messages[0]?.content}
+                          {conv.messages[0]?.content}
                         </span>
                       </div>
                     ) : (
@@ -81,10 +77,10 @@ export const ChatPanel: React.FC<{
     <div className="flex h-full w-full flex-col bg-background min-h-0">
       <div className="flex-1 min-h-0">
         <RealtimeChat
-          room={selectedRoom}
+          conversation={selectedConversation}
           userId={user?.id ?? "guest"}
           username={username ?? "guest"}
-          messages={selectedRoom.messages}
+          messages={selectedConversation.messages}
         />
       </div>
     </div>

@@ -6,7 +6,7 @@ import { persistMessage, PersistableMessage } from "@/services/messageService";
 import { useCallback, useEffect, useState } from "react";
 
 interface UseRealtimeChatProps {
-  room: any;
+  conversation: any;
   username: string;
 }
 
@@ -29,7 +29,7 @@ export interface ChatMessage {
 
 const EVENT_MESSAGE_TYPE = "message";
 
-export function useRealtimeChat({ room, username }: UseRealtimeChatProps) {
+export function useRealtimeChat({ conversation, username }: UseRealtimeChatProps) {
   const { user } = useSupabaseAuth();
   const supabase = createClient();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -39,7 +39,7 @@ export function useRealtimeChat({ room, username }: UseRealtimeChatProps) {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const newChannel = supabase.channel(room);
+    const newChannel = supabase.channel(conversation);
 
     newChannel
       .on("broadcast", { event: EVENT_MESSAGE_TYPE }, (payload) => {
@@ -58,7 +58,7 @@ export function useRealtimeChat({ room, username }: UseRealtimeChatProps) {
     return () => {
       supabase.removeChannel(newChannel);
     };
-  }, [room, username, supabase]);
+  }, [conversation, username, supabase]);
 
   const sendMessage = useCallback(
     async (content: string) => {
@@ -66,7 +66,7 @@ export function useRealtimeChat({ room, username }: UseRealtimeChatProps) {
 
       const message: ChatMessage = {
         id: crypto.randomUUID(),
-        conversationId: Number(room.id),
+        conversationId: Number(conversation.id),
         senderId: user?.id ?? null,
         sender: {
           id: user?.id ?? null,
@@ -92,7 +92,7 @@ export function useRealtimeChat({ room, username }: UseRealtimeChatProps) {
       });
 
       const messageToPersist: PersistableMessage = {
-        conversationId: Number(room.id),
+        conversationId: Number(conversation.id),
         senderId: user?.id ?? "",
         senderType: "customer",
         content,
