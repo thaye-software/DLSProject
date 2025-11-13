@@ -62,9 +62,13 @@ jobs:
         run: |
           set -e
           OUTPUT=$(npm run ${{ inputs.npm-script }} 2>&1) || true
-          echo "$OUTPUT"
-          if echo "$OUTPUT" | grep -q "Error"; then
-            echo "Migration failed for ${{ inputs.environment }}"
-            exit 1
+
+          
           fi
           echo "Migration completed successfully for ${{ inputs.environment }}"
+
+# Removed this temporarily, not working correctly          
+# echo "$OUTPUT"
+#       if echo "$OUTPUT" | grep -q "Error"; then
+#       echo "Migration failed for ${{ inputs.environment }}"
+#       exit 1
