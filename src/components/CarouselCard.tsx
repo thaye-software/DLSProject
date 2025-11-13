@@ -73,6 +73,7 @@ export const CarouselCard: React.FC<CarouselCardProps> = ({ image }) => {
           src={image.src}
           alt={image.brand}
           fill
+          sizes="20" // nextjs was complaining without this
           style={{ objectFit: "cover" }}
         />
       </motion.div>

@@ -9,6 +9,8 @@ import {
   text,
   timestamp,
   check,
+  uuid,
+  decimal,
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 
@@ -30,7 +32,7 @@ export const addresses = pgTable(
   "addresses",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
-    userId: bigint("user_id", { mode: "number" }).notNull(),
+    userId: uuid("user_id").notNull(),
     address1: varchar("address_line_1", { length: 255 }).notNull(),
     address2: varchar("address_line_2", { length: 255 }),
     city: varchar("city", { length: 255 }).notNull(),
@@ -78,9 +80,7 @@ export const brands = pgTable(
     id: bigserial("id", { mode: "number" }).primaryKey(),
     slug: text("slug").notNull().unique(),
     name: varchar("name", { length: 255 }).notNull().unique(),
-    country: varchar("country", { length: 255 })
-      .notNull()
-      .default(""),
+    country: varchar("country", { length: 255 }).notNull().default(""),
     addressLine1: varchar("address_line_1", { length: 255 }),
     addressLine2: varchar("address_line_2", { length: 255 }),
     zipCode: varchar("zip_code", { length: 50 }),
@@ -90,20 +90,16 @@ export const brands = pgTable(
     email: varchar("email", { length: 255 }),
     website: varchar("website", { length: 255 }),
   },
-  (table) => [
-    index("idx_brands_name").on(table.name),
-  ]
+  (table) => [index("idx_brands_name").on(table.name)]
 );
 
 export const users = pgTable(
   "users",
   {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
+    id: uuid("id").primaryKey(),
     username: varchar("username", { length: 255 }).notNull().unique(),
     email: varchar("email", { length: 255 }).notNull().unique(),
-    password: varchar("password", { length: 255 }).notNull(),
     avatarUrl: text("avatar_url"),
-    emailConfirmed: boolean("email_confirmed").notNull().default(false),
     role: varchar("role", { length: 50 }).notNull().default("customer"),
     country: bigint("country", { mode: "number" }).references(
       () => countries.id,
@@ -117,7 +113,6 @@ export const users = pgTable(
   (table) => [
     index("idx_users_country").on(table.country),
     index("idx_users_address").on(table.addressId),
-    index("idx_users_email_confirmed").on(table.emailConfirmed),
   ]
 );
 
@@ -175,7 +170,7 @@ export const orders = pgTable(
   "orders",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
-    userId: bigint("user_id", { mode: "number" })
+    userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     totalPrice: bigint("total_price", { mode: "number" }).notNull(),
@@ -183,11 +178,21 @@ export const orders = pgTable(
     currency: varchar("currency", { length: 10 }).notNull().default("DKK"),
 
     // Currency fields
-    currencyCode: varchar("currency_code", { length: 3 }).notNull().default("DKK"),
-    exchangeRateUsed: decimal("exchange_rate_used", { precision: 10, scale: 6 }).notNull().default("1.000000"),
-    totalPriceDkk: decimal("total_price_dkk", { precision: 12, scale: 2 }).notNull(),
-    totalPriceCurrency: decimal("total_price_currency", { precision: 12, scale: 2 }).notNull(),
-    
+    currencyCode: varchar("currency_code", { length: 3 })
+      .notNull()
+      .default("DKK"),
+    exchangeRateUsed: decimal("exchange_rate_used", { precision: 10, scale: 6 })
+      .notNull()
+      .default("1.000000"),
+    totalPriceDkk: decimal("total_price_dkk", {
+      precision: 12,
+      scale: 2,
+    }).notNull(),
+    totalPriceCurrency: decimal("total_price_currency", {
+      precision: 12,
+      scale: 2,
+    }).notNull(),
+
     deliveryAddressId: bigint("delivery_address_id", {
       mode: "number",
     }).references(() => orderAddresses.id, { onDelete: "set null" }),
@@ -234,10 +239,9 @@ export const blogPosts = pgTable(
     id: bigserial("id", { mode: "number" }).primaryKey(),
     title: varchar("title", { length: 255 }).notNull(),
     content: text("content").notNull(),
-    authorId: bigint("author_id", { mode: "number" }).references(
-      () => users.id,
-      { onDelete: "set null" }
-    ),
+    authorId: uuid("author_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [
@@ -280,12 +284,12 @@ export const conversations = pgTable(
   "conversations",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
-    customerId: bigint("customer_id", { mode: "number" })
+    customerId: uuid("customer_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     productId: bigint("product_id", { mode: "number" })
       .notNull()
-      .references(() => watches.id, { onDelete: "cascade" }),
+      .references(() => products.id, { onDelete: "cascade" }),
     status: text("status").default("open"), // open, closed, pending
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
@@ -309,7 +313,7 @@ export const messages = pgTable(
     conversationId: bigint("conversation_id", { mode: "number" })
       .notNull()
       .references(() => conversations.id, { onDelete: "cascade" }),
-    senderId: bigint("sender_id", { mode: "number" })
+    senderId: uuid("sender_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     senderType: text("sender_type").notNull(), // 'customer' or 'seller'
@@ -329,16 +333,15 @@ export const messages = pgTable(
   ]
 );
 
-import { decimal } from "drizzle-orm/pg-core";
-
-// Add these tables after your existing tables
-
 export const currencies = pgTable(
   "currencies",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
     code: varchar("code", { length: 3 }).notNull().unique(),
-    exchangeRate: decimal("exchange_rate", { precision: 10, scale: 6 }).notNull(),
+    exchangeRate: decimal("exchange_rate", {
+      precision: 10,
+      scale: 6,
+    }).notNull(),
     isActive: boolean("is_active").notNull().default(true),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -355,7 +358,10 @@ export const currencyHistory = pgTable(
     currencyId: bigint("currency_id", { mode: "number" })
       .notNull()
       .references(() => currencies.id, { onDelete: "cascade" }),
-    exchangeRate: decimal("exchange_rate", { precision: 10, scale: 6 }).notNull(),
+    exchangeRate: decimal("exchange_rate", {
+      precision: 10,
+      scale: 6,
+    }).notNull(),
     changedAt: timestamp("changed_at").notNull().defaultNow(),
     changedBy: varchar("changed_by", { length: 255 }),
   },
@@ -365,17 +371,7 @@ export const currencyHistory = pgTable(
   ]
 );
 
-
-
-
-
-
 //----------------------------------------------------------------  Relations --------------------------------------------------------------------
-
-
-
-
-
 
 export const countriesRelations = relations(countries, ({ many }) => ({
   users: many(users),
@@ -425,7 +421,6 @@ export const watchesRelations = relations(watches, ({ one, many }) => ({
   auctions: many(auctions),
   conversations: many(conversations),
 }));
-
 
 export const productImagesRelations = relations(productImages, ({ one }) => ({
   product: one(products, {
@@ -504,9 +499,9 @@ export const conversationsRelations = relations(
       fields: [conversations.customerId],
       references: [users.id],
     }),
-    product: one(watches, {
+    product: one(products, {
       fields: [conversations.productId],
-      references: [watches.id],
+      references: [products.id],
     }),
     messages: many(messages),
   })
@@ -528,9 +523,12 @@ export const currenciesRelations = relations(currencies, ({ many }) => ({
   orders: many(orders),
 }));
 
-export const currencyHistoryRelations = relations(currencyHistory, ({ one }) => ({
-  currency: one(currencies, {
-    fields: [currencyHistory.currencyId],
-    references: [currencies.id],
-  }),
-}));
+export const currencyHistoryRelations = relations(
+  currencyHistory,
+  ({ one }) => ({
+    currency: one(currencies, {
+      fields: [currencyHistory.currencyId],
+      references: [currencies.id],
+    }),
+  })
+);

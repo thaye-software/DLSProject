@@ -15,7 +15,6 @@ import {
 import { Button } from "../ui/button";
 import { UserNavbarDropdown } from "./UserNavbarDropdown";
 import SearchBar from "./SearchBar";
-import { productService } from "@/services/productService";
 
 export function Navbar() {
   const { user, isLoggedIn, loading, role } = useSupabaseAuth();
