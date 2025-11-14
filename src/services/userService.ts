@@ -92,6 +92,10 @@ export const userService = {
         columns: {
           id: true,
           email: true,
+          firstName: true,
+          middleName: true,
+          lastName: true,
+          phone: true
         },
         with: {
           country: {
