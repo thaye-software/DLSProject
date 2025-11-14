@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { RealtimeChat } from "./RealtimeChat";
-import { useSupabaseAuth } from "@/lib/useSupabaseAuth";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { Item } from "../ui/item";
 import Image from "next/image";
 
@@ -13,8 +13,14 @@ export const ChatPanel: React.FC<{
   selectedConversation: any | null;
   setSelectedConversation: (convId: string | null) => void;
   onClose?: () => void;
-}> = ({ user, username, conversations, selectedConversation, setSelectedConversation, onClose }) => {
-
+}> = ({
+  user,
+  username,
+  conversations,
+  selectedConversation,
+  setSelectedConversation,
+  onClose,
+}) => {
   // UI: if no conv selected show the convs list full-width; if selected show the conv full-width with back button
   if (!selectedConversation) {
     return (
@@ -55,7 +61,12 @@ export const ChatPanel: React.FC<{
                           <span className="font-bold">You: </span>
                         )}
                         <span
-                          className={`${!conv.messages[0].isRead && conv.messages[0].sender?.id !== user?.id ? "font-bold" : ""} inline-block align-middle max-w-45 truncate`}
+                          className={`${
+                            !conv.messages[0].isRead &&
+                            conv.messages[0].sender?.id !== user?.id
+                              ? "font-bold"
+                              : ""
+                          } inline-block align-middle max-w-45 truncate`}
                         >
                           {conv.messages[0]?.content}
                         </span>

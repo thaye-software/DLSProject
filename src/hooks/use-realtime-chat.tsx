@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient } from "@/database/supabase/client";
-import { useSupabaseAuth } from "@/lib/useSupabaseAuth";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { persistMessage, PersistableMessage } from "@/services/messageService";
 import { useCallback, useEffect, useState } from "react";
 
@@ -29,7 +29,10 @@ export interface ChatMessage {
 
 const EVENT_MESSAGE_TYPE = "message";
 
-export function useRealtimeChat({ conversation, username }: UseRealtimeChatProps) {
+export function useRealtimeChat({
+  conversation,
+  username,
+}: UseRealtimeChatProps) {
   const { user } = useSupabaseAuth();
   const supabase = createClient();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -98,7 +101,7 @@ export function useRealtimeChat({ conversation, username }: UseRealtimeChatProps
         content,
         isRead: false,
         createdAt: new Date().toISOString(),
-      }
+      };
 
       // Persist message to backend
       await persistMessage(messageToPersist);

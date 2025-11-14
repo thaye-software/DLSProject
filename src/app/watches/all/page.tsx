@@ -18,8 +18,7 @@ export default async function AllWatches() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-2">All Watches</h1>
-      <p className="text-muted-foreground mb-8">This is the page that lists all watches.</p>
+      <h1 className="text-4xl font-bold mb-10">All Watches</h1>
       
       <div className="flex justify-center">
         <Suspense fallback={<Spinner className="w-8 h-8"/>}>

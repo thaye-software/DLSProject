@@ -6,16 +6,16 @@ import { ArrowLeft, X } from "lucide-react";
 import { ChatPanel } from "./ChatPanel";
 import { useEffect, useState } from "react";
 import { getConversations } from "@/services/conversationService";
-import { useSupabaseAuth } from "@/lib/useSupabaseAuth";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 
 export default function ChatBox({
   setChatOpen,
   initialConversation,
-  setInitialConversation
+  setInitialConversation,
 }: {
   setChatOpen: (open: boolean) => void;
-    initialConversation?: any;
-    setInitialConversation: React.Dispatch<React.SetStateAction<any>>;
+  initialConversation?: any;
+  setInitialConversation: React.Dispatch<React.SetStateAction<any>>;
 }) {
   const [conversations, setConversations] = useState<any[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<any | null>(
@@ -23,11 +23,10 @@ export default function ChatBox({
   );
   const [loading, setLoading] = useState(false);
   const { user, role } = useSupabaseAuth();
-  
+
   useEffect(() => {
     let mounted = true;
     async function loadConversations() {
-      
       setLoading(true);
       try {
         if (!user || !user.id || !role) {

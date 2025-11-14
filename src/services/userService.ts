@@ -1,10 +1,12 @@
+"use server";
+
 import { db } from "@/database/drizzle";
 import { users } from "@/database/schema";
 import { eq } from "drizzle-orm";
 import { UserModel, NewUserModel } from "@/database/types";
 
-export const userService = {
-  async getAllUsers() {
+
+  export async function getAllUsers() {
     try {
       const allUsers = await db.select().from(users);
       return { success: true, data: allUsers };
@@ -12,19 +14,21 @@ export const userService = {
       console.error("Error fetching users:", error);
       return { success: false, error: "Failed to fetch users" };
     }
-  },
+  }
 
-  async getUserById(id: string) {
+  export async function getUserById(id: string) {
     try {
-      const user = await db.select().from(users).where(eq(users.id, id));
-      return { success: true, data: user[0] || null };
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, id),
+      })
+      return user;
     } catch (error) {
       console.error("Error fetching user:", error);
-      return { success: false, error: "Failed to fetch user" };
+      return { error: "Failed to fetch user" };
     }
-  },
+  }
 
-  async getUserByUsername(username: string) {
+  export async function getUserByUsername(username: string) {
     try {
       const user = await db
         .select()
@@ -35,9 +39,9 @@ export const userService = {
       console.error("Error fetching user by username:", error);
       return { success: false, error: "Failed to fetch user by username" };
     }
-  },
+  }
 
-  async getUserByEmail(email: string) {
+  export async function getUserByEmail(email: string) {
     try {
       const user = await db.select().from(users).where(eq(users.email, email));
       return { success: true, data: user[0] || null };
@@ -45,9 +49,9 @@ export const userService = {
       console.error("Error fetching user by email:", error);
       return { success: false, error: "Failed to fetch user by email" };
     }
-  },
+  }
 
-  async createUser(user: NewUserModel) {
+  export async function createUser(user: NewUserModel) {
     // check if user with the same username already exists
     const existingUser = await db
       .select()
@@ -83,5 +87,5 @@ export const userService = {
         error: "Something went wrong. please try again.",
       };
     }
-  },
-} as const;
+  }
+

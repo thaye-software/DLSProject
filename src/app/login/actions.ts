@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/database/supabase/server";
 import { RegisterSchema, LoginSchema } from "./validation";
-import { userService } from "@/services/userService";
+import { createUser } from "@/services/userService";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
@@ -70,28 +70,6 @@ export async function login(
       values: { email, password },
     };
   }
-
-  // On successful sign in, fetch avatar by email from the users table.
-  // Use the absolute baseUrl because this code runs on the server.
-  try {
-    const res = await fetch(
-      `${baseUrl}/api/users/avatar?email=${encodeURIComponent(email)}`
-    );
-
-    if (res.ok) {
-      const { avatarUrl } = await res.json();
-      // Note: this is server-side code; localStorage is not available here.
-      // If you want the client to have the avatar immediately, either:
-      // - store it in a cookie (via next/headers cookies()),
-      // - or return it to the client and let the client set localStorage,
-      // - or let the client fetch it after redirect via the hook.
-      // For now we don't persist it server-side — the value is fetched to ensure it exists.
-    }
-  } catch (fetchErr) {
-    // ignore avatar fetch failures — don't block sign-in
-    console.error("Failed to fetch avatar:", fetchErr);
-  }
-
   revalidatePath("/", "layout");
   redirect("/");
 }
@@ -148,7 +126,7 @@ export async function register(
     role: "customer",
   }
 
-  const createUserResponse = await userService.createUser(newUser)
+  const createUserResponse = await createUser(newUser)
 
   // set display name in supabase auth user metadata
   const { error } = await supabase.auth.updateUser({

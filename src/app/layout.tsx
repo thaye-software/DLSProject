@@ -18,7 +18,7 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "framer-motion";
 import ChatBox from "@/components/chat/ChatBox";
-import { useSupabaseAuth } from "@/lib/useSupabaseAuth";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 
 const theSeasons = theSeasonsFont({
   src: [
@@ -157,7 +157,8 @@ export default function RootLayout({
 }
 
 function LayoutChatControls() {
-  const { chatOpen, setChatOpen, initialConversation, setInitialConversation } = useChatContext();
+  const { chatOpen, setChatOpen, initialConversation, setInitialConversation } =
+    useChatContext();
 
   return (
     <>
