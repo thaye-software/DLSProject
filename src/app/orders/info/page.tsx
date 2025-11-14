@@ -2,13 +2,14 @@ import BackButton from "@/components/BackButton";
 import ShippingAndBillingForm from "@/components/Orders/Info/ShippingAndBillingForm";
 import { getSignedInUser } from "@/lib/utils/serverutils/utils";
 import { redirect } from "next/navigation";
-import { useSupabaseAuth } from "@/lib/useSupabaseAuth";
 import { userService } from "@/services/userService";
 import ToastWrapper from "@/components/Toast/ToastWrapper";
+import { SearchParams } from "next/dist/server/request/search-params";
 
 
-export default async function OrdersInfoPage() {
+export default async function OrdersInfoPage({searchParams}: {searchParams: SearchParams}) {
 
+  const productSlug = (await searchParams).product;
   let state = { success: true, message: "", redirectUrl: "" };
 	const { data: { user }, error } = await getSignedInUser();
 	
@@ -28,7 +29,7 @@ export default async function OrdersInfoPage() {
       {customer ? (
         <div>
           <BackButton/>
-          <ShippingAndBillingForm customer={customer}/>
+          <ShippingAndBillingForm customer={customer} productSlug={productSlug as string}/>
         </div>
       ) : (
         <ToastWrapper state={state}/>
