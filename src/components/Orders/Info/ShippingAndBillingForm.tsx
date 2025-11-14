@@ -93,6 +93,7 @@ export default function ShippingAndBillingForm({customer, productSlug}: {custome
 
 	const [sameAsShipping, setSameAsShipping] = useState<boolean>(true);
   	const [saveBillingInfo, setSaveBillingInfo] = useState<boolean>(true);
+	const [isBillingInfoSaved, setIsBillingInfoSaved] = useState<boolean>(customer.country != null && customer.address != null);
 
 	let state = {success: true, message: "", redirectUrl: ""}
 
@@ -182,16 +183,32 @@ export default function ShippingAndBillingForm({customer, productSlug}: {custome
 														</p>
 													)} */}
 													{/* {...form.register("firstName")} */}
-													<Input id="firstName" placeholder="your first name" name="firstName" required/>
+													<Input 
+														id="firstName" 
+														name="firstName" 
+														placeholder="your first name" 
+														value={isBillingInfoSaved && customer.firstName != null ? customer.firstName : ""}
+														required
+													/>
 												</div>
 
 												<div className="space-y-2">
 													<Label htmlFor="middleName">Middle Name (Optional)</Label>
-													<Input id="middleName" placeholder="your middle name" name="middleName"/>
+													<Input 
+														id="middleName" 
+														name="middleName"
+														placeholder="your middle name"
+														value={isBillingInfoSaved && customer.middleName != null ? customer.middleName : ""}
+													/>
 												</div>
 												<div className="space-y-2">
 													<Label htmlFor="lastName">Last Name*</Label>
-													<Input id="lastName" placeholder="your last name" name="lastName" required />
+													<Input 
+														id="lastName" 
+														name="lastName" 
+														placeholder="your last name" 
+														value={isBillingInfoSaved && customer.lastName != null ? customer.lastName : ""}
+														required />
 												</div>
 											</div>
 
@@ -202,45 +219,78 @@ export default function ShippingAndBillingForm({customer, productSlug}: {custome
 
 											<div className="space-y-2">
 												<Label htmlFor="phone">Phone Number (optional)</Label>
-												<Input id="phone" type="tel" name="phone" placeholder="+45 26 46 95 96" />
+												<Input 
+													id="phone" 
+													type="tel" 
+													name="phone" 
+													placeholder="+45 26 46 95 96"
+													value={isBillingInfoSaved && customer.phone != null ? customer.phone : ""} 
+												/>
 											</div>
 
 											<div className="space-y-2">
 												<Label htmlFor="address">Street Address*</Label>
-												<Input id="address" name="address" placeholder="123 Main Street" required/>
+												<Input 
+													id="address" 
+													name="address" 
+													placeholder="123 Main Street" 
+													value={isBillingInfoSaved && customer.address?.address1 != null ? customer.address.address1 : ""}
+													required
+												/>
 											</div>
 
 											<div className="grid grid-cols-2 gap-4">
 												<div className="space-y-2">
-													<Label htmlFor="city">City</Label>
-													<Input id="city" name="city" placeholder="Copenhagen" required/>
+													<Label htmlFor="city">City*</Label>
+													<Input 
+														id="city" 
+														name="city" 
+														placeholder="Copenhagen" 
+														value={isBillingInfoSaved && customer.address?.city != null ? customer.address.city : ""}
+														required
+													/>
 												</div>
 												<div className="space-y-2">
-													<Label htmlFor="postalCode">Postal Code</Label>
-													<Input id="postalCode" name="postalCode" placeholder="2300" required/>
+													<Label htmlFor="postalCode">Postal Code*</Label>
+													<Input 
+														id="postalCode" 
+														name="postalCode" 
+														placeholder="2300" 
+														value={isBillingInfoSaved && customer.address?.zipCode != null ? customer.address.zipCode : ""}
+														required
+													/>
 												</div>
 											</div>
 
 											<div className="space-y-2">
-												<Label htmlFor="country">Country</Label>
+												<Label htmlFor="country">Country*</Label>
 												<select 
 													id="country" 
 													name="country" 
 													required
 													className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 												>
-													<option value="">Select a country</option>
-														{countries.map((countryName) => (
+													<option value={isBillingInfoSaved && customer.country?.name != null ? customer.country.name : ""}>
+														Select a country
+													</option>
+
+													{countries.map((countryName) => (
 														<option key={countryName} value={countryName}>
 															{countryName}
 														</option>
-														))}
+													))}
+
 												</select>
 											</div>
 
 											<div className="space-y-2">
 												<Label htmlFor="stateProvince">State Province (optional)</Label>
-												<Input id="stateProvince" name="stateProvince" placeholder="Hovedstaden"/>
+												<Input 
+													id="stateProvince" 
+													name="stateProvince" 
+													placeholder="Hovedstaden"
+													value={isBillingInfoSaved && customer.address?.stateProvince != null ? customer.address.stateProvince : ""}
+												/>
 											</div>
 										</div>
 

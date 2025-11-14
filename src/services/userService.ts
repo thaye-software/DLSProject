@@ -8,6 +8,10 @@ import { NewUserModel } from "@/database/types";
 export interface CustomerInfo {
   id: string;
   email: string;
+  firstName: string | null;
+  middleName: string | null;
+  lastName: string | null;
+  phone: string | null;
   country: {
     id: number;
     name: string;
