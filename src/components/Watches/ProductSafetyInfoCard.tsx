@@ -24,13 +24,13 @@ interface ProductSafetyInfoProps {
 export default function ProductSafetyInfo({ safetyInfo, brandName }: ProductSafetyInfoProps) {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-      <Card className="bg-white border-[#D3C6A3] shadow-md">
+      <Card className="shadow-md">
         <CardHeader>
-          <CardTitle className="text-2xl flex items-center gap-3 text-[#1A1A1A]">
-            <Shield size={24} className="text-[#773D0E]" />
+          <CardTitle className="text-2xl flex items-center gap-3">
+            <Shield size={24} className="" />
             Product Safety Information
           </CardTitle>
-          <CardDescription className="text-[#244B5A]">
+          <CardDescription className="">
             Manufacturer details and contact information
           </CardDescription>
         </CardHeader>
@@ -38,9 +38,9 @@ export default function ProductSafetyInfo({ safetyInfo, brandName }: ProductSafe
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Manufacturer Information */}
-            <Card className="bg-[#F5F3EE] border-[#D3C6A3]">
+            <Card className="">
               <CardHeader>
-                <CardTitle className="text-lg text-[#773D0E]">
+                <CardTitle className="text-lg">
                   Manufacturer
                 </CardTitle>
               </CardHeader>
@@ -57,9 +57,9 @@ export default function ProductSafetyInfo({ safetyInfo, brandName }: ProductSafe
             </Card>
 
             {/* Contact Information */}
-            <Card className="bg-[#F5F3EE] border-[#D3C6A3]">
+            <Card className="">
               <CardHeader>
-                <CardTitle className="text-lg text-[#773D0E]">
+                <CardTitle className="text-lg">
                   Contact Details
                 </CardTitle>
               </CardHeader>
@@ -84,7 +84,7 @@ export default function ProductSafetyInfo({ safetyInfo, brandName }: ProductSafe
                         href={safetyInfo.website}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[#244B5A] hover:text-[#773D0E] underline transition-colors"
+                        className="text-muted-foreground underline transition-colors"
                       >
                         {safetyInfo.website}
                       </a>
@@ -95,14 +95,14 @@ export default function ProductSafetyInfo({ safetyInfo, brandName }: ProductSafe
             </Card>
 
             {/* Address Information */}
-            <Card className="bg-[#F5F3EE] border-[#D3C6A3] md:col-span-2">
+            <Card className="md:col-span-2">
               <CardHeader>
-                <CardTitle className="text-lg text-[#773D0E]">
+                <CardTitle className="text-lg">
                   Address
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <address className="not-italic text-[#244B5A] space-y-1">
+                <address className="not-italic text-muted-foreground space-y-1">
                   <p>{safetyInfo.address}</p>
                   {safetyInfo.address2 && (
                     <p>{safetyInfo.address2}</p>
@@ -122,8 +122,8 @@ export default function ProductSafetyInfo({ safetyInfo, brandName }: ProductSafe
           </div>
 
           {/* Disclaimer */}
-          <div className="pt-6 border-t border-[#D3C6A3]">
-            <p className="text-[#5E561C] text-xs leading-relaxed">
+          <div className="pt-6 border-t">
+            <p className="text-muted-foreground text-xs leading-relaxed">
               This information is provided in accordance with EU product safety regulations. 
               For any safety concerns or questions regarding this product, please contact the manufacturer 
               using the details provided above.
@@ -139,8 +139,8 @@ export default function ProductSafetyInfo({ safetyInfo, brandName }: ProductSafe
 function SafetyInfoItem({ label, value }: { label: string; value: string | React.ReactNode }) {
   return (
     <div className="flex flex-col sm:flex-row sm:gap-2">
-      <span className="text-[#5E561C] text-sm font-medium min-w-[100px]">{label}:</span>
-      <span className="text-[#244B5A] text-sm">
+      <span className=" text-sm font-medium min-w-[100px]">{label}:</span>
+      <span className="text-muted-foreground text-sm">
         {value}
       </span>
     </div>

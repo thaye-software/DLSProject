@@ -157,8 +157,7 @@ export default function RootLayout({
 }
 
 function LayoutChatControls() {
-  const { chatOpen, setChatOpen, initialConversation } = useChatContext();
-  const { user, role } = useSupabaseAuth();
+  const { chatOpen, setChatOpen, initialConversation, setInitialConversation } = useChatContext();
 
   return (
     <>
@@ -172,8 +171,7 @@ function LayoutChatControls() {
           <ChatBox
             setChatOpen={setChatOpen}
             initialConversation={initialConversation}
-            user={user}
-            role={role}
+            setInitialConversation={setInitialConversation}
           />
         </AnimatePresence>
       )}

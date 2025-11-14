@@ -112,6 +112,7 @@ export const RealtimeChat = ({
             : conversation.id;
         if (Number.isNaN(convId)) return;
 
+        console.log("userId:", userId);
         await markAsRead(convId, userId);
       } catch (err) {
         console.error("markAsRead failed", err);
