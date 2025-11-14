@@ -20,7 +20,7 @@ export async function WatchCard({ product, countryCode }: { product: Product, co
 
   return (
 
-            <Card className="group bg-transparent overflow-hidden transition-all duration-300 border-0 shadow-none p-0">
+            <Card className="group bg-transparent overflow-hidden transition-all duration-300 border-0 shadow-none p-0 gap-1">
                 <Link href={`/watches/view/${product.watch.slug}`}>
                     <CardHeader className="p-0">
                         <div className="relative overflow-hidden aspect-square rounded-2xl">
@@ -49,7 +49,7 @@ export async function WatchCard({ product, countryCode }: { product: Product, co
                     </CardHeader>
                 </Link> 
             
-                <CardContent className="pb-2 gap-2 flex flex-col justify-between h-full px-3">
+                <CardContent className="gap-2 flex flex-col justify-between h-full px-3">
                     <div className="">
                         {/* Brand + Model */}
                             <p className="text-xs text-muted-foreground font-semibold tracking-[0.2em] uppercase line-clamp-1">
