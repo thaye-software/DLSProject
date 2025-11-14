@@ -70,28 +70,6 @@ export async function login(
       values: { email, password },
     };
   }
-
-  // On successful sign in, fetch avatar by email from the users table.
-  // Use the absolute baseUrl because this code runs on the server.
-  try {
-    const res = await fetch(
-      `${baseUrl}/api/users/avatar?email=${encodeURIComponent(email)}`
-    );
-
-    if (res.ok) {
-      const { avatarUrl } = await res.json();
-      // Note: this is server-side code; localStorage is not available here.
-      // If you want the client to have the avatar immediately, either:
-      // - store it in a cookie (via next/headers cookies()),
-      // - or return it to the client and let the client set localStorage,
-      // - or let the client fetch it after redirect via the hook.
-      // For now we don't persist it server-side — the value is fetched to ensure it exists.
-    }
-  } catch (fetchErr) {
-    // ignore avatar fetch failures — don't block sign-in
-    console.error("Failed to fetch avatar:", fetchErr);
-  }
-
   revalidatePath("/", "layout");
   redirect("/");
 }
