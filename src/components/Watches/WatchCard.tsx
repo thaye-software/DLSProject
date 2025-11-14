@@ -1,3 +1,5 @@
+
+
 import Image from "next/image";
 import Link from "next/link";
 
@@ -7,17 +9,17 @@ import { Button } from "@/components/ui/button";
 import { ShoppingCart } from "lucide-react";
 
 import { Product } from "@/app/watches/type";
-import { currencyService } from "@/services/currencyService";
+import { convertPrice } from "@/services/currencyService";
 import AddToCartButton from "./AddToCartButton";
 
 
-export function WatchCard({ product, countryCode }: { product: Product, countryCode: string }) {
-    
-  const formatedPrice = currencyService.convertPrice(product.priceDkk, countryCode);
-  
-  
-    return (
-        
+export async function WatchCard({ product, countryCode }: { product: Product, countryCode: string }) {
+
+  const formattedPrice = await convertPrice(product.priceDkk, countryCode.toLowerCase());
+
+
+  return (
+
             <Card className="group overflow-hidden transition-all duration-300 hover:shadow-2xl border-0 p-0">
                 <Link href={`/watches/view/${product.watch.slug}`}>
                     <CardHeader className="p-0">
@@ -65,7 +67,7 @@ export function WatchCard({ product, countryCode }: { product: Product, countryC
                     {/* Price + Button */}
                     <div className="flex items-center justify-between gap-4 pt-2 mt-auto">
                         <p className="text-3xl font-bold">
-                            {formatedPrice}
+                            {formattedPrice}
                         </p>
 
                         <div className="overflow-hidden">

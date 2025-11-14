@@ -1,9 +1,9 @@
-"use client";
+
 
 import BackButton from "@/components/BackButton";
 import ProductImageSwiper from "@/components/Watches/ProductImageSwiper";
 import { getProductBySlug } from "@/services/productService";
-import { notFound, redirect, useRouter } from "next/navigation";
+import { notFound } from "next/navigation";
 import {
   Check,
   Shield,
@@ -13,68 +13,23 @@ import {
   Gauge,
   Clock,
 } from "lucide-react";
-// import { currencyService } from "@/services/currencyService";
+import { convertPrice } from "@/services/currencyService";
 import ProductSafetyInfo from "@/components/Watches/ProductSafetyInfoCard";
-import { Product } from "../../type";
 import AddToCartButton from "@/components/Watches/AddToCartButton";
-import { Button } from "@/components/ui/button";
-import { useChatContext } from "@/context/ChatContext";
-import { useEffect, useState } from "react";
-import { useSupabaseAuth } from "@/lib/useSupabaseAuth";
-import { createConversation } from "@/services/conversationService";
+import ContactButton from "@/components/Contact/ContactButton";
 
-export default function ViewWatchPage({
+export default async function ViewWatchPage({
   params,
 }: {
   params: Promise<{ watchSlug: string }>;
   }) {
-  const router = useRouter();
-  const [product, setProduct] = useState<Product | null>(null);
-  const { setChatOpen, setInitialConversation } = useChatContext();
-  const { user } = useSupabaseAuth();
 
-  async function getProduct() {
-    const p = await params;
-    console.log("Fetching product for slug:", p);
-    const slug = p.watchSlug;
-    return await getProductBySlug(slug);
+  
+  const product = await getProductBySlug((await params).watchSlug)
+  if (!product) {
+    return notFound();
   }
-
-  async function createNewConversation() {
-    const productId = product ? product.id : null;
-    const customerId = user ? user.id : null;
-    if (!productId) {
-      console.error("Product ID is not available.");
-      return;
-    }
-    if (!customerId) {
-      console.error("User is not logged in.");
-      router.push("/login");
-      return;
-    }
-
-    const conversation = await createConversation(customerId, productId);
-    console.log("Created conversation:", conversation);
-    setInitialConversation(conversation);
-  }
-
-  async function handleContactClick() {
-    await createNewConversation();
-    setChatOpen(true);
-  }
-
-  useEffect(() => {
-    const fetchProduct = async () => {
-      const prod = await getProduct();
-      console.log("Fetched product:", prod);
-      if (!prod) {
-        notFound();
-      } else {
-        setProduct(prod);
-      }
-    };
-    fetchProduct();
-  }, []);
+  const formattedPrice = await convertPrice(product?.priceDkk, "dkk");
 
   let brandName = "";
   let productSafetyInfo = null;
@@ -96,11 +51,11 @@ export default function ViewWatchPage({
   }
 
   //TODO use either headers/cookies to find out location of user to display correct currency.
-  // const formattedPrice = await currencyService.convertPrice(product.priceDkk, "dkk")
+  // formattedPrice = convertPrice(product?.priceDkk, "dkk");
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-[#F5F3EE] flex items-center justify-center">
+      <div className="min-h-screen flex">
         <div className="text-center text-lg text-[#244B5A]">
           Loading product...
         </div>
@@ -109,12 +64,12 @@ export default function ViewWatchPage({
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F3EE]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="min-h-screen container mx-auto">
+      <div className="mx-auto py-6">
         <BackButton />
       </div>
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8 pb-16">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Left Column - Image Swiper */}
           <div className="lg:sticky lg:top-8 lg:self-start">
@@ -140,7 +95,7 @@ export default function ViewWatchPage({
             <div className="bg-white border border-[#D3C6A3] rounded-lg p-6 shadow-sm">
               <div className="text-[#244B5A] text-md mb-1">Price</div>
               <div className="text-4xl font-bold text-[#1A1A1A]">
-                {/* {formattedPrice} */}
+                {formattedPrice}
               </div>
               <div className="text-[#5E561C] text-xs mt-2">
                 Including {product.watch.vat || 0}% VAT
@@ -259,12 +214,7 @@ export default function ViewWatchPage({
                 className="hover:cursor-pointer h-12 flex-1 bg-[#1A1A1A] hover:bg-[#244B5A] text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               />
 
-              <Button
-                onClick={() => handleContactClick()}
-                className="hover:cursor-pointer h-12 flex-1 bg-white hover:bg-[#F5F3EE] text-[#1A1A1A] font-semibold py-4 px-8 rounded-lg border-2 border-[#D3C6A3] transition-all"
-              >
-                Contact
-              </Button>
+              <ContactButton productId={product.id} />
             </div>
 
             {/* Trust Badges */}

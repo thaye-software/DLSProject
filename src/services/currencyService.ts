@@ -1,10 +1,12 @@
+"use server";
+
 import { db } from "@/database/drizzle";
 import { currencies, currencyHistory } from "@/database/schema";
 import { eq, desc } from "drizzle-orm";
 
-export const currencyService = {
 
-  async getCurrentRate(currencyCode: string) {
+
+  export async function getCurrentRate(currencyCode: string) {
     const currency = await db.query.currencies.findFirst({
       where: eq(currencies.code, currencyCode.toUpperCase()),
     });
@@ -18,20 +20,20 @@ export const currencyService = {
     }
 
     return currency;
-  },
+  }
 
 
 
-  async getActiveCurrencies() {
+  export async function getActiveCurrencies() {
     return await db.query.currencies.findMany({
       where: eq(currencies.isActive, true),
       orderBy: currencies.code,
     });
-  },
+  }
 
 
 
-  async updateExchangeRate(
+  export async function updateExchangeRate(
     currencyCode: string,
     newRate: string,
     updatedBy: string
@@ -71,11 +73,11 @@ export const currencyService = {
         currency: updated,
       };
     });
-  },
+  }
 
 
 
-  async convertPrice(priceDkkInCents: number, targetCountryCode: string) {
+  export async function convertPrice(priceDkkInCents: number, targetCountryCode: string) {
   const country = targetCountryCode.toUpperCase();
 
   // If Danish, return DKK
@@ -89,7 +91,7 @@ export const currencyService = {
 
   // For all non-DK users, use EUR
   const targetCurrencyCode = "EUR"; // Requirement: non-DK users see EUR
-  const currency = await this.getCurrentRate(targetCurrencyCode);
+  const currency = await getCurrentRate(targetCurrencyCode);
   const rate = parseFloat(currency.exchangeRate);
 
   const convertedPrice = (priceDkkInCents * rate) / 100;
@@ -98,12 +100,12 @@ export const currencyService = {
     style: "currency",
     currency: targetCurrencyCode,
   }).format(convertedPrice);
-},
+}
 
 
  
 
-  async getCurrencyHistory(currencyCode: string, limit: number = 50) {
+  export async function getCurrencyHistory(currencyCode: string, limit: number = 50) {
     const currency = await db.query.currencies.findFirst({
       where: eq(currencies.code, currencyCode.toUpperCase()),
     });
@@ -117,11 +119,11 @@ export const currencyService = {
       orderBy: desc(currencyHistory.changedAt),
       limit,
     });
-  },
+  }
 
 
 
-  async createCurrency(
+  export async function createCurrency(
     code: string,
     exchangeRate: string,
     isActive: boolean = true
@@ -137,11 +139,11 @@ export const currencyService = {
       .returning();
 
     return currency;
-  },
+  }
 
 
 
-  async toggleCurrencyStatus(currencyCode: string, isActive: boolean) {
+  export async function toggleCurrencyStatus(currencyCode: string, isActive: boolean) {
     const [updated] = await db
       .update(currencies)
       .set({
@@ -152,8 +154,8 @@ export const currencyService = {
       .returning();
 
     return updated;
-  },
-};
+  }
+
 
 
 
