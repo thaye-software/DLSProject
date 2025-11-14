@@ -60,9 +60,7 @@ export async function createConversation(customerId: string, productId: number) 
 
   const existingConversation = await checkConversationExists(customerId, productId);
   if (existingConversation) {
-    console.log("Conversation already exists:", existingConversation);
     return existingConversation;
-    
   }
 
   const newConversation = await db.insert(conversations).values({
