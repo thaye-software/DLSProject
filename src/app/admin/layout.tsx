@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/database/supabase/server";
-import { userService } from "@/services/userService";
+import { getUserByEmail } from "@/services/userService";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { Separator } from "@/components/ui/separator";
@@ -28,7 +28,7 @@ export default async function AdminLayout({
       redirect("/login");
     }
 
-    const result = await userService.getUserByEmail(user.email);
+    const result = await getUserByEmail(user.email);
     if (!result.success || !result.data) {
       // No matching application user
       redirect("/");

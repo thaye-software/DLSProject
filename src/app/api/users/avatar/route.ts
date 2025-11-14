@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { userService } from "@/services/userService";
+import { getUserByEmail } from "@/services/userService";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     );
   }
 
-  const result = await userService.getUserByEmail(email);
+  const result = await getUserByEmail(email);
 
   if (!result.success) {
     return NextResponse.json({ error: result.error }, { status: 500 });
