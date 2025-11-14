@@ -23,7 +23,7 @@ import constants from "@/lib/constants";
 
 function getOptionName(
   options: { id: number; name: string }[],
-  val: string
+  val: string | null
 ) {
   const id = Number(val);
   return options.find((o) => o.id === id)?.name;
