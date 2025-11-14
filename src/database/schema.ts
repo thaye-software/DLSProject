@@ -100,6 +100,10 @@ export const users = pgTable(
   {
     id: uuid("id").primaryKey(),
     username: varchar("username", { length: 255 }).notNull().unique(),
+    firstName: varchar("first_name", {length: 255}),
+    middleName: varchar("middle_name", {length: 255}),
+    lastName: varchar("last_name", {length: 255}),
+    phone:varchar("phone", {length: 20}),
     email: varchar("email", { length: 255 }).notNull().unique(),
     avatarUrl: text("avatar_url"),
     role: varchar("role", { length: 50 }).notNull().default("customer"),
