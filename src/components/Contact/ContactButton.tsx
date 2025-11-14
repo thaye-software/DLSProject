@@ -1,7 +1,5 @@
 "use client";
 
-
-
 import { useSupabaseAuth } from "@/lib/useSupabaseAuth";
 import { Button } from "../ui/button";
 import { redirect } from "next/navigation";
@@ -28,10 +26,11 @@ export default function ContactButton({ productId }: { productId?: number }) {
 
     return (
       <Button
-        className={`hover:cursor-pointer h-12 flex-1 bg-white hover:bg-[#F5F3EE] text-[#1A1A1A] font-semibold py-4 px-8 rounded-lg border-2 border-[#D3C6A3] transition-all`}
+        variant="outline"
+        className={`hover:cursor-pointer h-12 font-bold py-4 px-8 transition-all`}
         onClick={handleContactClick}
       >
-        Contact Us (to be implemented)
+        Contact Us
       </Button>
     );
   }

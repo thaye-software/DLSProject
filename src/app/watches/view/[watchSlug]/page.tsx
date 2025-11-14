@@ -12,11 +12,15 @@ import {
   Calendar,
   Gauge,
   Clock,
+  ShoppingBasket,
+  Ruler,
+  Star,
 } from "lucide-react";
 import { convertPrice } from "@/services/currencyService";
 import ProductSafetyInfo from "@/components/Watches/ProductSafetyInfoCard";
 import AddToCartButton from "@/components/Watches/AddToCartButton";
 import ContactButton from "@/components/Contact/ContactButton";
+import { Button } from "@/components/ui/button";
 
 export default async function ViewWatchPage({
   params,
@@ -79,35 +83,34 @@ export default async function ViewWatchPage({
           {/* Right Column - Product Details */}
           <div className="space-y-8">
             {/* Brand & Model */}
-            <div className="border-b border-[#D3C6A3] pb-6">
-              <div className="text-[#773D0E] text-lg font-medium tracking-widest uppercase mb-2">
+            <div className="border-b pb-6">
+              <div className="text-lg font-medium tracking-widest uppercase mb-2">
                 {brandName}
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold text-[#1A1A1A] mb-3">
+              <h1 className="text-4xl md:text-5xl font-bold mb-3">
                 {product.watch.model || "Unknown Model"}
               </h1>
-              <p className="text-[#244B5A] text-sm">
+              <p className="text-sm">
                 Reference: {product.watch.reference || "N/A"}
               </p>
             </div>
 
             {/* Price */}
-            <div className="bg-white border border-[#D3C6A3] rounded-lg p-6 shadow-sm">
-              <div className="text-[#244B5A] text-md mb-1">Price</div>
-              <div className="text-4xl font-bold text-[#1A1A1A]">
+            <div>
+              <div className="text-4xl font-bold">
                 {formattedPrice}
               </div>
-              <div className="text-[#5E561C] text-xs mt-2">
+              <div className="text-muted-foreground text-xs mt-2">
                 Including {product.watch.vat || 0}% VAT
               </div>
             </div>
 
             {/* Description */}
             <div>
-              <h2 className="text-xl font-semibold text-[#1A1A1A] mb-3">
+              <h2 className="text-xl font-semibold mb-3">
                 Description
               </h2>
-              <p className="text-[#244B5A] leading-relaxed">
+              <p className="leading-relaxed">
                 {product.description ||
                   "No description available for this watch."}
               </p>
@@ -115,12 +118,9 @@ export default async function ViewWatchPage({
 
             {/* Specifications Grid */}
             <div>
-              <h2 className="text-xl font-semibold text-[#1A1A1A] mb-4">
-                Specifications
-              </h2>
               <div className="grid grid-cols-2 gap-4">
                 <SpecItem
-                  icon={<Gauge size={18} />}
+                  icon={<Ruler size={18} />}
                   label="Size"
                   value={product.watch.size || "Not specified"}
                 />
@@ -157,9 +157,9 @@ export default async function ViewWatchPage({
             </div>
 
             {/* Included Items */}
-            <div className="bg-white border border-[#D3C6A3] rounded-lg p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-[#1A1A1A] mb-4 flex items-center gap-2">
-                <Package size={20} className="text-[#773D0E]" />
+            <div className="border border-[#D3C6A3] rounded-lg p-6 shadow-sm">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Package size={20} className="" />
                 Included with Purchase
               </h3>
               <div className="space-y-3">
@@ -182,7 +182,7 @@ export default async function ViewWatchPage({
             {product.watch.limited && (
               <div className="bg-linear-to-r from-[#773D0E]/20 to-[#5E561C]/20 border border-[#773D0E]/50 rounded-lg p-4">
                 <div className="flex items-center gap-2 text-[#773D0E] font-semibold">
-                  <Shield size={20} />
+                  <Star size={20} />
                   Limited Edition
                 </div>
               </div>
@@ -192,8 +192,8 @@ export default async function ViewWatchPage({
             <div className="flex items-center gap-2 text-sm">
               {product.stock > 0 ? (
                 <>
-                  <div className="w-2 h-2 bg-[#2D4330] rounded-full animate-pulse"></div>
-                  <span className="text-[#2D4330] font-medium">
+                  <div className="w-2 h-2 bg-emerald-600 rounded-full animate-pulse"></div>
+                  <span className="text-emerald-600 font-medium">
                     In Stock ({product.stock} available)
                   </span>
                 </>
@@ -208,11 +208,11 @@ export default async function ViewWatchPage({
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <AddToCartButton
-                product={product}
-                className="hover:cursor-pointer h-12 flex-1 bg-[#1A1A1A] hover:bg-[#244B5A] text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              />
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button
+                className="cursor-pointer h-12 font-bold transition-all flex-1 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
+                <ShoppingBasket />Buy now
+              </Button>
 
               <ContactButton productId={product.id} />
             </div>
@@ -264,12 +264,12 @@ function SpecItem({
   value: string;
 }) {
   return (
-    <div className="bg-white border border-[#D3C6A3] rounded-lg p-3 shadow-sm">
-      <div className="flex items-center gap-2 text-[#5E561C] text-xs mb-1">
+    <div className="border-[#D3C6A3] rounded-lg p-3">
+      <div className="flex items-center gap-2 text-xs mb-1">
         {icon}
         <span>{label}</span>
       </div>
-      <div className="text-[#1A1A1A] font-medium">{value}</div>
+      <div className="font-medium">{value}</div>
     </div>
   );
 }
@@ -280,14 +280,14 @@ function IncludedItem({ included, text }: { included: boolean; text: string }) {
       <div
         className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${
           included
-            ? "bg-[#2D4330]/20 text-[#2D4330]"
-            : "bg-[#D3C6A3] text-[#5E561C]"
+            ? ""
+            : ""
         }`}
       >
         {included && <Check size={14} />}
       </div>
       <span
-        className={included ? "text-[#244B5A]" : "text-[#5E561C] line-through"}
+        className={included ? "" : "line-through"}
       >
         {text}
       </span>
@@ -298,8 +298,8 @@ function IncludedItem({ included, text }: { included: boolean; text: string }) {
 function TrustBadge({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
     <div className="flex flex-col items-center gap-2 text-center">
-      <div className="text-[#773D0E]">{icon}</div>
-      <span className="text-[#244B5A] text-xs font-medium">{text}</span>
+      <div className="">{icon}</div>
+      <span className="text-muted-foreground text-xs font-medium">{text}</span>
     </div>
   );
 }
