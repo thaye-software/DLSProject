@@ -1,5 +1,3 @@
-
-
 import BackButton from "@/components/BackButton";
 import ProductImageSwiper from "@/components/Watches/ProductImageSwiper";
 import { getProductBySlug } from "@/services/productService";
@@ -21,15 +19,22 @@ import ProductSafetyInfo from "@/components/Watches/ProductSafetyInfoCard";
 import AddToCartButton from "@/components/Watches/AddToCartButton";
 import ContactButton from "@/components/Contact/ContactButton";
 import { Button } from "@/components/ui/button";
+import constants from "@/lib/constants";
+
+function getOptionName(
+  options: { id: number; name: string }[],
+  val: string
+) {
+  const id = Number(val);
+  return options.find((o) => o.id === id)?.name;
+}
 
 export default async function ViewWatchPage({
   params,
 }: {
   params: Promise<{ watchSlug: string }>;
-  }) {
-
-  
-  const product = await getProductBySlug((await params).watchSlug)
+}) {
+  const product = await getProductBySlug((await params).watchSlug);
   if (!product) {
     return notFound();
   }
@@ -97,9 +102,7 @@ export default async function ViewWatchPage({
 
             {/* Price */}
             <div>
-              <div className="text-4xl font-bold">
-                {formattedPrice}
-              </div>
+              <div className="text-4xl font-bold">{formattedPrice}</div>
               <div className="text-muted-foreground text-xs mt-2">
                 Including {product.watch.vat || 0}% VAT
               </div>
@@ -107,9 +110,7 @@ export default async function ViewWatchPage({
 
             {/* Description */}
             <div>
-              <h2 className="text-xl font-semibold mb-3">
-                Description
-              </h2>
+              <h2 className="text-xl font-semibold mb-3">Description</h2>
               <p className="leading-relaxed">
                 {product.description ||
                   "No description available for this watch."}
@@ -127,16 +128,30 @@ export default async function ViewWatchPage({
                 <SpecItem
                   icon={<Clock size={18} />}
                   label="Movement"
-                  value={product.watch.movement || "Not specified"}
+                  value={
+                    getOptionName(
+                      constants.MOVEMENT_OPTIONS,
+                      product.watch.movement
+                    ) ?? "Not specified"
+                  }
                 />
                 <SpecItem
                   icon={<Calendar size={18} />}
                   label="Year"
-                  value={product.watch.year.toString() || "Not specified"}
+                  value={
+                    product.watch.year
+                      ? product.watch.year.toString()
+                      : "Not specified"
+                  }
                 />
                 <SpecItem
                   label="Glass"
-                  value={product.watch.glassType || "Not specified"}
+                  value={
+                    getOptionName(
+                      constants.GLASS_OPTIONS,
+                      product.watch.glassType
+                    ) ?? "Not specified"
+                  }
                 />
                 <SpecItem
                   label="Dial Color"
@@ -144,14 +159,36 @@ export default async function ViewWatchPage({
                 />
                 <SpecItem
                   label="Bracelet"
-                  value={
-                    `${product.watch.braceletType} (${product.watch.braceletColor})` ||
-                    "Not specified"
-                  }
+                  value={(() => {
+                    const name = getOptionName(
+                      constants.BRACELET_OPTIONS,
+                      product.watch.braceletType
+                    );
+                    if (name)
+                      return `${name}${
+                        product.watch.braceletColor
+                          ? ` (${product.watch.braceletColor})`
+                          : ""
+                      }`;
+                    if (
+                      product.watch.braceletType ||
+                      product.watch.braceletColor
+                    )
+                      return `${product.watch.braceletType ?? ""}${
+                        product.watch.braceletColor
+                          ? ` (${product.watch.braceletColor})`
+                          : ""
+                      }`;
+                    return "Not specified";
+                  })()}
                 />
                 <SpecItem
                   label="Condition"
-                  value={`${product.watch.condition}/10` || "Not specified"}
+                  value={
+                    product.watch.condition
+                      ? `${product.watch.condition}/10`
+                      : "Not specified"
+                  }
                 />
               </div>
             </div>
@@ -209,9 +246,9 @@ export default async function ViewWatchPage({
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button
-                className="cursor-pointer h-12 font-bold transition-all flex-1 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
-                <ShoppingBasket />Buy now
+              <Button className="cursor-pointer h-12 font-bold transition-all flex-1 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
+                <ShoppingBasket />
+                Buy now
               </Button>
 
               <ContactButton productId={product.id} />
@@ -279,18 +316,12 @@ function IncludedItem({ included, text }: { included: boolean; text: string }) {
     <div className="flex items-center gap-3">
       <div
         className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${
-          included
-            ? ""
-            : ""
+          included ? "" : ""
         }`}
       >
         {included && <Check size={14} />}
       </div>
-      <span
-        className={included ? "" : "line-through"}
-      >
-        {text}
-      </span>
+      <span className={included ? "" : "line-through"}>{text}</span>
     </div>
   );
 }
