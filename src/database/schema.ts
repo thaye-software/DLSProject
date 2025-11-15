@@ -179,17 +179,9 @@ export const orders = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    totalPrice: bigint("total_price", { mode: "number" }).notNull(),
-    status: varchar("status", { length: 50 }).notNull(),
-    currency: varchar("currency", { length: 10 }).notNull().default("DKK"),
+    status: varchar("status", { length: 15 }).notNull(),
+    currencyId: bigint("currency_id", { mode: "number" }).references(() => currencies.id).notNull(),
 
-    // Currency fields
-    currencyCode: varchar("currency_code", { length: 3 })
-      .notNull()
-      .default("DKK"),
-    exchangeRateUsed: decimal("exchange_rate_used", { precision: 10, scale: 6 })
-      .notNull()
-      .default("1.000000"),
     totalPriceDkk: decimal("total_price_dkk", {
       precision: 12,
       scale: 2,
@@ -213,11 +205,11 @@ export const orders = pgTable(
     index("idx_orders_created_at").on(table.createdAt),
     index("idx_orders_delivery_address").on(table.deliveryAddressId),
     index("idx_orders_billing_address").on(table.billingAddressId),
-    index("idx_orders_currency_code").on(table.currencyCode), // NEW INDEX
+    index("idx_orders_currency_id").on(table.currencyId), // NEW INDEX
     check(
       "orders_status_check",
-      sql`${table.status} IN ('pending', 'paid', 'shipped', 'completed', 'cancelled')`
-    ),
+      sql`${table.status} IN ('PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED')`
+    )
   ]
 );
 
@@ -456,8 +448,8 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
     relationName: "billingAddress",
   }),
   currency: one(currencies, {
-    fields: [orders.currencyCode],
-    references: [currencies.code],
+    fields: [orders.currencyId],
+    references: [currencies.id],
   }),
 }));
 
