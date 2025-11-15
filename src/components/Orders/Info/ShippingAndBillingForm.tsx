@@ -23,6 +23,7 @@ import { getProductBySlug } from "@/services/productService"
 import { Spinner } from "@/components/ui/spinner";
 import { convertPriceAction } from "@/app/orders/actions";
 import SaveBillingInfoCheckBox from "./SaveBillingInfoCheckBox";
+import { watch } from "fs";
 
 
 
@@ -117,7 +118,8 @@ export default function ShippingAndBillingForm({customer, productSlug, customerG
 			try{
 				const product = await getProductBySlug(productSlug);
 				if(!product) throw new Error("(Client) Error fetching product");
-				
+				if(product.stock === 0) throw new Error(`(Client) ${product.watch.brand.name} ${product.watch.model} is out of stock`);
+
 				const formatedPrice = await convertPriceAction(product.priceDkk, customerGeoLocation);
 				setFormatedPrice(formatedPrice)
 				
@@ -153,7 +155,7 @@ export default function ShippingAndBillingForm({customer, productSlug, customerG
 
 		const customerCountry = customer.country || null;
 		//@ts-ignore
-		submitOrderDetails(data, product, country)
+		submitOrderDetails(data, product, customerCountry)
 	}
 
 console.log(customer.country)
@@ -165,7 +167,7 @@ console.log(customer.country)
 					<Spinner/>
 				</div>
 
-			) : product ? (
+			) : product && product?.stock > 0 ? (
 				<div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
 					<div className="max-w-7xl mx-auto">
 						<h1 className="text-3xl font-bold text-foreground mb-8">Checkout</h1>
@@ -432,9 +434,12 @@ console.log(customer.country)
 												<span className="text-foreground">{formatedPrice}</span>
 											</div>
 											
-											<div className="flex text-xs text-muted-foreground">
+											<div className="flex flex-col text-xs text-muted-foreground">
 												<p>
-													Including {formatedTax} in taxes {" "} ({product.watch.vat}%) //TODO move vat over to country
+													Including {formatedTax} in taxes {" "} ({product.watch.vat}%)
+												</p>
+												<p>
+													//TODO move vat over to country and should be based on shipping address.
 												</p>
 											</div>
 										</div>

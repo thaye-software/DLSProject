@@ -1,0 +1,58 @@
+import { db } from "@/database/drizzle";
+import { orders } from "@/database/schema";
+import { NewOrderModel, NewOrderAddressModel } from "@/database/types";
+
+import { createOrderAddress } from "./orderAddressService";
+import { getProductById, getProductBySlug, updateProductStock } from "./productService";
+import { createOrderItem } from "./orderItemService";
+
+
+
+export async function createOrder(
+    orderDetails: Omit<NewOrderModel, "id">,
+    newBillingAddress: Omit<NewOrderAddressModel, "id">,
+    newShippingAddress?: Omit<NewOrderAddressModel, "id">
+) {
+
+    try{
+
+        const result = await db.transaction(async (tx) => {
+
+            let shippingAddressId;
+            if(newShippingAddress) {
+                const createdShippingAddress = await createOrderAddress(newShippingAddress);
+                shippingAddressId = createdShippingAddress.id;
+            }
+            const createdBillingAddress = await createOrderAddress(newBillingAddress);
+            const billingAddressesId = createdBillingAddress.id;
+            
+            // deæoveryAddress is the same as shipping address
+            orderDetails.deliveryAddressId = shippingAddressId;
+            orderDetails.billingAddressId = billingAddressesId;
+            const createdOrder = await db.insert(orders).values(orderDetails).returning();
+            const orderId = createdOrder[0].id;
+
+            //@ts-ignore
+            const product = await getProductById(orderDetails.productId);
+            //@ts-ignore
+            if(!product) throw new Error(`(server) could not find product with id: ${orderDetails.productId}`);
+            if(product.stock === 0 ) throw new Error(`(Server) ${product.name} with id: ${product.id} is out of stock`);
+            if(product.stock < 0) throw new Error(`(Server) hmm, something seems ood ${product.name} with id: ${product.id} has negative stock value`);
+
+            // hardcoded 1 since requirment that customer can only buy one watch at a time.
+            await updateProductStock(product.id, product.stock-1);
+
+            const orderItem = {
+                orderId, 
+                productId: product.id, 
+                quantity: 1
+            }
+
+            await createOrderItem(orderItem);
+        })
+
+    } catch(error) {
+        console.error("(server) failed creating new order...", error);
+        throw error;
+    }
+}

@@ -1,9 +1,22 @@
 import { db } from "@/database/drizzle";
 import { countries, users } from "@/database/schema";
 import { eq } from "drizzle-orm";
-import { NewCountryModel, CountryModel } from "@/database/types"
 import { userService } from "./userService";
 
+
+
+export interface Country {
+    id: number;
+    name: string;
+    abbreviation: string;
+    currency: {
+        id: number;
+        code: string;
+        exchangeRate: number;
+        isActive: boolean;
+        updatedAt: Date | string;
+    } 
+}
 
 
 export async function getAllCountries() {

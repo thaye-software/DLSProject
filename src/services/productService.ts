@@ -2,7 +2,7 @@
 
 import { db } from "@/database/drizzle";
 import { products, brands, watches } from "@/database/schema.ts";
-import { NewProductModel } from "@/database/types";
+import { NewProductModel, ProductModel } from "@/database/types";
 
 import { Product } from "../app/watches/type";
 import { eq } from "drizzle-orm";
@@ -43,15 +43,16 @@ export async function getProductBySlug(
   }
 }
 
-export async function createProduct(
-  data: Omit<NewProductModel, "id" | "createdAt">
-) {
+export async function getProductById(id: number): Promise<ProductModel | undefined> {
   try {
-    const result = await db.insert(products).values(data).returning();
-    return { success: true, data: result[0] };
+    const foundProduct = await db.query.products.findFirst({
+      where: eq(products.id, id)
+    });
+    return foundProduct;
+
   } catch (error) {
-    console.error("Error creating product:", error);
-    return { success: false, error: "Failed to create product" };
+    console.error(`(server) faild to get product by id: ${id}`, error);
+    throw error;
   }
 }
 
@@ -133,5 +134,28 @@ export async function searchProducts(query: string) {
   } catch (error) {
     console.error("Error searching products:", error);
     throw new Error("Failed to search products in database");
+  }
+}
+
+export async function createProduct(
+  data: Omit<NewProductModel, "id" | "createdAt">
+) {
+  try {
+    const result = await db.insert(products).values(data).returning();
+    return { success: true, data: result[0] };
+  } catch (error) {
+    console.error("Error creating product:", error);
+    return { success: false, error: "Failed to create product" };
+  }
+}
+
+export async function updateProductStock(productId: number, stock: number) {
+  try {
+    const updatedProduct = await db.update(products).set({stock}).where(eq(products.id, productId)).returning();
+    return updatedProduct;
+
+  } catch (error) {
+    console.error("(server) failed to update the stock on product...", error);
+    throw error;
   }
 }

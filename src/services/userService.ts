@@ -20,7 +20,11 @@ export interface CustomerInfo {
     name: string;
     abbreviation: string;
     currency: {
+      id: number;
       code: string;
+      exchangeRate: number;
+      isActive: boolean;
+      updatedAt: Date | string;
     }
   } | null;
   address: {
@@ -112,7 +116,11 @@ export const userService = {
             with: {
               currency: {
                 columns: {
+                  id: true,
                   code: true,
+                  exchangeRate: true,
+                  isActive: true,
+                  updatedAt: true
                 },
               },
             },
