@@ -22,7 +22,7 @@ export interface CustomerInfo {
     currency: {
       id: number;
       code: string;
-      exchangeRate: number;
+      exchangeRate: string;
       isActive: boolean;
       updatedAt: Date | string;
     }
