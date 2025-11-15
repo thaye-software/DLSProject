@@ -12,7 +12,7 @@ import { NewAddressModel, AddressModel } from "@/database/types"
 //     stateProvince?: string | null;
 // }
 
-export async function saveBillingInfo( billingInfo: Omit<NewAddressModel, "id">): Promise<AddressModel | null> {
+export async function saveBillingAddress( billingInfo: Omit<NewAddressModel, "id">): Promise<AddressModel | null> {
     
     try {
         const doesExist = await db.query.addresses.findFirst({
@@ -33,7 +33,7 @@ export async function saveBillingInfo( billingInfo: Omit<NewAddressModel, "id">)
     }
 }
 
-export async function deleteBillingInfo(userId: string): Promise<boolean> {
+export async function deleteBillingAddress(userId: string): Promise<boolean> {
     try {
         const billingInfo = await db.query.addresses.findFirst({
             where: eq(addresses.userId, userId)

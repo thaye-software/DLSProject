@@ -5,15 +5,13 @@ import { getAllProducts } from "@/services/productService";
 import { Product } from "../type";
 import { Suspense } from "react";
 import { Spinner } from "@/components/ui/spinner";
+import { getUserLocation } from "@/lib/utils/serverutils/utils";
 
 
 export default async function AllWatches() {
 
-  // to be implemented 
-  // get user country and convert price accordingly
-  // const countryCode = getUserCountryCode(); // placeholder function
-  // use header/cookies to get userId / countrty id etc.
-  const countryCode = "DKK";
+  const userGeoLocationData = await getUserLocation();
+  const countryCode = userGeoLocationData.countryCode;
   const watches: Product[] = await getAllProducts();
 
   return (
@@ -23,7 +21,7 @@ export default async function AllWatches() {
       
       <div className="flex justify-center">
         <Suspense fallback={<Spinner className="w-8 h-8"/>}>
-          <WatchesGrid watches={watches} countryCode={countryCode}/>
+          <WatchesGrid watches={watches} customerGeoLocation={countryCode}/>
         </Suspense>
       </div>
     </div>

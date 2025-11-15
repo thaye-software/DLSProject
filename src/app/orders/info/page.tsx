@@ -1,13 +1,20 @@
+import { SearchParams } from "next/dist/server/request/search-params";
+import { redirect } from "next/navigation";
+
 import BackButton from "@/components/BackButton";
 import ShippingAndBillingForm from "@/components/Orders/Info/ShippingAndBillingForm";
-import { getSignedInUser } from "@/lib/utils/serverutils/utils";
-import { redirect } from "next/navigation";
-import { userService } from "@/services/userService";
 import ToastWrapper from "@/components/Toast/ToastWrapper";
-import { SearchParams } from "next/dist/server/request/search-params";
+
+import { userService } from "@/services/userService";
+
+import { getSignedInUser, getUserLocation } from "@/lib/utils/serverutils/utils";
+
+
 
 
 export default async function OrdersInfoPage({searchParams}: {searchParams: SearchParams}) {
+  const userGeoLocationData = await getUserLocation();
+  const countryCode = userGeoLocationData.countryCode;
 
   const productSlug = (await searchParams).product;
   let state = { success: true, message: "", redirectUrl: "" };
@@ -29,7 +36,7 @@ export default async function OrdersInfoPage({searchParams}: {searchParams: Sear
       {customer ? (
         <div>
           <BackButton/>
-          <ShippingAndBillingForm customer={customer} productSlug={productSlug as string}/>
+          <ShippingAndBillingForm customer={customer} productSlug={productSlug as string} customerGeoLocation={countryCode}/>
         </div>
       ) : (
         <ToastWrapper state={state}/>

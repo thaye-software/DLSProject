@@ -6,18 +6,17 @@ import { WatchesGrid } from "@/components/Watches/WatchesGrid";
 import { getAllProductsByBrandName } from "@/services/productService";
 import { Product } from "../type";
 
+import { getUserLocation } from "@/lib/utils/serverutils/utils";
+
 
 export default async function BrandWatchesPage({ params }: { params: Promise<{ brandName: string }> }) {
+  const userGeoLocationData = await getUserLocation();
+  const countryCode = userGeoLocationData.countryCode;
 
   let brandName = (await params).brandName;
   brandName = capitalizeFirstLetter(brandName)
 
   const allWatches: Product[] = await getAllProductsByBrandName(brandName);
-  // to be implemented 
-  // get user country and convert price accordingly
-  // const countryCode = getUserCountryCode(); // placeholder function
-  // use header/cookies to get userId / countrty id etc.
-  const countryCode = "DKK";
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -25,7 +24,7 @@ export default async function BrandWatchesPage({ params }: { params: Promise<{ b
 
       <div className="flex justify-center">
         <Suspense fallback={<Spinner className="w-8 h-8" />}>
-          <WatchesGrid watches={allWatches} countryCode={countryCode}/>
+          <WatchesGrid watches={allWatches} customerGeoLocation={countryCode}/>
         </Suspense>
       </div>
 

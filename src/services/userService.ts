@@ -1,7 +1,10 @@
+import { eq } from "drizzle-orm";
+
 import { db } from "@/database/drizzle";
 import { users } from "@/database/schema";
-import { eq } from "drizzle-orm";
 import { NewUserModel } from "@/database/types";
+
+import { CustomerNameAndPhone } from "@/app/orders/actions"
 
 
 
@@ -38,6 +41,8 @@ export interface User {
   countryId: number | null;
   addressId: number | null;
 }
+
+
 
 export const userService = {
   async getAllUsers() {
@@ -105,7 +110,7 @@ export const userService = {
               abbreviation: true,
             },
             with: {
-              currency: { // ✅ Now you can nest currency
+              currency: {
                 columns: {
                   code: true,
                 },
@@ -169,4 +174,36 @@ export const userService = {
       };
     }
   },
+
+  async saveCustomerNameAndPhone(customerInfo: CustomerNameAndPhone): Promise<void> {
+    try {
+      await db.update(users).set({
+        firstName: customerInfo.firstName, 
+        middleName: customerInfo.middleName,
+        lastName: customerInfo.lastName,
+        phone: customerInfo.phone
+      })
+      .where(eq(users.id, customerInfo.id));
+
+    } catch (error) {
+      console.error("(server) failed to save customer name and phone...", error);
+      throw error;
+    }
+  },
+
+  async deleteCustomerNameAndPhone(customerId: string) {
+    try {
+      await db.update(users).set({
+        firstName: null,
+        middleName: null,
+        lastName: null,
+        phone: null
+      })
+      .where(eq(users.id, customerId));
+      
+    } catch (error) {
+      console.error("(server) failed to delete customer name and phone...", error);
+      throw error;
+    }
+  }
 } as const;

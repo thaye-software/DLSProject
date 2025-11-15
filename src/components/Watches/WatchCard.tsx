@@ -11,9 +11,9 @@ import { convertPrice } from "@/services/currencyService";
 import AddToCartButton from "./BuyButton";
 
 
-export function WatchCard({ product, countryCode }: { product: Product, countryCode: string }) {
+export function WatchCard({ product, customerGeoLocation }: { product: Product, customerGeoLocation: string }) {
     
-  const formatedPrice = convertPrice(product.priceDkk, countryCode);
+  const formatedPrice = convertPrice(product.priceDkk, customerGeoLocation);
   
   
     return (
@@ -27,7 +27,7 @@ export function WatchCard({ product, countryCode }: { product: Product, countryC
                                 alt={`${product.watch.brand.name} ${product.name}`}
                                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                                 fill
-                                unoptimized // REMOVE THIS IN PRODUCTION
+                                unoptimized={process.env.APP_ENV != "prod" && process.env.APP_ENV != "production"  ? true : false}
                             />
 
                             <div className="absolute top-4 right-4 flex gap-2">

@@ -83,12 +83,13 @@ import SaveBillingInfoCheckBox from "./SaveBillingInfoCheckBox";
 
 
 
-export default function ShippingAndBillingForm({customer, productSlug}: {customer: CustomerInfo, productSlug: string}) {
+export default function ShippingAndBillingForm({customer, productSlug, customerGeoLocation}: {customer: CustomerInfo, productSlug: string, customerGeoLocation: string}) {
 	
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 
 	const [product, setProduct] = useState<Product | null>(null);
 	const [formatedPrice, setFormatedPrice] = useState<string>("");
+	const [formatedTax, setFormatedTax] = useState<string>("");
 	const [countries, setCountries] = useState<string[]>([]);
 
 	const [sameAsShipping, setSameAsShipping] = useState<boolean>(true);
@@ -96,9 +97,6 @@ export default function ShippingAndBillingForm({customer, productSlug}: {custome
 	const [isBillingInfoSaved, setIsBillingInfoSaved] = useState<boolean>(customer.country != null && customer.address != null);
 
 	let state = {success: true, message: "", redirectUrl: ""}
-
-
-
 
 
 	
@@ -120,9 +118,13 @@ export default function ShippingAndBillingForm({customer, productSlug}: {custome
 				const product = await getProductBySlug(productSlug);
 				if(!product) throw new Error("(Client) Error fetching product");
 				
-				const customerCountry = customer.country?.abbreviation;
-				const formatedPrice = await convertPriceAction(product.priceDkk, customerCountry || "EUR");
+				const formatedPrice = await convertPriceAction(product.priceDkk, customerGeoLocation);
 				setFormatedPrice(formatedPrice)
+				
+				const taxValue = Math.round((product.priceDkk * (product.watch.vat as number)/100));
+				const formattedTaxValue = await convertPriceAction(taxValue, customerGeoLocation)
+				setFormatedTax(formattedTaxValue);
+
 				setProduct(product)
 				
 			} catch(error) {
@@ -146,13 +148,15 @@ export default function ShippingAndBillingForm({customer, productSlug}: {custome
 		const data = Object.fromEntries(formData.entries());
 
     	data.saveBillingInfo = String(saveBillingInfo);
+		data.shippingSameAsBilling = String(sameAsShipping);
 		data.customerId = customer.id;
 
+		const customerCountry = customer.country || null;
 		//@ts-ignore
-		submitOrderDetails(data)
+		submitOrderDetails(data, product, country)
 	}
 
-
+console.log(customer.country)
 
   return (
 		<div>
@@ -187,7 +191,7 @@ export default function ShippingAndBillingForm({customer, productSlug}: {custome
 														id="firstName" 
 														name="firstName" 
 														placeholder="your first name" 
-														value={isBillingInfoSaved && customer.firstName != null ? customer.firstName : ""}
+														defaultValue={isBillingInfoSaved && customer.firstName != null ? customer.firstName : undefined}
 														required
 													/>
 												</div>
@@ -198,7 +202,7 @@ export default function ShippingAndBillingForm({customer, productSlug}: {custome
 														id="middleName" 
 														name="middleName"
 														placeholder="your middle name"
-														value={isBillingInfoSaved && customer.middleName != null ? customer.middleName : ""}
+														defaultValue={isBillingInfoSaved && customer.middleName != null ? customer.middleName : undefined}
 													/>
 												</div>
 												<div className="space-y-2">
@@ -207,14 +211,14 @@ export default function ShippingAndBillingForm({customer, productSlug}: {custome
 														id="lastName" 
 														name="lastName" 
 														placeholder="your last name" 
-														value={isBillingInfoSaved && customer.lastName != null ? customer.lastName : ""}
+														defaultValue={isBillingInfoSaved && customer.lastName != null ? customer.lastName : undefined}
 														required />
 												</div>
 											</div>
 
 											<div className="space-y-2">
 												<Label htmlFor="email">Email*</Label>
-												<Input id="email" type="email" name="email" placeholder="your email" value={customer.email} required/>
+												<Input id="email" type="email" name="email" placeholder="your email" defaultValue={customer.email} required/>
 											</div>
 
 											<div className="space-y-2">
@@ -224,7 +228,7 @@ export default function ShippingAndBillingForm({customer, productSlug}: {custome
 													type="tel" 
 													name="phone" 
 													placeholder="+45 26 46 95 96"
-													value={isBillingInfoSaved && customer.phone != null ? customer.phone : ""} 
+													defaultValue={isBillingInfoSaved && customer.phone != null ? customer.phone : undefined} 
 												/>
 											</div>
 
@@ -234,7 +238,7 @@ export default function ShippingAndBillingForm({customer, productSlug}: {custome
 													id="address" 
 													name="address" 
 													placeholder="123 Main Street" 
-													value={isBillingInfoSaved && customer.address?.address1 != null ? customer.address.address1 : ""}
+													defaultValue={isBillingInfoSaved && customer.address?.address1 != null ? customer.address.address1 : undefined}
 													required
 												/>
 											</div>
@@ -246,7 +250,7 @@ export default function ShippingAndBillingForm({customer, productSlug}: {custome
 														id="city" 
 														name="city" 
 														placeholder="Copenhagen" 
-														value={isBillingInfoSaved && customer.address?.city != null ? customer.address.city : ""}
+														defaultValue={isBillingInfoSaved && customer.address?.city != null ? customer.address.city : undefined}
 														required
 													/>
 												</div>
@@ -256,7 +260,7 @@ export default function ShippingAndBillingForm({customer, productSlug}: {custome
 														id="postalCode" 
 														name="postalCode" 
 														placeholder="2300" 
-														value={isBillingInfoSaved && customer.address?.zipCode != null ? customer.address.zipCode : ""}
+														value={isBillingInfoSaved && customer.address?.zipCode != null ? customer.address.zipCode : undefined}
 														required
 													/>
 												</div>
@@ -268,14 +272,15 @@ export default function ShippingAndBillingForm({customer, productSlug}: {custome
 													id="country" 
 													name="country" 
 													required
+													defaultValue={isBillingInfoSaved && customer.country?.name != null ? customer.country.name : undefined}
 													className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 												>
-													<option value={isBillingInfoSaved && customer.country?.name != null ? customer.country.name : ""}>
+													<option value="">
 														Select a country
 													</option>
 
 													{countries.map((countryName) => (
-														<option key={countryName} value={countryName}>
+														<option key={countryName} defaultValue={countryName}>
 															{countryName}
 														</option>
 													))}
@@ -289,7 +294,7 @@ export default function ShippingAndBillingForm({customer, productSlug}: {custome
 													id="stateProvince" 
 													name="stateProvince" 
 													placeholder="Hovedstaden"
-													value={isBillingInfoSaved && customer.address?.stateProvince != null ? customer.address.stateProvince : ""}
+													defaultValue={isBillingInfoSaved && customer.address?.stateProvince != null ? customer.address.stateProvince : undefined}
 												/>
 											</div>
 										</div>
@@ -333,38 +338,43 @@ export default function ShippingAndBillingForm({customer, productSlug}: {custome
 											<div className="space-y-4">
 												<div className="grid grid-cols-2 gap-4">
 													<div className="space-y-2">
-														<Label htmlFor="shippingFirstName">First Name</Label>
+														<Label htmlFor="shippingFirstName">First Name*</Label>
 														<Input id="shippingFirstName" name="shippingFirstName" placeholder="Reciver first name" />
 													</div>
 													<div className="space-y-2">
-														<Label htmlFor="shippingMiddleName">Middle Name</Label>
+														<Label htmlFor="shippingMiddleName">Middle Name (optional)</Label>
 														<Input id="shippingMiddleName" name="middleName" placeholder="Reciver middle name" />
 													</div>
 													<div className="space-y-2">
-														<Label htmlFor="shippingLastName">Last Name</Label>
+														<Label htmlFor="shippingLastName">Last Name*</Label>
 														<Input id="shippingLastName" name="shippingLastName" placeholder="Reciver last name" />
 													</div>
 												</div>
 
 												<div className="space-y-2">
-													<Label htmlFor="shippingAddress">Street Address</Label>
+													<Label htmlFor="shippingAddress">Street Address*</Label>
 													<Input id="shippingAddress" name="shippingAddress" placeholder="123 Main Street" />
 												</div>
 
 												<div className="grid grid-cols-2 gap-4">
 													<div className="space-y-2">
-														<Label htmlFor="shippingCity">City</Label>
+														<Label htmlFor="shippingCity">City*</Label>
 														<Input id="shippingCity" name="shippingCity" placeholder="Roskilde" />
 													</div>
 													<div className="space-y-2">
-														<Label htmlFor="shippingPostalCode">Postal Code</Label>
+														<Label htmlFor="shippingPostalCode">Postal Code*</Label>
 														<Input id="shippingPostalCode" name="shippingPostalCode" placeholder="2640" />
 													</div>
 												</div>
 
 												<div className="space-y-2">
-													<Label htmlFor="shippingCountry">Country</Label>
+													<Label htmlFor="shippingCountry">Country*</Label>
 													<Input id="shippingCountry" name="shippingCountry" placeholder="Denmark" />
+												</div>
+
+												<div className="space-y-2">
+													<Label htmlFor="shippingStateProvince">State Province (optional)</Label>
+													<Input id="shippingStateProvince" name="shippingStateProvince" placeholder="North Sealand" />
 												</div>
 											</div>
 										)}
@@ -385,17 +395,16 @@ export default function ShippingAndBillingForm({customer, productSlug}: {custome
 									
 									<div className="space-y-6">
 										<div className="flex gap-4">
-											<div className="w-24 h-24 rounded-lg overflow-hidden bg-muted shrink-0">
+											<div className="w-24 h-24 rounded-lg overflow-hidden bg-muted shrink-0 relative">
 												<Image
 													src={product.productImages[0].imageUrl || ""}
 													alt={product.name}
-													width={50}
-													height={50}
+													fill
 													className="w-full h-full object-cover"
 												/>
 											</div>
 											<div className="flex-1">
-												<h3 className="font-semibold text-foreground">{product.name}</h3>
+												<h3 className="font-semibold text-foreground">{product.watch.brand.name} {product.watch.model}</h3>
 												<p className="text-2xl font-bold text-foreground mt-2">
 													{formatedPrice}
 												</p>
@@ -411,19 +420,23 @@ export default function ShippingAndBillingForm({customer, productSlug}: {custome
 											</div>
 											<div className="flex justify-between text-sm">
 												<span className="text-muted-foreground">Shipping</span>
-												<span className="text-foreground">$0.00</span>
-											</div>
-											<div className="flex justify-between text-sm">
-												<span className="text-muted-foreground">Tax</span>
-												<span className="text-foreground">$0.00</span>
+												<span className="text-foreground">Free</span>
 											</div>
 										</div>
 
 										<Separator />
 
-										<div className="flex justify-between text-lg font-semibold">
-											<span className="text-foreground">Total</span>
-											<span className="text-foreground">{formatedPrice}</span>
+										<div>
+											<div className="flex justify-between text-lg font-semibold">
+												<span className="text-foreground">Total</span>
+												<span className="text-foreground">{formatedPrice}</span>
+											</div>
+											
+											<div className="flex text-xs text-muted-foreground">
+												<p>
+													Including {formatedTax} in taxes {" "} ({product.watch.vat}%) //TODO move vat over to country
+												</p>
+											</div>
 										</div>
 									</div>
 								</Card>
