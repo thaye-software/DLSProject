@@ -7,6 +7,10 @@ import { NewProductModel, ProductModel } from "@/database/types";
 import { Product } from "../app/watches/type";
 import { eq } from "drizzle-orm";
 
+type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+
+
 export async function getProductBySlug(
   watchSlug: string
 ): Promise<Product | null> {
@@ -43,9 +47,10 @@ export async function getProductBySlug(
   }
 }
 
-export async function getProductById(id: number): Promise<ProductModel | undefined> {
+export async function getProductById(id: number, tx?: DbTransaction): Promise<ProductModel | undefined> {
   try {
-    const foundProduct = await db.query.products.findFirst({
+    const dbContext = tx || db;
+    const foundProduct = await dbContext.query.products.findFirst({
       where: eq(products.id, id)
     });
     return foundProduct;
@@ -137,6 +142,8 @@ export async function searchProducts(query: string) {
   }
 }
 
+
+
 export async function createProduct(
   data: Omit<NewProductModel, "id" | "createdAt">
 ) {
@@ -149,9 +156,12 @@ export async function createProduct(
   }
 }
 
-export async function updateProductStock(productId: number, stock: number) {
+
+
+export async function updateProductStock(productId: number, stock: number, tx?: DbTransaction) {
   try {
-    const updatedProduct = await db.update(products).set({stock}).where(eq(products.id, productId)).returning();
+    const dbContext = tx || db;
+    const updatedProduct = await dbContext.update(products).set({stock}).where(eq(products.id, productId)).returning();
     return updatedProduct;
 
   } catch (error) {

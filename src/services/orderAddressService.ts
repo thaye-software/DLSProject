@@ -4,9 +4,11 @@ import { NewOrderAddressModel, OrderAddressModel } from "@/database/types";
 
 
 
-export async function createOrderAddress(newOrderAddress: Omit<NewOrderAddressModel, "id">): Promise<OrderAddressModel> {
+type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export async function createOrderAddress(newOrderAddress: Omit<NewOrderAddressModel, "id">, tx?: DbTransaction): Promise<OrderAddressModel> {
     try { 
-        const createdOrderAddress = await db.insert(orderAddresses).values(newOrderAddress).returning();
+        const dbContext = tx || db;
+        const createdOrderAddress = await dbContext.insert(orderAddresses).values(newOrderAddress).returning();
         return createdOrderAddress[0];
 
     }catch (error) {

@@ -3,10 +3,11 @@ import { orderItems } from "@/database/schema";
 import { NewOrderItemModel, OrderItemModel } from "@/database/types";
 
 
-
-export async function createOrderItem(newOrderItem: Omit<NewOrderItemModel, "id">): Promise<OrderItemModel> {
+type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export async function createOrderItem(newOrderItem: Omit<NewOrderItemModel, "id">, tx?: DbTransaction): Promise<OrderItemModel> {
     try {
-        const createdOrderItem = await db.insert(orderItems).values(newOrderItem).returning();
+        const dbContext = tx || db;
+        const createdOrderItem = await dbContext.insert(orderItems).values(newOrderItem).returning();
         return createdOrderItem[0];
 
     } catch(error) {

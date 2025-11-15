@@ -20,27 +20,27 @@ export async function createOrder(
 
             let shippingAddressId;
             if(newShippingAddress) {
-                const createdShippingAddress = await createOrderAddress(newShippingAddress);
+                const createdShippingAddress = await createOrderAddress(newShippingAddress, tx);
                 shippingAddressId = createdShippingAddress.id;
             }
-            const createdBillingAddress = await createOrderAddress(newBillingAddress);
+            const createdBillingAddress = await createOrderAddress(newBillingAddress, tx);
             const billingAddressesId = createdBillingAddress.id;
             
             // deæoveryAddress is the same as shipping address
             orderDetails.deliveryAddressId = shippingAddressId;
             orderDetails.billingAddressId = billingAddressesId;
-            const createdOrder = await db.insert(orders).values(orderDetails).returning();
+            const createdOrder = await tx.insert(orders).values(orderDetails).returning();
             const orderId = createdOrder[0].id;
 
             //@ts-ignore
-            const product = await getProductById(orderDetails.productId);
+            const product = await getProductById(orderDetails.productId, tx);
             //@ts-ignore
             if(!product) throw new Error(`(server) could not find product with id: ${orderDetails.productId}`);
             if(product.stock === 0 ) throw new Error(`(Server) ${product.name} with id: ${product.id} is out of stock`);
             if(product.stock < 0) throw new Error(`(Server) hmm, something seems ood ${product.name} with id: ${product.id} has negative stock value`);
 
             // hardcoded 1 since requirment that customer can only buy one watch at a time.
-            await updateProductStock(product.id, product.stock-1);
+            await updateProductStock(product.id, product.stock-1, tx);
 
             const orderItem = {
                 orderId, 
@@ -48,7 +48,7 @@ export async function createOrder(
                 quantity: 1
             }
 
-            await createOrderItem(orderItem);
+            await createOrderItem(orderItem, tx);
         })
 
     } catch(error) {
