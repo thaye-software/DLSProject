@@ -1,7 +1,7 @@
 import { db } from "@/database/drizzle";
 import { countries, users } from "@/database/schema";
 import { eq } from "drizzle-orm";
-import { userService } from "./userService";
+import { getUserById } from "./userService";
 
 
 
@@ -32,8 +32,8 @@ export async function getAllCountries() {
 
 export async function saveCustomerCountry(countryName: string, userUuid: string) {
     try {
-        const foundUser = await userService.getUserById(userUuid);
-        const countryAlreadySaved = foundUser.data?.countryId;
+        const foundUser = await getUserById(userUuid);
+        const countryAlreadySaved = foundUser?.countryId;
         if(countryAlreadySaved) {
             return;
         }
@@ -54,8 +54,8 @@ export async function saveCustomerCountry(countryName: string, userUuid: string)
 
 export async function deleteCustomerCountry(userUuid: string) {
     try {
-        const foundUser = await userService.getUserById(userUuid);
-        const countryAlreadySaved = foundUser.data?.countryId;
+        const foundUser = await getUserById(userUuid);
+        const countryAlreadySaved = foundUser?.countryId;
         if(!countryAlreadySaved) {
             return;
         }

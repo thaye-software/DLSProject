@@ -2,7 +2,7 @@
 
 import { z } from "zod"
 
-import { userService } from "@/services/userService";
+import { saveCustomerNameAndPhone, deleteCustomerNameAndPhone } from "@/services/userService";
 import { convertPrice } from "@/services/currencyService"
 import { deleteBillingAddress, saveBillingAddress } from "@/services/addressService";
 import { saveCustomerCountry, deleteCustomerCountry, getAllCountries, Country } from "@/services/countryServive";
@@ -206,10 +206,10 @@ async function updateBillingPreferences(
     if (isSaveBillingAddress) {
         await saveBillingAddress(billingAddress);
         await saveCustomerCountry(formData.country, formData.customerId);
-        await userService.saveCustomerNameAndPhone(customerInfo);
+        await saveCustomerNameAndPhone(customerInfo);
     } else {
         await deleteBillingAddress(formData.customerId);
         await deleteCustomerCountry(formData.customerId);
-        await userService.deleteCustomerNameAndPhone(customerInfo.id);
+        await deleteCustomerNameAndPhone(customerInfo.id);
     }
 }

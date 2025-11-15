@@ -67,9 +67,10 @@ export async function getUserById(id: string) {
       where: eq(users.id, id),
     })
     return user;
+
   } catch (error) {
-    console.error("Error fetching user:", error);
-    return { error: "Failed to fetch user" };
+    console.error(`(server) Error fetching user by id: ${id}`, error);
+    throw error;
   }
 }
 
@@ -188,7 +189,7 @@ export async function createUser(user: NewUserModel) {
 }
 
 
-async function saveCustomerNameAndPhone(customerInfo: CustomerNameAndPhone): Promise<void> {
+export async function saveCustomerNameAndPhone(customerInfo: CustomerNameAndPhone): Promise<void> {
   try {
     await db.update(users).set({
       firstName: customerInfo.firstName, 
@@ -204,7 +205,7 @@ async function saveCustomerNameAndPhone(customerInfo: CustomerNameAndPhone): Pro
   }
 }
 
-async function deleteCustomerNameAndPhone(customerId: string) {
+export async function deleteCustomerNameAndPhone(customerId: string) {
   try {
     await db.update(users).set({
       firstName: null,

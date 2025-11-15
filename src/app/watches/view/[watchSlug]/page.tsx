@@ -252,7 +252,6 @@ export default async function ViewWatchPage({
               />
 
               <Button
-                onClick={() => handleContactClick()}
                 className="hover:cursor-pointer h-12 flex-1 bg-white hover:bg-[#F5F3EE] text-[#1A1A1A] font-semibold py-4 px-8 rounded-lg border-2 border-[#D3C6A3] transition-all"
               >
                 Contact
