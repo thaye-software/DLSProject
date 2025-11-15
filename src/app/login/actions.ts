@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/database/supabase/server";
 import { RegisterSchema, LoginSchema } from "./validation";
-import { userService } from "@/services/userService";
+import { createUser } from "@/services/userService";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
@@ -158,7 +158,7 @@ export async function register(
     role: "customer",
   }
 
-  const createUserResponse = await userService.createUser(newUser)
+  const createUserResponse = await createUser(newUser)
 
   // set display name in supabase auth user metadata
   const { error } = await supabase.auth.updateUser({

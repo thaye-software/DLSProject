@@ -120,7 +120,7 @@ export default function CreateWatchForm({
     // Map product fields expected by action
     fd.append("productName", form.model ?? "");
     fd.append("description", form.description ?? "");
-    fd.append("price", String(form.price ?? "0"));
+    fd.append("price", form.price);
     // default stock if not present
     fd.append("stock", String(form.stock ?? "1"));
     // imageUrls as comma separated string (action splits)

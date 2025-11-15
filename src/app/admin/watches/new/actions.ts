@@ -28,7 +28,8 @@ export async function createWatch(formData: FormData): Promise<any> {
         name: newWatch.productName as string,
         productType: "watch",
         description: newWatch.description as string,
-        priceDkk: parseFloat(newWatch.price as string),
+        // convert price to number of øre
+        priceDkk: Math.round(parseFloat(newWatch.price as string) * 100),
         stock: parseInt(newWatch.stock as string),
       },
       imageUrls: (newWatch.imageUrls as string)?.split(",") || [],

@@ -1,3 +1,5 @@
+"use server";
+
 import { db } from "@/database/drizzle";
 import { currencies, currencyHistory } from "@/database/schema";
 import { eq, desc } from "drizzle-orm";

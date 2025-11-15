@@ -6,34 +6,34 @@ import { ArrowLeft, X } from "lucide-react";
 import { ChatPanel } from "./ChatPanel";
 import { useEffect, useState } from "react";
 import { getConversations } from "@/services/conversationService";
-import { useSupabaseAuth } from "@/lib/useSupabaseAuth";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 
 export default function ChatBox({
   setChatOpen,
   initialConversation,
-  user,
-  role,
+  setInitialConversation,
 }: {
   setChatOpen: (open: boolean) => void;
   initialConversation?: any;
-  user: any;
-  role: string | null;
+  setInitialConversation: React.Dispatch<React.SetStateAction<any>>;
 }) {
   const [conversations, setConversations] = useState<any[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<any | null>(
     initialConversation
   );
   const [loading, setLoading] = useState(false);
+  const { user, role } = useSupabaseAuth();
 
   useEffect(() => {
     let mounted = true;
     async function loadConversations() {
       setLoading(true);
       try {
-        if (!user || !user.id) {
+        if (!user || !user.id || !role) {
           setConversations([]);
+          return;
         }
-        const res = await getConversations(user?.id, role || "customer");
+        const res = await getConversations(user.id, role);
         if (!mounted) return;
         setConversations(res);
       } catch (err) {
@@ -45,7 +45,12 @@ export default function ChatBox({
     return () => {
       mounted = false;
     };
-  }, [selectedConversation]);
+  }, [user, role, selectedConversation]);
+
+  function handleBackButton() {
+    setSelectedConversation(null);
+    setInitialConversation(null);
+  }
 
   return (
     <motion.div
@@ -60,7 +65,7 @@ export default function ChatBox({
           <div className="flex items-center justify-between w-full">
             <div>
               <Button
-                onClick={() => setSelectedConversation(null)}
+                onClick={() => handleBackButton()}
                 size="icon"
                 variant="ghost"
               >
@@ -97,6 +102,8 @@ export default function ChatBox({
       </div>
       <div className="flex-1 overflow-hidden min-h-0">
         <ChatPanel
+          user={user}
+          username={user?.user_metadata.display_name}
           conversations={conversations}
           selectedConversation={selectedConversation}
           setSelectedConversation={setSelectedConversation}

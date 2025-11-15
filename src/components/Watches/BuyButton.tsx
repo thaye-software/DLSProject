@@ -5,7 +5,7 @@ import { Button } from "../ui/button";
 import { Product } from "@/app/watches/type";
 import Link from "next/link";
 
-export default function AddToCartButton({product, className}: {product: Product, className: string}) {
+export default function BuyButton({product, className}: {product: Product, className: string}) {
   return(
     <div>
       { product.stock > 0 ? (

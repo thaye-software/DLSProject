@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { User as UserIcon } from "lucide-react";
 import Image from "next/image";
-import { useSupabaseAuth } from "@/lib/useSupabaseAuth";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 
 import {
   NavigationMenu,

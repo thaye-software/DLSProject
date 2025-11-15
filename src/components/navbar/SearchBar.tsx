@@ -6,9 +6,11 @@ import { Search } from "lucide-react";
 import { SearchResultsDialog } from "./SearchResultsDialog";
 import { AnimatePresence } from "framer-motion";
 import { Spinner } from "../ui/spinner";
+import { searchProducts } from "@/services/productService";
+import { set } from "zod";
 
 export default function SearchBar() {
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState<any[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -35,19 +37,8 @@ export default function SearchBar() {
 
       setLoading(true);
       try {
-        const res = await fetch(
-          `/api/search?q=${encodeURIComponent(query)}`,
-          {
-            signal: controller.signal,
-          }
-        );
-        if (!res.ok) {
-          setResults([]);
-          setLoading(false);
-          return;
-        }
-        const data = await res.json();
-        setResults(data);
+        const results = await searchProducts(query);
+        setResults(results);
       } catch (err: any) {
         if (err.name === "AbortError") return;
         console.error(err);
