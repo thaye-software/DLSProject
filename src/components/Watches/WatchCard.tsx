@@ -25,7 +25,7 @@ export async function WatchCard({ product, customerGeoLocation }: { product: Pro
                         alt={`${product.watch.brand.name} ${product.name}`}
                         className="w-full h-full object-cover rounded-2xl transition-transform duration-700 group-hover:scale-105"
                         fill
-                        unoptimized // REMOVE THIS IN PRODUCTION
+                        unoptimized={process.env.APP_ENV != "prod" && process.env.APP_ENV != "production"  ? true : false}
                     />
 
                     <div className="absolute top-4 right-4 flex gap-2 group">
