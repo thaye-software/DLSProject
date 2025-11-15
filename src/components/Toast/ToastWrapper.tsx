@@ -1,11 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation"; // ✅ use next/navigation, not next/router
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
 export default function ToastWrapper({ state }: { state: any }) {
-  const router = useRouter(); // ✅ Must be top-level
+  const router = useRouter();
 
   useEffect(() => {
     if (state?.message) {
@@ -21,7 +21,7 @@ export default function ToastWrapper({ state }: { state: any }) {
     if (state?.redirectUrl) {
       router.push(state.redirectUrl);
     }
-  }, [state, router]);
+  }, [router]);
 
   return null;
   // The <Toaster /> component can be found in the root layout

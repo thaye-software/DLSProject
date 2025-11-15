@@ -97,15 +97,21 @@ export default function ShippingAndBillingForm({customer, productSlug, customerG
   	const [saveBillingInfo, setSaveBillingInfo] = useState<boolean>(true);
 	const [isBillingInfoSaved, setIsBillingInfoSaved] = useState<boolean>(customer.country != null && customer.address != null);
 
-	let state = {success: true, message: "", redirectUrl: ""}
-
+	const [errorState, setErrorState] = useState<{
+		success: boolean;
+		message: string;
+		redirectUrl: string;
+	} | null>(null);
 
 	
 	useEffect(() => {
 		if(!productSlug) {
-			state.message = "Unexpected error, no products selected, try again...";
-			state.redirectUrl = "/watches/all";
-			return;
+			setErrorState({
+				success: false,
+				message: "Unexpected error, no products selected, try again...",
+				redirectUrl: "/watches/all"
+			});
+      		setIsLoading(false);
 		}
 
 		async function getAllCountries() {
@@ -129,10 +135,13 @@ export default function ShippingAndBillingForm({customer, productSlug, customerG
 
 				setProduct(product)
 				
-			} catch(error) {
+			} catch(error: any) {
 				console.error(error)
-				state.message = "Unexpected error, try again later...";
-				state.redirectUrl = "/watches/all";
+				setErrorState({
+					success: false,
+					message: error.message,
+					redirectUrl: "/watches/all"
+				});
 
 			} finally {
 				setIsLoading(false);
@@ -277,7 +286,7 @@ console.log(customer.country)
 													defaultValue={isBillingInfoSaved && customer.country?.name != null ? customer.country.name : undefined}
 													className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 												>
-													<option value="">
+													<option value="" disabled>
 														Select a country
 													</option>
 
@@ -371,7 +380,22 @@ console.log(customer.country)
 
 												<div className="space-y-2">
 													<Label htmlFor="shippingCountry">Country*</Label>
-													<Input id="shippingCountry" name="shippingCountry" placeholder="Denmark" />
+													<select 
+														id="shippingCountry" 
+														name="shippingCountry" 
+														className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+													>
+														<option value="" disabled>
+															Select a country
+														</option>
+
+														{countries.map((countryName) => (
+															<option key={countryName} defaultValue={countryName}>
+																{countryName}
+															</option>
+														))}
+
+													</select>
 												</div>
 
 												<div className="space-y-2">
@@ -449,8 +473,9 @@ console.log(customer.country)
 						</div>
 					</div>
 				</div>
-			) : (
-				<ToastWrapper state={state} />
+			) : (<div>
+				<ToastWrapper state={errorState} />
+			</div>
 			)}
 		</div>
   );

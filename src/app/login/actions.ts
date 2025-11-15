@@ -112,6 +112,8 @@ export async function register(
 ): Promise<RegisterFormState> {
   const supabase = await createClient();
 
+  const redirectUrl = formData.get("redirectUrl")?.toString();
+
   // Extract raw values
   const raw = {
     username: formData.get("username"),
@@ -172,6 +174,11 @@ export async function register(
       errorMsg = res.error || errorMsg;
     } catch {}
     return { formError: errorMsg };
+  }
+
+  if(redirectUrl) {
+    revalidatePath(redirectUrl, "layout");
+    redirect(redirectUrl);
   }
 
   return { success: true };

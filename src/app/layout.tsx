@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "framer-motion";
 import ChatBox from "@/components/chat/ChatBox";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { Toaster } from "sonner";
 
 const theSeasons = theSeasonsFont({
   src: [
@@ -104,6 +105,7 @@ export default function RootLayout({
     >
       <body className="antialiased min-h-screen flex flex-col">
         <ChatProvider>
+        <Toaster />
           <ThemeProvider
             attribute="class"
             defaultTheme="system"

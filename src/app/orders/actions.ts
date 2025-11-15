@@ -121,6 +121,7 @@ export async function submitOrderDetails(formData: customerBillingDetails, produ
     
         if (!isShippingSameAsBilling) {
             await createOrder(orderDetails, billingAddress, shippingAddress);
+            return;
         }
         
         await createOrder(orderDetails, billingAddress);
