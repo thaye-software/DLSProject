@@ -162,6 +162,9 @@ export const orderAddresses = pgTable(
   "order_addresses",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
+    firstName: varchar("first_name", {length: 255}),
+    middleName: varchar("middle_name", {length: 255}),
+    lastName: varchar("last_name", {length: 255}),
     address1: varchar("address_line_1", { length: 255 }).notNull(),
     address2: varchar("address_line_2", { length: 255 }),
     city: varchar("city", { length: 255 }).notNull(),
