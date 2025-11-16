@@ -5,6 +5,7 @@ import { Button } from "../ui/button";
 import { Heart } from "lucide-react";
 import { isFavorite, handleFavoriteToggle } from "@/services/favoriteService";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function FavoriteButton({ productId }: { productId: number }) {
   const { user } = useSupabaseAuth();
@@ -24,6 +25,7 @@ export default function FavoriteButton({ productId }: { productId: number }) {
       return;
     }
     setFavorited(!favorited);
+    toast.success(favorited ? "Removed from favorites" : "Added to favorites");
     return await handleFavoriteToggle(user.id, productId);
   }
 

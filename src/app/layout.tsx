@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "framer-motion";
 import ChatBox from "@/components/chat/ChatBox";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { Toaster } from "sonner";
 
 const theSeasons = theSeasonsFont({
   src: [
@@ -151,6 +152,7 @@ export default function RootLayout({
             {!hideRootShell && <LayoutChatControls />}
           </ThemeProvider>
         </ChatProvider>
+        <Toaster />
       </body>
     </html>
   );
