@@ -1,20 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { LoginForm, RegisterForm } from "@/components/Login";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay } from "swiper/modules";
 import "swiper/css";
+import { Autoplay } from "swiper/modules";
+import { Swiper, SwiperSlide } from "swiper/react";
 import { AnimatePresence, motion } from "framer-motion";
+
 
 import Logo from "@/components/Logo";
 import BackButton from "@/components/BackButton";
+import { LoginForm, RegisterForm } from "@/components/Login";
+import { Spinner } from "@/components/ui/spinner";
 
 const images = ["/login_cover.jpg", "/login_cover_1.jpg", "/login_cover_2.jpg"];
 
-export default function LoginPage() {
+
+
+// Separate component that uses useSearchParams. 
+
+// Reason:
+// Next.js tries to pre-render your page at build time, but useSearchParams() depends on runtime data (the URL query parameters). Without Suspense, Next.js doesn't know how to handle this during the build process.
+function LoginContent() {
   const [isLogin, setIsLogin] = useState<boolean>(true);
   const searchParams = useSearchParams();
   const redirectUrl: string | null = searchParams.get("redirect");
@@ -34,13 +42,11 @@ export default function LoginPage() {
 
         {redirectUrl && (
           <div className="flex flex-col items-center justify-center text-center">
-            {/* Heading with responsive spacing */}
             <h1 className="text-3xl font-bold max-w-2xl mt-8 sm:mt-12 md:mt-16 lg:mt-20 xl:mt-24">
               If you are a new customer, please sign up — otherwise login to proceed.
             </h1>
           </div>
         )}
-       
 
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-xs mb-12 sm:mb-16 md:mb-20 lg:mb-32 xl:mb-40">
@@ -53,7 +59,7 @@ export default function LoginPage() {
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.28 }}
                 >
-                  <LoginForm isLogin={isLogin} setIsLogin={setIsLogin} redirectUrl={redirectUrl ? redirectUrl : ""}/>
+                  <LoginForm isLogin={isLogin} setIsLogin={setIsLogin} redirectUrl={redirectUrl || ""}/>
                 </motion.div>
               ) : (
                 <motion.div
@@ -63,13 +69,14 @@ export default function LoginPage() {
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.28 }}
                 >
-                  <RegisterForm isLogin={isLogin} setIsLogin={setIsLogin} redirectUrl={redirectUrl ? redirectUrl : ""} />
+                  <RegisterForm isLogin={isLogin} setIsLogin={setIsLogin} redirectUrl={redirectUrl || ""} />
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         </div>
       </div>
+      
       <div className="relative hidden lg:block">
         <Swiper
           className="absolute inset-0 h-full w-full"
@@ -91,5 +98,21 @@ export default function LoginPage() {
         </Swiper>
       </div>
     </div>
+  );
+}
+
+// Main page component with Suspense wrapper
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"></div>
+          <p className="mt-2 text-sm text-muted-foreground">Loading... <Spinner/> </p>
+        </div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }
