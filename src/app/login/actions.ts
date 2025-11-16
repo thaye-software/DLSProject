@@ -26,6 +26,7 @@ export type LoginFormState = {
   values?: {
     email?: string;
     password?: string;
+    redirectUrl?: string
   };
   success?: boolean;
 };
@@ -36,9 +37,11 @@ export async function login(
 ): Promise<LoginFormState> {
   const supabase = await createClient();
 
+  const redirectUrl = formData.get("redirectUrl")?.toString();
+
   const raw = {
     email: formData.get("email"),
-    password: formData.get("password"),
+    password: formData.get("password")
   };
 
   const parsed = LoginSchema.safeParse(raw);
@@ -70,8 +73,37 @@ export async function login(
       values: { email, password },
     };
   }
-  revalidatePath("/", "layout");
-  redirect("/");
+
+  // On successful sign in, fetch avatar by email from the users table.
+  // Use the absolute baseUrl because this code runs on the server.
+  try {
+    const res = await fetch(
+      `${baseUrl}/api/users/avatar?email=${encodeURIComponent(email)}`
+    );
+
+    if (res.ok) {
+      const { avatarUrl } = await res.json();
+      // Note: this is server-side code; localStorage is not available here.
+      // If you want the client to have the avatar immediately, either:
+      // - store it in a cookie (via next/headers cookies()),
+      // - or return it to the client and let the client set localStorage,
+      // - or let the client fetch it after redirect via the hook.
+      // For now we don't persist it server-side — the value is fetched to ensure it exists.
+    }
+  } catch (fetchErr) {
+    // ignore avatar fetch failures — don't block sign-in
+    console.error("Failed to fetch avatar:", fetchErr);
+  }
+  
+  
+  if (redirectUrl) {
+    revalidatePath(redirectUrl, "layout");
+    redirect(redirectUrl);
+
+  } else {
+    revalidatePath("/", "layout");
+    redirect("/");
+  }
 }
 
 export async function register(
@@ -79,6 +111,8 @@ export async function register(
   formData: FormData
 ): Promise<RegisterFormState> {
   const supabase = await createClient();
+
+  const redirectUrl = formData.get("redirectUrl")?.toString();
 
   // Extract raw values
   const raw = {
@@ -140,6 +174,11 @@ export async function register(
       errorMsg = res.error || errorMsg;
     } catch {}
     return { formError: errorMsg };
+  }
+
+  if(redirectUrl) {
+    revalidatePath(redirectUrl, "layout");
+    redirect(redirectUrl);
   }
 
   return { success: true };

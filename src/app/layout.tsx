@@ -105,6 +105,7 @@ export default function RootLayout({
     >
       <body className="antialiased min-h-screen flex flex-col">
         <ChatProvider>
+        <Toaster />
           <ThemeProvider
             attribute="class"
             defaultTheme="system"

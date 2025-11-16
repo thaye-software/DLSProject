@@ -11,12 +11,10 @@ import { motion } from "framer-motion";
 
 export function WatchCard({
   product,
-  countryCode,
   formattedPrice,
   index,
 }: {
   product: Product;
-  countryCode: string;
   formattedPrice: Promise<string>;
   index?: number;
 }) {
@@ -71,17 +69,9 @@ export function WatchCard({
             </p>
           </div>
 
-          {/* Price + Button */}
+          {/* Price */}
           <div className="flex items-center justify-between mt-auto">
             <p className="text-xl font-bold">{formattedPrice}</p>
-
-            {/* <div className="overflow-hidden">
-                            <AddToCartButton 
-                                product={product}
-                                className="hover:cursor-pointer opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0 transition-all duration-700 ease-out whitespace-nowrap"
-
-                            />
-                        </div> */}
           </div>
         </CardContent>
       </Card>

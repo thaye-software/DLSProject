@@ -131,15 +131,36 @@
     {
       "idx": 18,
       "version": "7",
-      "when": 1763128004103,
-      "tag": "0018_create-favorites-table",
+      "when": 1763047665361,
+      "tag": "0018_synch-changes",
       "breakpoints": true
     },
     {
       "idx": 19,
       "version": "7",
-      "when": 1763302235105,
-      "tag": "0019_default-uuid-for-favorites",
+      "when": 1763154200863,
+      "tag": "0019_added-first-middle-last-name-and-phone-userstable",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1763154311618,
+      "tag": "0020_corrected-new-coloumnames-for-userstable",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1763203192219,
+      "tag": "0021_simplified-orders-table",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1763304320021,
+      "tag": "0022_added-first-middle-lastname-to-orderaddresstable",
       "breakpoints": true
     }
   ]

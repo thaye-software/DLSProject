@@ -1,6 +1,6 @@
 {
-  "id": "0c7d5a23-d51c-4a14-930a-d4900fbff3d5",
-  "prevId": "8b3dbec7-6ed9-491f-ba20-b6a75a46a5de",
+  "id": "1e3d6044-94c3-46ea-a1d0-4bd5ad06d07d",
+  "prevId": "2f03ab5a-99de-4d4b-818e-c1bfd4558345",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -612,9 +612,9 @@
           "primaryKey": false,
           "notNull": true
         },
-        "currency": {
-          "name": "currency",
-          "type": "varchar(50)",
+        "currency_id": {
+          "name": "currency_id",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": true
         }
@@ -651,7 +651,21 @@
           "with": {}
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "countries_currency_id_currencies_id_fk": {
+          "name": "countries_currency_id_currencies_id_fk",
+          "tableFrom": "countries",
+          "tableTo": "currencies",
+          "columnsFrom": [
+            "currency_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -817,103 +831,6 @@
           "tableTo": "currencies",
           "columnsFrom": [
             "currency_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.favorites": {
-      "name": "favorites",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "watch_id": {
-          "name": "watch_id",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "idx_favorites_user_id": {
-          "name": "idx_favorites_user_id",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_favorites_watch_id": {
-          "name": "idx_favorites_watch_id",
-          "columns": [
-            {
-              "expression": "watch_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "favorites_user_id_users_id_fk": {
-          "name": "favorites_user_id_users_id_fk",
-          "tableFrom": "favorites",
-          "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "favorites_watch_id_watches_id_fk": {
-          "name": "favorites_watch_id_watches_id_fk",
-          "tableFrom": "favorites",
-          "tableTo": "watches",
-          "columnsFrom": [
-            "watch_id"
           ],
           "columnsTo": [
             "id"
@@ -1641,6 +1558,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "first_name": {
+          "name": "first_name",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "email": {
           "name": "email",
           "type": "varchar(255)",
@@ -1660,14 +1583,14 @@
           "notNull": true,
           "default": "'customer'"
         },
-        "country": {
-          "name": "country",
+        "country_id": {
+          "name": "country_id",
           "type": "bigint",
           "primaryKey": false,
           "notNull": false
         },
-        "address": {
-          "name": "address",
+        "address_id": {
+          "name": "address_id",
           "type": "bigint",
           "primaryKey": false,
           "notNull": false
@@ -1678,7 +1601,7 @@
           "name": "idx_users_country",
           "columns": [
             {
-              "expression": "country",
+              "expression": "country_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1693,7 +1616,7 @@
           "name": "idx_users_address",
           "columns": [
             {
-              "expression": "address",
+              "expression": "address_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1706,12 +1629,12 @@
         }
       },
       "foreignKeys": {
-        "users_country_countries_id_fk": {
-          "name": "users_country_countries_id_fk",
+        "users_country_id_countries_id_fk": {
+          "name": "users_country_id_countries_id_fk",
           "tableFrom": "users",
           "tableTo": "countries",
           "columnsFrom": [
-            "country"
+            "country_id"
           ],
           "columnsTo": [
             "id"
@@ -1719,12 +1642,12 @@
           "onDelete": "set null",
           "onUpdate": "no action"
         },
-        "users_address_addresses_id_fk": {
-          "name": "users_address_addresses_id_fk",
+        "users_address_id_addresses_id_fk": {
+          "name": "users_address_id_addresses_id_fk",
           "tableFrom": "users",
           "tableTo": "addresses",
           "columnsFrom": [
-            "address"
+            "address_id"
           ],
           "columnsTo": [
             "id"

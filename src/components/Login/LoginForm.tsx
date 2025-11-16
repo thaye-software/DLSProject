@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { cn } from "@/lib/tailwindUtils";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -9,7 +10,7 @@ import {
   FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Spinner } from "./ui/spinner";
+import { Spinner } from "../ui/spinner";
 
 import { login, type LoginFormState } from "@/app/login/actions";
 import { useActionState } from "react";
@@ -24,21 +25,25 @@ function toggleLoginState(
 export function LoginForm({
   isLogin,
   setIsLogin,
+  redirectUrl,
   className,
   ...props
 }: React.ComponentProps<"form"> & {
   isLogin: boolean;
   setIsLogin: (isLogin: boolean) => void;
+  redirectUrl?: string;
 }) {
+  const router = useRouter();
   const initialState: LoginFormState = {};
   const [state, formAction] = useActionState(login, initialState);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-  // whenever the action state changes, stop the loading spinner
-  // this covers success and error cases (server returned)
-  setLoading(false);
-}, [state]);
+    // whenever the action state changes, stop the loading spinner
+    // this covers success and error cases (server returned)
+    setLoading(false);
+    
+  }, [state]);
 
   return (
     <form
@@ -54,6 +59,11 @@ export function LoginForm({
             Enter your email below to login to your account
           </p>
         </div>
+        
+        {redirectUrl && (
+          <input type="hidden" name="redirectUrl" value={redirectUrl} />
+        )}
+        
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
           <Input

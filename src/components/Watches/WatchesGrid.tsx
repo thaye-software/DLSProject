@@ -5,16 +5,13 @@ import { convertPrice } from "@/services/currencyService";
 
 export async function WatchesGrid({
   watches,
-  countryCode,
+  customerGeoLocation,
 }: {
   watches: Product[];
-  countryCode: string;
+  customerGeoLocation: string;
 }) {
-  async function getFormattedPrice(
-    productPriceDkk: number,
-    countryCode: string
-  ) {
-    return await convertPrice(productPriceDkk, countryCode.toLowerCase());
+  async function getFormattedPrice( productPriceDkk: number) {
+    return await convertPrice(productPriceDkk, customerGeoLocation);
   }
 
   return (
@@ -23,8 +20,7 @@ export async function WatchesGrid({
         <WatchCard
           key={watch.id}
           product={watch}
-          countryCode={countryCode}
-          formattedPrice={getFormattedPrice(watch.priceDkk, countryCode)}
+          formattedPrice={getFormattedPrice(watch.priceDkk)}
           index={i}
         />
       ))}

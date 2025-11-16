@@ -16,10 +16,11 @@ import {
 } from "lucide-react";
 import { convertPrice } from "@/services/currencyService";
 import ProductSafetyInfo from "@/components/Watches/ProductSafetyInfoCard";
-import AddToCartButton from "@/components/Watches/AddToCartButton";
+import BuyButton from "@/components/Watches/BuyButton";
 import ContactButton from "@/components/Contact/ContactButton";
 import { Button } from "@/components/ui/button";
 import constants from "@/lib/constants";
+import { getUserLocation } from "@/lib/utils/serverutils/utils";
 
 function getOptionName(
   options: { id: number; name: string }[],
@@ -38,7 +39,9 @@ export default async function ViewWatchPage({
   if (!product) {
     return notFound();
   }
-  const formattedPrice = await convertPrice(product?.priceDkk, "dkk");
+
+  const userGeoLocationData = await getUserLocation();
+  const formattedPrice = await convertPrice(product?.priceDkk, userGeoLocationData.currency);
 
   let brandName = "";
   let productSafetyInfo = null;
@@ -59,8 +62,7 @@ export default async function ViewWatchPage({
     };
   }
 
-  //TODO use either headers/cookies to find out location of user to display correct currency.
-  // formattedPrice = convertPrice(product?.priceDkk, "dkk");
+
 
   if (!product) {
     return (
@@ -245,10 +247,16 @@ export default async function ViewWatchPage({
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button className="cursor-pointer h-12 font-bold transition-all flex-1 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
-                <ShoppingBasket />
-                Buy now
+            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <BuyButton
+                product={product}
+                className="hover:cursor-pointer h-12 flex-1 bg-[#1A1A1A] hover:bg-[#244B5A] text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              />
+
+              <Button
+                className="hover:cursor-pointer h-12 flex-1 bg-white hover:bg-[#F5F3EE] text-[#1A1A1A] font-semibold py-4 px-8 rounded-lg border-2 border-[#D3C6A3] transition-all"
+              >
+                Contact
               </Button>
 
               <ContactButton productId={product.id} />

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { cn } from "@/lib/tailwindUtils";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -12,8 +13,8 @@ import { Input } from "@/components/ui/input";
 
 import { register, type RegisterFormState } from "@/app/login/actions";
 import { useActionState } from "react";
-import { Spinner } from "./ui/spinner";
-import { ConfirmDialog } from "./ConfirmDialog";
+import { Spinner } from "../ui/spinner";
+import { ConfirmDialog } from "../ConfirmDialog";
 
 function toggleLoginState(
   isLogin: boolean,
@@ -25,12 +26,15 @@ function toggleLoginState(
 export function RegisterForm({
   isLogin,
   setIsLogin,
+  redirectUrl,
   className,
   ...props
 }: React.ComponentProps<"form"> & {
   isLogin: boolean;
   setIsLogin: (isLogin: boolean) => void;
+  redirectUrl?: string;
 }) {
+  const router = useRouter();
   const initialState: RegisterFormState = {};
   const [state, formAction] = useActionState(register, initialState);
   const [loading, setLoading] = useState(false);
@@ -41,8 +45,18 @@ export function RegisterForm({
     // this covers success and error cases (server returned)
     setLoading(false);
     // open dialog if registration succeeded
-    if (state?.success) setDialogOpen(true);
+    if (state?.success) {
+      setDialogOpen(true);
+    }
   }, [state]);
+
+  // Handle redirect after dialog is closed
+  const handleDialogClose = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open && state?.success && redirectUrl) {
+      router.push(redirectUrl);
+    }
+  };
 
   return (
     <>
@@ -60,6 +74,10 @@ export function RegisterForm({
             </p>
           </div>
 
+          {redirectUrl && (
+            <input type="hidden" name="redirectUrl" value={redirectUrl} />
+          )}
+
           <Field>
             <FieldLabel htmlFor="username">Username</FieldLabel>
             <Input
@@ -69,6 +87,7 @@ export function RegisterForm({
               required
               disabled={loading}
               defaultValue={state?.values?.username || ""}
+              placeholder="your username"
             />
             {state?.fieldErrors?.username && (
               <p className="text-sm text-destructive mt-1">
@@ -94,15 +113,7 @@ export function RegisterForm({
             )}
           </Field>
           <Field>
-            <div className="flex items-center">
-              <FieldLabel htmlFor="password">Password</FieldLabel>
-              <a
-                href="#"
-                className="ml-auto text-sm underline-offset-4 hover:underline"
-              >
-                Forgot your password?
-              </a>
-            </div>
+            <FieldLabel htmlFor="password">Password</FieldLabel>
             <Input
               name="password"
               id="password"
@@ -148,7 +159,7 @@ export function RegisterForm({
           </Field>
         </FieldGroup>
       </form>
-      <ConfirmDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <ConfirmDialog open={dialogOpen} onOpenChange={handleDialogClose} />
     </>
   );
 }

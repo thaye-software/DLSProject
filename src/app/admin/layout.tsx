@@ -7,6 +7,8 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { Separator } from "@/components/ui/separator";
 
+import { getSignedInUser } from "@/lib/utils/serverutils/utils";
+
 export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({
@@ -17,24 +19,23 @@ export default async function AdminLayout({
   
   // Server-side auth + role check
   try {
-    const supabase = await createClient();
     const {
       data: { user },
       error,
-    } = await supabase.auth.getUser();
+    } = await getSignedInUser();
 
     if (error || !user || !user.email) {
       // Not signed in - send to login
       redirect("/login");
     }
 
-    const result = await getUserByEmail(user.email);
-    if (!result.success || !result.data) {
+    const costumer = await getUserByEmail(user.email);
+    if (!costumer) {
       // No matching application user
       redirect("/");
     }
 
-    if (result.data.role !== "admin") {
+    if (costumer.role !== "admin") {
       // Not an admin
       redirect("/");
     }

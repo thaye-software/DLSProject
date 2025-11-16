@@ -20,7 +20,9 @@ export const countries = pgTable(
     id: bigserial("id", { mode: "number" }).primaryKey(),
     name: varchar("name", { length: 255 }).notNull(),
     abbreviation: varchar("abbreviation", { length: 10 }).notNull(),
-    currency: varchar("currency", { length: 50 }).notNull(),
+    currencyId: bigint("currency_id", { mode: "number" })
+      .notNull()
+      .references(() => currencies.id, { onDelete: "cascade" }),
   },
   (table) => [
     index("idx_countries_name").on(table.name),
@@ -98,20 +100,24 @@ export const users = pgTable(
   {
     id: uuid("id").primaryKey(),
     username: varchar("username", { length: 255 }).notNull().unique(),
+    firstName: varchar("first_name", {length: 255}),
+    middleName: varchar("middle_name", {length: 255}),
+    lastName: varchar("last_name", {length: 255}),
+    phone:varchar("phone", {length: 20}),
     email: varchar("email", { length: 255 }).notNull().unique(),
     avatarUrl: text("avatar_url"),
     role: varchar("role", { length: 50 }).notNull().default("customer"),
-    country: bigint("country", { mode: "number" }).references(
+    countryId: bigint("country_id", { mode: "number" }).references(
       () => countries.id,
       { onDelete: "set null" }
     ),
-    addressId: bigint("address", { mode: "number" }).references(
+    addressId: bigint("address_id", { mode: "number" }).references(
       () => addresses.id,
       { onDelete: "set null" }
     ),
   },
   (table) => [
-    index("idx_users_country").on(table.country),
+    index("idx_users_country").on(table.countryId),
     index("idx_users_address").on(table.addressId),
   ]
 );
@@ -174,6 +180,9 @@ export const orderAddresses = pgTable(
   "order_addresses",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
+    firstName: varchar("first_name", {length: 255}),
+    middleName: varchar("middle_name", {length: 255}),
+    lastName: varchar("last_name", {length: 255}),
     address1: varchar("address_line_1", { length: 255 }).notNull(),
     address2: varchar("address_line_2", { length: 255 }),
     city: varchar("city", { length: 255 }).notNull(),
@@ -191,17 +200,9 @@ export const orders = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    totalPrice: bigint("total_price", { mode: "number" }).notNull(),
-    status: varchar("status", { length: 50 }).notNull(),
-    currency: varchar("currency", { length: 10 }).notNull().default("DKK"),
+    status: varchar("status", { length: 15 }).notNull(),
+    currencyId: bigint("currency_id", { mode: "number" }).references(() => currencies.id).notNull(),
 
-    // Currency fields
-    currencyCode: varchar("currency_code", { length: 3 })
-      .notNull()
-      .default("DKK"),
-    exchangeRateUsed: decimal("exchange_rate_used", { precision: 10, scale: 6 })
-      .notNull()
-      .default("1.000000"),
     totalPriceDkk: decimal("total_price_dkk", {
       precision: 12,
       scale: 2,
@@ -225,11 +226,11 @@ export const orders = pgTable(
     index("idx_orders_created_at").on(table.createdAt),
     index("idx_orders_delivery_address").on(table.deliveryAddressId),
     index("idx_orders_billing_address").on(table.billingAddressId),
-    index("idx_orders_currency_code").on(table.currencyCode), // NEW INDEX
+    index("idx_orders_currency_id").on(table.currencyId), // NEW INDEX
     check(
       "orders_status_check",
-      sql`${table.status} IN ('pending', 'paid', 'shipped', 'completed', 'cancelled')`
-    ),
+      sql`${table.status} IN ('PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED')`
+    )
   ]
 );
 
@@ -391,13 +392,17 @@ export const currencyHistory = pgTable(
 
 //----------------------------------------------------------------  Relations --------------------------------------------------------------------
 
-export const countriesRelations = relations(countries, ({ many }) => ({
+export const countriesRelations = relations(countries, ({ many, one }) => ({
   users: many(users),
+  currency: one(currencies, {
+    fields: [countries.currencyId],
+    references: [currencies.id],
+  }),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   country: one(countries, {
-    fields: [users.country],
+    fields: [users.countryId],
     references: [countries.id],
   }),
   address: one(addresses, {
@@ -464,8 +469,8 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
     relationName: "billingAddress",
   }),
   currency: one(currencies, {
-    fields: [orders.currencyCode],
-    references: [currencies.code],
+    fields: [orders.currencyId],
+    references: [currencies.id],
   }),
 }));
 
@@ -539,6 +544,7 @@ export const messagesRelations = relations(messages, ({ one }) => ({
 export const currenciesRelations = relations(currencies, ({ many }) => ({
   history: many(currencyHistory),
   orders: many(orders),
+  countries: many(countries),
 }));
 
 export const currencyHistoryRelations = relations(

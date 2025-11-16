@@ -30,7 +30,7 @@ async function seedDatabase() {
         `);
 
     await seed();
-    await seedCurrencies();
+    // await seedCurrencies();
 }
 
 
@@ -60,13 +60,42 @@ async function seedCurrencies() {
 async function seed() {
   console.log("🌱 Starting seed...");
 
+  const [danishCurrency] = await db.insert(currencies).values(
+    {
+      code: "DKK",
+      exchangeRate: "1.000000",
+      isActive: true,
+      updatedAt: new Date(),
+    }
+  ).returning();
+
+  const [euroCurrency] = await db.insert(currencies).values(
+    {
+      code: "EUR",
+      exchangeRate: "0.134000", // Example rate: 1 DKK = 0.134 EUR
+      isActive: true,
+      updatedAt: new Date(),
+    }   
+  ).returning();
+
+ 
+
   // 1. Countries
   const [denmark] = await db
     .insert(countries)
     .values({
       name: "Denmark",
       abbreviation: "DK",
-      currency: "DKK",
+      currencyId: danishCurrency.id
+    })
+    .returning();
+    
+    const [germany] = await db
+    .insert(countries)
+    .values({
+      name: "Germany",
+      abbreviation: "DE",
+      currencyId: euroCurrency.id
     })
     .returning();
 
@@ -167,35 +196,35 @@ const seededProducts = await db
       name: "Submariner",
       priceDkk: 9500000,
       description: "The iconic diver’s watch, crafted in Oystersteel.",
-      stock: 5,
+      stock: 15,
     },
     {
       productType: "watch",
       name: "Speedmaster",
       priceDkk: 6200000,
       description: "The legendary chronograph that went to the moon.",
-      stock: 3,
+      stock: 23,
     },
     {
       productType: "watch",
       name: "Monaco",
       priceDkk: 4900000,
       description: "Distinctive square case with racing heritage.",
-      stock: 4,
+      stock: 44,
     },
     {
       productType: "watch",
       name: "Nautilus",
       priceDkk: 28000000,
       description: "A luxury sports watch with timeless elegance.",
-      stock: 2,
+      stock: 23,
     },
     {
       productType: "watch",
       name: "Royal Oak",
       priceDkk: 31000000,
       description: "Iconic octagonal bezel and refined craftsmanship.",
-      stock: 1,
+      stock: 12,
     },
   ])
   .returning();
@@ -366,10 +395,10 @@ const seededWatches = await db
   // 8. Users
   await db.insert(users).values({
     id: crypto.randomUUID(),
-    username: "john_doe",
-    email: "john@example.com",
+    username: "Chris",
+    email: "chye0001@stud.ek.dk",
     role: "customer",
-    country: denmark.id,
+    countryId: denmark.id,
     addressId: address.id,
     avatarUrl: "https://example.com/avatar.jpg",
   });
