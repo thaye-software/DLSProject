@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   try {
     event = stripe.webhooks.constructEvent(
       await req.text(),
-      (await headers()).get('stripe-signature'),
+      (await headers()).get('stripe-signature') as string,
       process.env.STRIPE_WEBHOOK_SECRET!
     )
   } catch (err: any) {
