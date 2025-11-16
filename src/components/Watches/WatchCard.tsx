@@ -2,13 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Heart, ShoppingCart } from "lucide-react";
 
 import { Product } from "@/app/watches/type";
 import { convertPrice } from "@/services/currencyService";
-import AddToCartButton from "./AddToCartButton";
 import FavoriteButton from "./FavoriteButton";
 
 

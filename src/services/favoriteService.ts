@@ -4,6 +4,22 @@ import { db } from "@/database/drizzle";
 import { favorites } from "@/database/schema";
 import { and, eq } from "drizzle-orm";
 
+export async function getUserFavorites(userId: string) {
+  return await db.query.favorites.findMany({
+    where: eq(favorites.userId, userId)
+  });
+}
+
+export async function isFavorite(userId: string, watchId: number) {
+  const favorite =  await db.query.favorites.findFirst({
+    where: and(
+      eq(favorites.userId, userId),
+      eq(favorites.watchId, watchId)
+    )
+  });
+  return !!favorite;
+}
+
 export async function handleFavoriteToggle(userId: string, watchId: number) {
   const isFavorite = await db.query.favorites.findFirst({
     where: and(

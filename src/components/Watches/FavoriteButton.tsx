@@ -3,10 +3,19 @@
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { Button } from "../ui/button";
 import { Heart } from "lucide-react";
-import { handleFavoriteToggle } from "@/services/favoriteService";
+import { isFavorite, handleFavoriteToggle } from "@/services/favoriteService";
+import { useState } from "react";
 
 export default function FavoriteButton({ productId }: { productId: number }) {
   const { user } = useSupabaseAuth();
+  const [favorited, setFavorited] = useState(false);
+
+  async function isFavorited() {
+    if (!user) return;
+    const favoritedStatus = await isFavorite(user.id, productId);
+    setFavorited(favoritedStatus);
+  }
+
 
   async function handleButtonClick(event: React.MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
@@ -14,6 +23,7 @@ export default function FavoriteButton({ productId }: { productId: number }) {
       alert("Please log in to add favorites.");
       return;
     }
+    setFavorited(!favorited);
     return await handleFavoriteToggle(user.id, productId);
   }
 
@@ -22,9 +32,9 @@ export default function FavoriteButton({ productId }: { productId: number }) {
       size="icon"
       variant="secondary"
       className="cursor-pointer opacity-0 group-hover:opacity-100 bg-background/95 shadow-lg"
-    onClick={handleButtonClick}
+      onClick={handleButtonClick}
     >
-      <Heart />
+      <Heart className={favorited ? "fill-primary" : ""} />
     </Button>
   );
 }

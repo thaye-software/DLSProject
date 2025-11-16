@@ -15,6 +15,7 @@ export default async function AllWatches() {
   // use header/cookies to get userId / countrty id etc.
   const countryCode = "DKK";
   const watches: Product[] = await getAllProducts();
+  
 
   return (
     <div className="container mx-auto px-4 py-8">
