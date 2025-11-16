@@ -1,41 +1,44 @@
 import { relations } from "drizzle-orm/relations";
-import { addresses, users, countries, productSafetyInfo, watches, auctions, blogPosts, blogMedia, conversations, messages, orders, orderItems, products, productImages, orderAddresses } from "./schema";
+import { users, favorites, watches, auctions, blogPosts, blogMedia, conversations, products, messages, orders, orderItems, countries, addresses, productImages, orderAddresses, currencies, currencyHistory, brands } from "./schema";
+
+export const favoritesRelations = relations(favorites, ({one}) => ({
+	user: one(users, {
+		fields: [favorites.userId],
+		references: [users.id]
+	}),
+	watch: one(watches, {
+		fields: [favorites.watchId],
+		references: [watches.id]
+	}),
+}));
 
 export const usersRelations = relations(users, ({one, many}) => ({
-	address: one(addresses, {
-		fields: [users.address],
-		references: [addresses.id]
-	}),
+	favorites: many(favorites),
+	blogPosts: many(blogPosts),
+	conversations: many(conversations),
+	messages: many(messages),
 	country: one(countries, {
 		fields: [users.country],
 		references: [countries.id]
 	}),
-	blogPosts: many(blogPosts),
-	conversations: many(conversations),
-	messages: many(messages),
+	address: one(addresses, {
+		fields: [users.address],
+		references: [addresses.id]
+	}),
 	orders: many(orders),
 }));
 
-export const addressesRelations = relations(addresses, ({many}) => ({
-	users: many(users),
-}));
-
-export const countriesRelations = relations(countries, ({many}) => ({
-	users: many(users),
-}));
-
 export const watchesRelations = relations(watches, ({one, many}) => ({
-	productSafetyInfo: one(productSafetyInfo, {
-		fields: [watches.productSafetyInfoId],
-		references: [productSafetyInfo.id]
-	}),
+	favorites: many(favorites),
 	auctions: many(auctions),
-	conversations: many(conversations),
-	products: many(products),
-}));
-
-export const productSafetyInfoRelations = relations(productSafetyInfo, ({many}) => ({
-	watches: many(watches),
+	product: one(products, {
+		fields: [watches.productId],
+		references: [products.id]
+	}),
+	brand: one(brands, {
+		fields: [watches.brandId],
+		references: [brands.id]
+	}),
 }));
 
 export const auctionsRelations = relations(auctions, ({one}) => ({
@@ -65,11 +68,18 @@ export const conversationsRelations = relations(conversations, ({one, many}) => 
 		fields: [conversations.customerId],
 		references: [users.id]
 	}),
-	watch: one(watches, {
+	product: one(products, {
 		fields: [conversations.productId],
-		references: [watches.id]
+		references: [products.id]
 	}),
 	messages: many(messages),
+}));
+
+export const productsRelations = relations(products, ({many}) => ({
+	conversations: many(conversations),
+	orderItems: many(orderItems),
+	productImages: many(productImages),
+	watches: many(watches),
 }));
 
 export const messagesRelations = relations(messages, ({one}) => ({
@@ -96,15 +106,15 @@ export const orderItemsRelations = relations(orderItems, ({one}) => ({
 
 export const ordersRelations = relations(orders, ({one, many}) => ({
 	orderItems: many(orderItems),
-	orderAddress_billingAddressId: one(orderAddresses, {
-		fields: [orders.billingAddressId],
-		references: [orderAddresses.id],
-		relationName: "orders_billingAddressId_orderAddresses_id"
-	}),
 	orderAddress_deliveryAddressId: one(orderAddresses, {
 		fields: [orders.deliveryAddressId],
 		references: [orderAddresses.id],
 		relationName: "orders_deliveryAddressId_orderAddresses_id"
+	}),
+	orderAddress_billingAddressId: one(orderAddresses, {
+		fields: [orders.billingAddressId],
+		references: [orderAddresses.id],
+		relationName: "orders_billingAddressId_orderAddresses_id"
 	}),
 	user: one(users, {
 		fields: [orders.userId],
@@ -112,27 +122,41 @@ export const ordersRelations = relations(orders, ({one, many}) => ({
 	}),
 }));
 
-export const productsRelations = relations(products, ({one, many}) => ({
-	orderItems: many(orderItems),
-	productImage: one(productImages, {
-		fields: [products.imageId],
-		references: [productImages.id]
-	}),
-	watch: one(watches, {
-		fields: [products.watchId],
-		references: [watches.id]
-	}),
+export const countriesRelations = relations(countries, ({many}) => ({
+	users: many(users),
 }));
 
-export const productImagesRelations = relations(productImages, ({many}) => ({
-	products: many(products),
+export const addressesRelations = relations(addresses, ({many}) => ({
+	users: many(users),
+}));
+
+export const productImagesRelations = relations(productImages, ({one}) => ({
+	product: one(products, {
+		fields: [productImages.productId],
+		references: [products.id]
+	}),
 }));
 
 export const orderAddressesRelations = relations(orderAddresses, ({many}) => ({
-	orders_billingAddressId: many(orders, {
-		relationName: "orders_billingAddressId_orderAddresses_id"
-	}),
 	orders_deliveryAddressId: many(orders, {
 		relationName: "orders_deliveryAddressId_orderAddresses_id"
 	}),
+	orders_billingAddressId: many(orders, {
+		relationName: "orders_billingAddressId_orderAddresses_id"
+	}),
+}));
+
+export const currencyHistoryRelations = relations(currencyHistory, ({one}) => ({
+	currency: one(currencies, {
+		fields: [currencyHistory.currencyId],
+		references: [currencies.id]
+	}),
+}));
+
+export const currenciesRelations = relations(currencies, ({many}) => ({
+	currencyHistories: many(currencyHistory),
+}));
+
+export const brandsRelations = relations(brands, ({many}) => ({
+	watches: many(watches),
 }));
