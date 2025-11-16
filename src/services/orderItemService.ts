@@ -1,6 +1,73 @@
+import { eq } from "drizzle-orm";
 import { db } from "@/database/drizzle";
 import { orderItems } from "@/database/schema";
 import { NewOrderItemModel, OrderItemModel } from "@/database/types";
+
+
+//todo we should create reference number instead on use that instead of the auto incremented id... laster tho
+export async function getOrderItemByOrderId(orderId: number) {
+    try{
+        const foundOrderItem = await db.query.orderItems.findFirst({
+            where: eq(orderItems.orderId, orderId),
+            columns: {
+                id: true,
+                quantity: true
+            },
+            with: {
+                order: {
+                    columns: {
+                        totalPriceDkk: true,
+                        createdAt: true,
+                    },
+                    with: {
+                        user: {
+                            columns: {
+                                email: true
+                            }
+                        },
+                        billingAddress: {
+                            columns: {
+                                firstName: true,
+                                middleName: true,
+                                lastName: true
+                            }
+                        },
+                        currency: {
+                            columns: {
+                                code: true
+                            }
+                        }
+                    }
+                },
+                product: {
+                    columns: { },
+                    with: {
+                        productImages: true,
+                        watch: {
+                            columns: {
+                                model: true
+                            },
+                            with: {
+                                brand: {
+                                    columns: {
+                                        name: true
+                                    }
+                                }
+                            }
+                        },
+                    }
+                }
+            }
+        })
+
+        return foundOrderItem;
+
+    } catch(error) {
+        console.error(`(server) failed to retrieve order item for order id: ${orderId}`, error);
+        throw error;
+    }
+}
+
 
 
 type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
