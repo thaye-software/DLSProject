@@ -63,7 +63,7 @@ export default function LoginPage() {
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.28 }}
                 >
-                  <RegisterForm isLogin={isLogin} setIsLogin={setIsLogin} />
+                  <RegisterForm isLogin={isLogin} setIsLogin={setIsLogin} redirectUrl={redirectUrl ? redirectUrl : ""} />
                 </motion.div>
               )}
             </AnimatePresence>

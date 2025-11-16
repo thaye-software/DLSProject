@@ -1,9 +1,8 @@
-import { SearchParams } from "next/dist/server/request/search-params";
 import { redirect } from "next/navigation";
+import { SearchParams } from "next/dist/server/request/search-params";
 
-import BackButton from "@/components/BackButton";
-import ShippingAndBillingForm from "@/components/Orders/Info/ShippingAndBillingForm";
 import ToastWrapper from "@/components/Toast/ToastWrapper";
+import ShippingAndBillingForm from "@/components/Orders/Info/ShippingAndBillingForm";
 
 import { getCostumerInfoByEmail } from "@/services/userService";
 
@@ -21,7 +20,7 @@ export default async function OrdersInfoPage({searchParams}: {searchParams: Sear
 	const { data: { user }, error } = await getSignedInUser();
 	
 	if(!user) {
-		redirect(`/login?redirect=${encodeURIComponent("/orders/info")}`);
+		redirect(`/login?redirect=${encodeURIComponent("/orders/checkouttwo/infomation")}`);
 	}
 
   const customer = await getCostumerInfoByEmail(user.email as string)
@@ -31,7 +30,7 @@ export default async function OrdersInfoPage({searchParams}: {searchParams: Sear
   }
   
 
-  
+
 	return(
     <div>
       {customer ? (
