@@ -5,7 +5,7 @@ import { z } from "zod"
 import { convertPrice, getCurrencyByCode } from "@/services/currencyService"
 import { deleteBillingAddress, saveBillingAddress } from "@/services/addressService";
 import { saveCustomerNameAndPhone, deleteCustomerNameAndPhone } from "@/services/userService";
-import { saveCustomerCountry, deleteCustomerCountry, getAllCountries, Country } from "@/services/countryServive";
+import getCountryByName, { saveCustomerCountry, deleteCustomerCountry, getAllCountries, Country } from "@/services/countryServive";
 
 import { getResendClientAndOriginEmail, getUserLocation } from "@/lib/utils/serverutils/utils";
 
@@ -74,6 +74,7 @@ export async function submitOrderDetails(formData: customerBillingDetails, produ
     currencyCode = currencyCode == "DKK" ? "DKK" : "EUR" 
     const localeCurrency = await getCurrencyByCode(currencyCode);
 
+    const billingAddressCountry = await getCountryByName(formData.country);
     // return;
     // let customerCountry;
     // if(!country) {
@@ -114,9 +115,11 @@ export async function submitOrderDetails(formData: customerBillingDetails, produ
 
     const orderDetails = {
         userId: formData.customerId,
-        currencyId: country?.currency?.id || localeCurrency.id,
+        currencyId: billingAddressCountry?.currencyId || localeCurrency.id,
         status: "PROCESSING",
         totalPriceDkk: String(product.priceDkk), // In cents
+
+        //todo might just refactor this to use billingaddress
         totalPriceCurrency: country === null ? 
             String(Math.round(product.priceDkk * Number(localeCurrency.exchangeRate))) : // In cents
             String(Math.round(product.priceDkk * country.currency.exchangeRate)), // In cents

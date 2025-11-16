@@ -20,7 +20,7 @@ export default async function OrdersInfoPage({searchParams}: {searchParams: Sear
 	const { data: { user }, error } = await getSignedInUser();
 	
 	if(!user) {
-		redirect(`/login?redirect=${encodeURIComponent("/orders/checkouttwo/infomation")}`);
+		redirect(`/login?redirect=${encodeURIComponent(`/orders/checkouttwo/infomation?product=${productSlug}`)}`);
 	}
 
   const customer = await getCostumerInfoByEmail(user.email as string)

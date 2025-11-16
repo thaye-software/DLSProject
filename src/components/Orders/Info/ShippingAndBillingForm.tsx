@@ -172,7 +172,7 @@ export default function ShippingAndBillingForm({customer, productSlug, customerG
 		data.customerId = customer.id;
 
 		const customerCountry = customer.country || null;
-
+		
 		try {
 			setIsBuyLoading(true);
 			//@ts-ignore

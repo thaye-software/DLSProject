@@ -19,6 +19,22 @@ export interface Country {
 }
 
 
+
+export default async function getCountryByName(name: string) {
+    try {
+        const foundCountry = await db.query.countries.findFirst({
+            where: eq(countries.name, name)
+        });
+        return foundCountry;
+        
+    } catch(error) {
+        console.error(`(server) failded to get country from databse with name: ${name}`, error);
+        throw error;
+    }
+}
+
+
+
 export async function getAllCountries() {
     try {
         const allCountries = await db.query.countries.findMany();
