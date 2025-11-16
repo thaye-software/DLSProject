@@ -350,7 +350,12 @@ console.log(customer.country)
 												<div className="grid grid-cols-2 gap-4">
 													<div className="space-y-2">
 														<Label htmlFor="shippingFirstName">First Name*</Label>
-														<Input id="shippingFirstName" name="shippingFirstName" placeholder="Reciver first name" />
+														<Input 
+															id="shippingFirstName" 
+															name="shippingFirstName" 
+															placeholder="Reciver first name"
+															required={!sameAsShipping} 
+														/>
 													</div>
 													<div className="space-y-2">
 														<Label htmlFor="shippingMiddleName">Middle Name (optional)</Label>
@@ -358,23 +363,23 @@ console.log(customer.country)
 													</div>
 													<div className="space-y-2">
 														<Label htmlFor="shippingLastName">Last Name*</Label>
-														<Input id="shippingLastName" name="shippingLastName" placeholder="Reciver last name" />
+														<Input id="shippingLastName" name="shippingLastName" placeholder="Reciver last name" required={!sameAsShipping}  />
 													</div>
 												</div>
 
 												<div className="space-y-2">
 													<Label htmlFor="shippingAddress">Street Address*</Label>
-													<Input id="shippingAddress" name="shippingAddress" placeholder="123 Main Street" />
+													<Input id="shippingAddress" name="shippingAddress" placeholder="123 Main Street" required={!sameAsShipping} />
 												</div>
 
 												<div className="grid grid-cols-2 gap-4">
 													<div className="space-y-2">
 														<Label htmlFor="shippingCity">City*</Label>
-														<Input id="shippingCity" name="shippingCity" placeholder="Roskilde" />
+														<Input id="shippingCity" name="shippingCity" placeholder="Roskilde" required={!sameAsShipping} />
 													</div>
 													<div className="space-y-2">
 														<Label htmlFor="shippingPostalCode">Postal Code*</Label>
-														<Input id="shippingPostalCode" name="shippingPostalCode" placeholder="2640" />
+														<Input id="shippingPostalCode" name="shippingPostalCode" placeholder="2640" required={!sameAsShipping} />
 													</div>
 												</div>
 
@@ -384,6 +389,7 @@ console.log(customer.country)
 														id="shippingCountry" 
 														name="shippingCountry" 
 														className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+														required={!sameAsShipping} 
 													>
 														<option value="" disabled>
 															Select a country
