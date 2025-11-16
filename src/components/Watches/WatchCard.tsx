@@ -68,13 +68,6 @@ export async function WatchCard({ product, customerGeoLocation }: { product: Pro
                 <p className="text-xl font-bold">
                     {formattedPrice}
                 </p>
-
-                <div className="overflow-hidden">
-                    <BuyButton 
-                        product={product}
-                        className="hover:cursor-pointer opacity-0"
-                    />
-                </div> 
             </div>
         </CardContent>
     </Card>

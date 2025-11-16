@@ -20,6 +20,7 @@ import BuyButton from "@/components/Watches/BuyButton";
 import ContactButton from "@/components/Contact/ContactButton";
 import { Button } from "@/components/ui/button";
 import constants from "@/lib/constants";
+import { getUserLocation } from "@/lib/utils/serverutils/utils";
 
 function getOptionName(
   options: { id: number; name: string }[],
@@ -38,7 +39,9 @@ export default async function ViewWatchPage({
   if (!product) {
     return notFound();
   }
-  const formattedPrice = await convertPrice(product?.priceDkk, "dkk");
+
+  const userGeoLocationData = await getUserLocation();
+  const formattedPrice = await convertPrice(product?.priceDkk, userGeoLocationData.currency);
 
   let brandName = "";
   let productSafetyInfo = null;
@@ -59,8 +62,7 @@ export default async function ViewWatchPage({
     };
   }
 
-  //TODO use either headers/cookies to find out location of user to display correct currency.
-  // formattedPrice = convertPrice(product?.priceDkk, "dkk");
+
 
   if (!product) {
     return (
