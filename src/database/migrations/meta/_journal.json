@@ -134,6 +134,13 @@
       "when": 1763128004103,
       "tag": "0018_create-favorites-table",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1763302235105,
+      "tag": "0019_default-uuid-for-favorites",
+      "breakpoints": true
     }
   ]
 }

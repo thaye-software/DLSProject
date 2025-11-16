@@ -119,7 +119,7 @@ export const users = pgTable(
 export const favorites = pgTable(
   "favorites",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
+    id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
