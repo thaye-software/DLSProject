@@ -26,7 +26,7 @@ export const ChatPanel: React.FC<{
     return (
       <div className="flex h-full w-full flex-col bg-background min-h-0">
         <div className="flex-1 overflow-y-auto min-h-0">
-          <div className="flex flex-col mt-2 px-2">
+          <div className="flex flex-col mt-2 px-2 gap-2">
             {conversations.map((conv) => (
               <Item
                 key={conv.id}
@@ -44,33 +44,46 @@ export const ChatPanel: React.FC<{
                   className="rounded-2xl h-full aspect-square object-cover"
                   unoptimized
                 />
-                <div className="gap-2 flex flex-col justify-center flex-1">
+                <div className="gap-2 flex flex-col">
                   <div>
-                    <span className="font-bold text-lg mr-1">
+                    <span className="font-bold text-lg">
                       {conv.product.name}
                     </span>
-                    {/* <span className="text-xs text-muted-foreground">
-                      ref: {conv  .product.watch.reference}
-                    </span> */}
                   </div>
 
-                  <div>
+                  <div className="flex items-center gap-2 w-full">
                     {conv.messages && conv.messages.length > 0 ? (
-                      <div className="text-xs text-foreground/70">
-                        {conv.messages[0].sender?.id === user?.id && (
-                          <span className="font-bold">You: </span>
-                        )}
-                        <span
-                          className={`${
-                            !conv.messages[0].isRead &&
-                            conv.messages[0].sender?.id !== user?.id
-                              ? "font-bold"
-                              : ""
-                          } inline-block align-middle max-w-45 truncate`}
-                        >
-                          {conv.messages[0]?.content}
-                        </span>
-                      </div>
+                      <>
+                        <div className="flex items-center">
+                          {conv.messages[0].sender?.id === user?.id && (
+                            <span className="font-bold mr-1">You:</span>
+                          )}
+                          <span
+                            className={`${
+                              !conv.messages[0].isRead &&
+                              conv.messages[0].sender?.id !== user?.id
+                                ? "font-bold"
+                                : ""
+                            } inline-block align-middle truncate max-w-[22ch]`}
+                          >
+                            {conv.messages[0]?.content}
+                          </span>
+                        </div>
+
+                        <div className="flex absolute right-4">
+                          <span className="text-xs text-muted-foreground">
+                            {conv.messages[0]?.createdAt
+                              ? new Date(
+                                  conv.messages[0].createdAt
+                                ).toLocaleDateString("en-GB", {
+                                  weekday: "short",
+                                  day: "2-digit",
+                                  month: "short",
+                                })
+                              : ""}
+                          </span>
+                        </div>
+                      </>
                     ) : (
                       <div />
                     )}

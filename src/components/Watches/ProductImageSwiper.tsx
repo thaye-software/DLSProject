@@ -57,7 +57,7 @@ export default function ProductSwiper({product}: {product: Product}) {
                         <SwiperSlide key={image.id}>
                             <div className="aspect-square relative">
                             <Image
-                                src={image.imageUrl || ''}
+                                src={image.imageUrl ? image.imageUrl : '/sadly-no-image.png'}
                                 alt={`Picture of ${product.watch.brand.name} - ${product.watch.model}`}
                                 className="w-full h-full object-cover"
                                 fill
@@ -122,7 +122,7 @@ export default function ProductSwiper({product}: {product: Product}) {
                             }`}
                         >
                             <img
-                                src={image.imageUrl || ''}
+                                src={image.imageUrl ? image.imageUrl : '/sadly-no-image.png'}
                                 alt={`${index + 1}: Picture of ${product.watch.brand.name} - ${product.watch.model}`}
                                 className="w-full aspect-square object-cover"
                             />
