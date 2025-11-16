@@ -32,12 +32,6 @@ export async function getAllCountries() {
 
 export async function saveCustomerCountry(countryName: string, userUuid: string) {
     try {
-        const foundUser = await getUserById(userUuid);
-        const countryAlreadySaved = foundUser?.countryId;
-        if(countryAlreadySaved) {
-            return;
-        }
-
         const formatCountryName = countryName.charAt(0).toUpperCase() + countryName.slice(1).toLowerCase();
         const foundCountry = await db.query.countries.findFirst({
             where: eq(countries.name, formatCountryName)

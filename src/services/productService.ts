@@ -162,7 +162,7 @@ export async function updateProductStock(productId: number, stock: number, tx?: 
   try {
     const dbContext = tx || db;
     const updatedProduct = await dbContext.update(products).set({stock}).where(eq(products.id, productId)).returning();
-    return updatedProduct;
+    return updatedProduct[0];
 
   } catch (error) {
     console.error("(server) failed to update the stock on product...", error);

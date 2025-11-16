@@ -5,7 +5,7 @@ import { currencies, currencyHistory } from "@/database/schema";
 import { eq, desc } from "drizzle-orm";
 
 
-export async function getCurrentRate(currencyCode: string) {
+export async function getCurrencyByCode(currencyCode: string) {
   const currency = await db.query.currencies.findFirst({
     where: eq(currencies.code, currencyCode.toUpperCase()),
   });
@@ -91,7 +91,7 @@ export async function convertPrice(priceDkkInCents: number, targetCountryCode: s
   try {
     // For all non-DK users, use EUR
     const targetCurrencyCode = "EUR"; // Requirement: non-DK users see EUR
-    const { exchangeRate } = await getCurrentRate(targetCurrencyCode);
+    const { exchangeRate } = await getCurrencyByCode(targetCurrencyCode);
     const rate = parseFloat(exchangeRate);
     
     const convertedPrice = (priceDkkInCents * rate) / 100;

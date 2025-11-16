@@ -3,7 +3,7 @@ import { orders } from "@/database/schema";
 import { NewOrderModel, NewOrderAddressModel } from "@/database/types";
 
 import { createOrderAddress } from "./orderAddressService";
-import { getProductById, getProductBySlug, updateProductStock } from "./productService";
+import { getProductById, updateProductStock } from "./productService";
 import { createOrderItem } from "./orderItemService";
 
 
@@ -49,7 +49,11 @@ export async function createOrder(
             }
 
             await createOrderItem(orderItem, tx);
-        })
+
+            return orderId;
+        });
+
+        return result
 
     } catch(error) {
         console.error("(server) failed creating new order...", error);
