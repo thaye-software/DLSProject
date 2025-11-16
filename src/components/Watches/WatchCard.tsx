@@ -9,12 +9,12 @@ import { Heart, ShoppingCart } from "lucide-react";
 import { Product } from "@/app/watches/type";
 import { convertPrice } from "@/services/currencyService";
 import AddToCartButton from "./AddToCartButton";
+import FavoriteButton from "./FavoriteButton";
 
 
 export async function WatchCard({ product, countryCode }: { product: Product, countryCode: string }) {
 
   const formattedPrice = await convertPrice(product.priceDkk, countryCode.toLowerCase());
-
 
   return (
 
@@ -31,9 +31,7 @@ export async function WatchCard({ product, countryCode }: { product: Product, co
                             />
 
             <div className="absolute top-4 right-4 flex gap-2 group">
-              <Button size="icon" variant="secondary" className="opacity-0 group-hover:opacity-100 cursor-pointer bg-background/95 shadow-lg">
-                <Heart />
-              </Button>
+              <FavoriteButton productId={product.id} />
               {/* {product.stock > 0 ? (
                   <Badge variant="secondary" className="bg-background/95  shadow-lg">
                       In Stock

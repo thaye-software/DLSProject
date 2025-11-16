@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import CreateWatchForm from "@/components/admin/watches/CreateWatchForm";
-import { db } from "@/database/drizzle";
-import { brands as brandsTable } from "@/database/schema";
 import { brandService } from "@/services/brandService";
 
 export default async function NewWatchPage() {

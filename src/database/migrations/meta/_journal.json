@@ -127,6 +127,13 @@
       "when": 1762977219797,
       "tag": "0017_change int id's to uuid",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1763128004103,
+      "tag": "0018_create-favorites-table",
+      "breakpoints": true
     }
   ]
 }

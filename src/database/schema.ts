@@ -116,6 +116,24 @@ export const users = pgTable(
   ]
 );
 
+export const favorites = pgTable(
+  "favorites",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    watchId: bigint("watch_id", { mode: "number" })
+      .notNull()
+      .references(() => watches.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_favorites_user_id").on(table.userId),
+    index("idx_favorites_watch_id").on(table.watchId),
+  ]
+);
+
 export const watches = pgTable(
   "watches",
   {
@@ -532,3 +550,14 @@ export const currencyHistoryRelations = relations(
     }),
   })
 );
+
+export const favoritesRelations = relations(favorites, ({ one }) => ({
+  user: one(users, {
+    fields: [favorites.userId],
+    references: [users.id],
+  }),
+  watch: one(watches, {
+    fields: [favorites.watchId],
+    references: [watches.id],
+  }),
+}));
