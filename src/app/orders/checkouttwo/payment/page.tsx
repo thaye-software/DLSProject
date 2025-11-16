@@ -9,6 +9,9 @@ import { convertPrice } from '@/services/currencyService'
 import Image from 'next/image'
 
 import ToastWrapper from '@/components/Toast/ToastWrapper'
+import { Suspense } from 'react'
+import { Spinner } from '@/components/ui/spinner'
+import BackButton from '@/components/BackButton'
 
 //view all transaction at this link: https://dashboard.stripe.com/acct_1SKHlN6xjyBvX39o/test/payments
 export default async function PaymentPage({ searchParams }: { searchParams: { orderId?: string; } }) {
@@ -62,15 +65,18 @@ export default async function PaymentPage({ searchParams }: { searchParams: { or
         <ProgressSteps currentStep={2} />
       </div>
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-foreground mb-8">Checkout</h1>
+        <h1 className="text-3xl font-bold text-foreground">Checkout</h1>
+        <BackButton addClassName='mb-8'/>
         
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Left Column - Payment Form */}
           <div className="space-y-6">
-            <CheckoutForm 
-              clientSecret={paymentIntent.client_secret!} 
-              orderId={orderId}
-            />
+            <Suspense fallback={<div>Loading... <Spinner/> </div>}>
+              <CheckoutForm 
+                clientSecret={paymentIntent.client_secret!} 
+                orderId={orderId}
+              />
+            </Suspense>
           </div>
 
           {/* Right Column - Order Summary */}
