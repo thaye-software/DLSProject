@@ -13,6 +13,7 @@ export default async function AllWatches() {
   const userGeoLocationData = await getUserLocation();
   const countryCode = userGeoLocationData.countryCode;
   const watches: Product[] = await getAllProducts();
+  
 
   return (
     <div className="container mx-auto px-4 py-8">

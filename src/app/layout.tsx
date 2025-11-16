@@ -153,6 +153,7 @@ export default function RootLayout({
             {!hideRootShell && <LayoutChatControls />}
           </ThemeProvider>
         </ChatProvider>
+        <Toaster />
       </body>
     </html>
   );

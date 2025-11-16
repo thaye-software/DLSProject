@@ -15,6 +15,7 @@ import {
 import { Button } from "../ui/button";
 import { UserNavbarDropdown } from "./UserNavbarDropdown";
 import SearchBar from "./SearchBar";
+import { Spinner } from "../ui/spinner";
 
 export function Navbar() {
   const { user, isLoggedIn, loading, role } = useSupabaseAuth();
@@ -138,7 +139,9 @@ export function Navbar() {
           <SearchBar />
         </div>
         {loading ? (
-          <div className="text-sm text-muted-foreground">Checking...</div>
+          <div>
+          <Spinner />
+          </div>
         ) : isLoggedIn && user ? (
           <UserNavbarDropdown />
         ) : (

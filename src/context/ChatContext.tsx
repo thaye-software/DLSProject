@@ -11,7 +11,8 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   const [chatOpen, setChatOpen] = useState(false);
-  const [initialConversation, setInitialConversation] = useState<any>(undefined);
+  const [initialConversation, setInitialConversation] = useState<any>(null);
+
   return (
     <ChatContext.Provider value={{ chatOpen, setChatOpen, initialConversation, setInitialConversation }}>
       {children}

@@ -16,6 +16,7 @@ export default function ContactButton({ productId }: { productId?: number }) {
     }
     if (productId) {
       const newConversation = await createConversation(user.id, productId);
+      console.log("Created conversation:", newConversation);
       setInitialConversation(newConversation);
       setChatOpen(true);
     }

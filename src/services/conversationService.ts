@@ -6,7 +6,7 @@ import { and, desc, eq, or } from "drizzle-orm";
 
 export async function getConversations(userId: string, role: string) {
   let conversationsResult;
-  
+
   if (role === "admin") {
     conversationsResult = await getAllConversations();
   } else {
@@ -56,27 +56,38 @@ export async function getConversationsByCustomerId(customerId: string) {
   return conversationsResult;
 }
 
-export async function createConversation(customerId: string, productId: number) {
-
-  const existingConversation = await checkConversationExists(customerId, productId);
+export async function createConversation(
+  customerId: string,
+  productId: number
+) {
+  const existingConversation = await checkConversationExists(
+    customerId,
+    productId
+  );
   if (existingConversation) {
     return existingConversation;
   }
 
-  const newConversation = await db.insert(conversations).values({
+  // Insert the conversation, then fetch the complete record (with relations)
+  await db.insert(conversations).values({
     customerId,
     productId,
     status: "open",
   });
-  return newConversation;
-}
 
+  // Return the conversation with messages and product loaded
+  const created = await checkConversationExists(customerId, productId);
+  return created;
+}
 
 // Helper function to check for existing conversation
 // If a conversation exists between the customer and product, just return that, with product and messages loaded
 async function checkConversationExists(customerId: string, productId: number) {
   const existingConversation = await db.query.conversations.findFirst({
-    where: and(eq(conversations.customerId, customerId), eq(conversations.productId, productId)),
+    where: and(
+      eq(conversations.customerId, customerId),
+      eq(conversations.productId, productId)
+    ),
     with: {
       messages: {
         with: {
@@ -90,7 +101,7 @@ async function checkConversationExists(customerId: string, productId: number) {
           watch: true,
         },
       },
-    }
+    },
   });
   return existingConversation;
 }

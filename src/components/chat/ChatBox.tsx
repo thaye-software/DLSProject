@@ -36,6 +36,7 @@ export default function ChatBox({
         const res = await getConversations(user.id, role);
         if (!mounted) return;
         setConversations(res);
+        setLoading(false);
       } catch (err) {
         // on error, fallback to empty list
         setConversations([]);
@@ -52,13 +53,15 @@ export default function ChatBox({
     setInitialConversation(null);
   }
 
+  
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 50 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 50 }}
       transition={{ duration: 0.3 }}
-      className="fixed bottom-24 right-6 z-50 w-[340px] max-w-full h-[480px] rounded-lg bg-card shadow-xl overflow-hidden flex flex-col"
+      className="fixed bottom-24 right-6 z-50 w-[400px] max-w-full h-[480px] rounded-lg bg-card shadow-xl overflow-hidden flex flex-col"
     >
       <div className="sticky top-0 z-30 bg-card flex items-center justify-between p-2 border-b border-border">
         {selectedConversation ? (
