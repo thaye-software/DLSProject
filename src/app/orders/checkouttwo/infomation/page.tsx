@@ -30,14 +30,12 @@ export default async function OrdersInfoPage({searchParams}: {searchParams: Sear
     state.redirectUrl = "/"
   }
   
-  console.log(customer)
+
+  
 	return(
     <div>
       {customer ? (
-        <div>
-          <BackButton/>
-          <ShippingAndBillingForm customer={customer} productSlug={productSlug as string} customerGeoLocation={countryCode}/>
-        </div>
+        <ShippingAndBillingForm customer={customer} productSlug={productSlug as string} customerGeoLocation={countryCode}/>
       ) : (
         <ToastWrapper state={state}/>
       )}

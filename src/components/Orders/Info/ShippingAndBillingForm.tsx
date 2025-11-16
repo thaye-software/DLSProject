@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -22,8 +22,13 @@ import { getAllCountriesNameAction, submitOrderDetails } from "@/app/orders/acti
 import { getProductBySlug } from "@/services/productService"
 import { Spinner } from "@/components/ui/spinner";
 import { convertPriceAction } from "@/app/orders/actions";
-import SaveBillingInfoCheckBox from "./SaveBillingInfoCheckBox";
+
 import { watch } from "fs";
+import { toast } from "sonner";
+
+import ProgressSteps from "@/components/Orders/Info/ProgressSteps"
+import { useRouter } from "next/navigation"
+import BackButton from "@/components/BackButton";
 
 
 
@@ -86,7 +91,11 @@ import { watch } from "fs";
 
 export default function ShippingAndBillingForm({customer, productSlug, customerGeoLocation}: {customer: CustomerInfo, productSlug: string, customerGeoLocation: string}) {
 	
+	const formRef = useRef<HTMLFormElement>(null);
+	const router = useRouter()
+
 	const [isLoading, setIsLoading] = useState<boolean>(true);
+	const [isBuyLoading, setIsBuyLoading] = useState<boolean>(false);
 
 	const [product, setProduct] = useState<Product | null>(null);
 	const [formatedPrice, setFormatedPrice] = useState<string>("");
@@ -163,14 +172,32 @@ export default function ShippingAndBillingForm({customer, productSlug, customerG
 		data.customerId = customer.id;
 
 		const customerCountry = customer.country || null;
-		//@ts-ignore
-		submitOrderDetails(data, product, customerCountry)
+
+		try {
+			setIsBuyLoading(true);
+			//@ts-ignore
+			const orderId = await submitOrderDetails(data, product, customerCountry)
+
+			// TODO should replace orderId with ref nr.
+			router.push(`/orders/checkouttwo/payment?orderId=${orderId}`)
+
+		} catch(error) {
+			//@ts-ignore
+			toast.error(error.message);
+			
+		} finally {
+			setIsBuyLoading(false);
+		}
 	}
 
-console.log(customer.country)
+	
 
   return (
 		<div>
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+				<ProgressSteps currentStep={1} />
+			</div>
+
 			{isLoading ? (
 				<div className="flex justify-center items-center">
 					<Spinner/>
@@ -179,11 +206,12 @@ console.log(customer.country)
 			) : product && product?.stock > 0 ? (
 				<div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
 					<div className="max-w-7xl mx-auto">
-						<h1 className="text-3xl font-bold text-foreground mb-8">Checkout</h1>
+						<h1 className="text-3xl font-bold text-foreground">Checkout</h1>
+						<BackButton addClassName="mb-8"/>
 						
 						<div className="grid lg:grid-cols-2 gap-8">
 							{/* Left Column - Forms */}
-							<form onSubmit={handleSubmit}>
+							<form ref={formRef} onSubmit={handleSubmit}>
 								<div className="space-y-8">
 									{/* Billing Address */}
 									<Card className="p-6">
@@ -271,7 +299,7 @@ console.log(customer.country)
 														id="postalCode" 
 														name="postalCode" 
 														placeholder="2300" 
-														value={isBillingInfoSaved && customer.address?.zipCode != null ? customer.address.zipCode : undefined}
+														defaultValue={isBillingInfoSaved && customer.address?.zipCode != null ? customer.address.zipCode : undefined}
 														required
 													/>
 												</div>
@@ -359,7 +387,7 @@ console.log(customer.country)
 													</div>
 													<div className="space-y-2">
 														<Label htmlFor="shippingMiddleName">Middle Name (optional)</Label>
-														<Input id="shippingMiddleName" name="middleName" placeholder="Reciver middle name" />
+														<Input id="shippingMiddleName" name="shippingMiddleName" placeholder="Reciver middle name" />
 													</div>
 													<div className="space-y-2">
 														<Label htmlFor="shippingLastName">Last Name*</Label>
@@ -415,9 +443,15 @@ console.log(customer.country)
 
 								<Separator/>
 								
-								<Button className="w-full mt-6" size="lg">
-									Complete Purchase
-								</Button>
+								{isBuyLoading ? (
+									<Button className="w-full mt-6" size="lg" disabled>
+										Proceding to payment <Spinner/>
+									</Button>
+								) : (
+									<Button className="w-full mt-6" size="lg">
+										Procede to payment
+									</Button>
+								)}
 							</form>
 
 							{/* Right Column - Product Summary */}
