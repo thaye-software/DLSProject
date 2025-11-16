@@ -311,7 +311,7 @@ export const currencyHistory = pgTable("currency_history", {
 export const brands = pgTable("brands", {
 	id: bigserial({ mode: "bigint" }).primaryKey().notNull(),
 	name: varchar({ length: 255 }).notNull(),
-	country: varchar({ length: 255 }).default(').notNull(),
+	country: varchar({ length: 255 }).default("").notNull(),
 	addressLine1: varchar("address_line_1", { length: 255 }),
 	addressLine2: varchar("address_line_2", { length: 255 }),
 	zipCode: varchar("zip_code", { length: 50 }),

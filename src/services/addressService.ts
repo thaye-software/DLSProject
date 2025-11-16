@@ -15,12 +15,12 @@ import { NewAddressModel, AddressModel } from "@/database/types"
 export async function saveBillingAddress( billingInfo: Omit<NewAddressModel, "id">): Promise<AddressModel | null> {
     
     try {
-        const doesExist = await db.query.addresses.findFirst({
+        const foundBillingAddress = await db.query.addresses.findFirst({
             where: eq(addresses.userId, billingInfo.userId)
         });
 
-        if(doesExist) {
-            return null;
+        if(foundBillingAddress) {
+            return await updateBillingAddress(foundBillingAddress.id, billingInfo);
         }
 
         const savedBillingInfo = await db.insert(addresses).values(billingInfo).returning();
@@ -49,6 +49,27 @@ export async function deleteBillingAddress(userId: string): Promise<boolean> {
 
     } catch (error) {
         console.error("(server) Error deleting billing info...", error);
+        throw error;
+    }
+}
+
+export async function updateBillingAddress(id: number, newBillingAddress: Omit<NewAddressModel, "id">): Promise<AddressModel | null> {
+    try {
+
+        const updatedBillingAddress = await db
+            .update(addresses)
+            .set(newBillingAddress)
+            .where(eq(addresses.id, id))
+            .returning();
+        
+        if(!updatedBillingAddress[0]) {
+            return null;
+        }
+console.log("åplalsfdådåfp¨saå¨plsad",updatedBillingAddress[0])
+        return updatedBillingAddress[0];
+
+    } catch (error) {
+        console.error(`(server) failed to update billing address`, error);
         throw error;
     }
 }

@@ -2,9 +2,10 @@ import { db } from "@/database/drizzle";
 import { orders } from "@/database/schema";
 import { NewOrderModel, NewOrderAddressModel } from "@/database/types";
 
-import { createOrderAddress } from "./orderAddressService";
+import { createOrderAddress, updateOrderAddress } from "./orderAddressService";
 import { getProductById, updateProductStock } from "./productService";
 import { createOrderItem } from "./orderItemService";
+import { eq, desc } from "drizzle-orm";
 
 
 
@@ -17,6 +18,24 @@ export async function createOrder(
     try{
 
         const result = await db.transaction(async (tx) => {
+
+            const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+
+            const userNewestOrder = await getNewestOrder(tx);
+
+            // If the newest order was created less than 5 minutes ago, return early
+            if (userNewestOrder && userNewestOrder.createdAt > fiveMinutesAgo && userNewestOrder.status === "PROCESSING") {
+            
+                if(newShippingAddress) {
+                    await updateOrderAddress(userNewestOrder.deliveryAddress?.id as number, newShippingAddress, tx);
+                }
+                await updateOrderAddress(userNewestOrder.billingAddress?.id as number, newBillingAddress, tx);
+                
+                return userNewestOrder.id;
+            }
+            
+
+
 
             let shippingAddressId;
             if(newShippingAddress) {
@@ -59,4 +78,35 @@ export async function createOrder(
         console.error("(server) failed creating new order...", error);
         throw error;
     }
+}
+
+
+
+//--------------------------------------- helper functions --------------------------------------- 
+type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+async function getNewestOrder( tx?: DbTransaction) {
+    const dbContext = tx || db;
+    const newestOrder = await dbContext
+        .select()
+        .from(orders)
+        .orderBy(desc(orders.createdAt))
+        .limit(1);
+
+    if(!newestOrder) {
+        return null;
+    }
+
+    const newestOrderWithOrderAddresses = await dbContext.query.orders.findFirst({
+            where: eq(orders.id, newestOrder[0].id),
+            columns: { 
+                id: true,
+                createdAt: true,
+                status: true
+            },
+            with: {
+                billingAddress: true,
+                deliveryAddress: true
+            }
+        });
+    return newestOrderWithOrderAddresses;
 }

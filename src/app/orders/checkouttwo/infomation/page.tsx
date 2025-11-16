@@ -7,6 +7,8 @@ import ShippingAndBillingForm from "@/components/Orders/Info/ShippingAndBillingF
 import { getCostumerInfoByEmail } from "@/services/userService";
 
 import { getSignedInUser, getUserLocation } from "@/lib/utils/serverutils/utils";
+import { Suspense } from "react";
+import { Spinner } from "@/components/ui/spinner";
 
 
 
@@ -34,7 +36,9 @@ export default async function OrdersInfoPage({searchParams}: {searchParams: Sear
 	return(
     <div>
       {customer ? (
-        <ShippingAndBillingForm customer={customer} productSlug={productSlug as string} customerGeoLocation={countryCode}/>
+        <Suspense fallback={<div>Loading... <Spinner/> </div>}>
+          <ShippingAndBillingForm customer={customer} productSlug={productSlug as string} customerGeoLocation={countryCode}/>
+        </Suspense>
       ) : (
         <ToastWrapper state={state}/>
       )}

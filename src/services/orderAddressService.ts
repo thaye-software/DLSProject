@@ -1,6 +1,7 @@
 import { db } from "@/database/drizzle";
 import { orderAddresses } from "@/database/schema";
 import { NewOrderAddressModel, OrderAddressModel } from "@/database/types";
+import { eq } from "drizzle-orm";
 
 
 
@@ -13,6 +14,30 @@ export async function createOrderAddress(newOrderAddress: Omit<NewOrderAddressMo
 
     }catch (error) {
         console.error("(server) Failed to create new entry in order address...", error);
+        throw error;
+    }
+}
+
+export async function updateOrderAddress(id: number, newOrderAddress: Partial<OrderAddressModel>, tx?: DbTransaction) {
+    try {
+        const dbContext = tx || db;
+
+        const { id: _, ...safeUpdates } = newOrderAddress;
+
+        const updatedOrderAddress = await dbContext
+            .update(orderAddresses)
+            .set(safeUpdates)
+            .where(eq(orderAddresses.id, id))
+            .returning();
+
+        if (!updatedOrderAddress[0]) {
+            throw new Error(`Order address with id ${id} not found`);
+        }
+
+        return updatedOrderAddress[0];
+
+    } catch (error) {
+        console.error(`(server) failed to update order address`, error);
         throw error;
     }
 }
