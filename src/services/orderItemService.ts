@@ -5,7 +5,7 @@ import { NewOrderItemModel, OrderItemModel } from "@/database/types";
 
 
 //todo we should create reference number instead on use that instead of the auto incremented id... laster tho
-export async function getOrderItemByOrderId(orderId: number) {
+export async function getOrderItemByOrderId(orderId: string) {
     try{
         const foundOrderItem = await db.query.orderItems.findFirst({
             where: eq(orderItems.orderId, orderId),

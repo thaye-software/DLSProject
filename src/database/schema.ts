@@ -17,10 +17,10 @@ import { relations, sql } from "drizzle-orm";
 export const countries = pgTable(
   "countries",
   {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
+    id: uuid("id").primaryKey().defaultRandom(),
     name: varchar("name", { length: 255 }).notNull(),
     abbreviation: varchar("abbreviation", { length: 10 }).notNull(),
-    currencyId: bigint("currency_id", { mode: "number" })
+    currencyId: uuid("currency_id")
       .notNull()
       .references(() => currencies.id, { onDelete: "cascade" }),
   },
@@ -33,7 +33,7 @@ export const countries = pgTable(
 export const addresses = pgTable(
   "addresses",
   {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
+    id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id").notNull(),
     address1: varchar("address_line_1", { length: 255 }).notNull(),
     address2: varchar("address_line_2", { length: 255 }),
@@ -47,11 +47,10 @@ export const addresses = pgTable(
 export const productImages = pgTable(
   "product_images",
   {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
-    productId: bigint("product_id", { mode: "number" }).references(
-      () => products.id,
-      { onDelete: "cascade" }
-    ),
+    id: uuid("id").primaryKey().defaultRandom(),
+    productId: uuid("product_id").references(() => products.id, {
+      onDelete: "cascade",
+    }),
     imageUrl: varchar("image_url", { length: 255 }).notNull(),
     isThumbnail: boolean("is_thumbnail").notNull().default(false),
   },
@@ -61,7 +60,7 @@ export const productImages = pgTable(
 export const products = pgTable(
   "products",
   {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
+    id: uuid("id").primaryKey().defaultRandom(),
     productType: varchar("product_type", { length: 255 }).notNull(),
     name: varchar("name", { length: 255 }).notNull(),
     priceDkk: bigint("price_dkk", { mode: "number" }).notNull(),
@@ -79,7 +78,7 @@ export const products = pgTable(
 export const brands = pgTable(
   "brands",
   {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
+    id: uuid("id").primaryKey().defaultRandom(),
     slug: text("slug").notNull().unique(),
     name: varchar("name", { length: 255 }).notNull().unique(),
     country: varchar("country", { length: 255 }).notNull().default(""),
@@ -100,21 +99,19 @@ export const users = pgTable(
   {
     id: uuid("id").primaryKey(),
     username: varchar("username", { length: 255 }).notNull().unique(),
-    firstName: varchar("first_name", {length: 255}),
-    middleName: varchar("middle_name", {length: 255}),
-    lastName: varchar("last_name", {length: 255}),
-    phone:varchar("phone", {length: 20}),
+    firstName: varchar("first_name", { length: 255 }),
+    middleName: varchar("middle_name", { length: 255 }),
+    lastName: varchar("last_name", { length: 255 }),
+    phone: varchar("phone", { length: 20 }),
     email: varchar("email", { length: 255 }).notNull().unique(),
     avatarUrl: text("avatar_url"),
     role: varchar("role", { length: 50 }).notNull().default("customer"),
-    countryId: bigint("country_id", { mode: "number" }).references(
-      () => countries.id,
-      { onDelete: "set null" }
-    ),
-    addressId: bigint("address_id", { mode: "number" }).references(
-      () => addresses.id,
-      { onDelete: "set null" }
-    ),
+    countryId: uuid("country_id").references(() => countries.id, {
+      onDelete: "set null",
+    }),
+    addressId: uuid("address_id").references(() => addresses.id, {
+      onDelete: "set null",
+    }),
   },
   (table) => [
     index("idx_users_country").on(table.countryId),
@@ -129,7 +126,7 @@ export const favorites = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    watchId: bigint("watch_id", { mode: "number" })
+    watchId: uuid("watch_id")
       .notNull()
       .references(() => watches.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -143,11 +140,11 @@ export const favorites = pgTable(
 export const watches = pgTable(
   "watches",
   {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
-    productId: bigint("product_id", { mode: "number" })
+    id: uuid("id").primaryKey().defaultRandom(),
+    productId: uuid("product_id")
       .notNull()
       .references(() => products.id, { onDelete: "cascade" }),
-    brandId: bigint("brand_id", { mode: "number" })
+    brandId: uuid("brand_id")
       .notNull()
       .references(() => brands.id, { onDelete: "cascade" }),
     model: varchar("model", { length: 255 }).notNull(),
@@ -179,10 +176,10 @@ export const watches = pgTable(
 export const orderAddresses = pgTable(
   "order_addresses",
   {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
-    firstName: varchar("first_name", {length: 255}),
-    middleName: varchar("middle_name", {length: 255}),
-    lastName: varchar("last_name", {length: 255}),
+    id: uuid("id").primaryKey().defaultRandom(),
+    firstName: varchar("first_name", { length: 255 }),
+    middleName: varchar("middle_name", { length: 255 }),
+    lastName: varchar("last_name", { length: 255 }),
     address1: varchar("address_line_1", { length: 255 }).notNull(),
     address2: varchar("address_line_2", { length: 255 }),
     city: varchar("city", { length: 255 }).notNull(),
@@ -196,12 +193,14 @@ export const orderAddresses = pgTable(
 export const orders = pgTable(
   "orders",
   {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
+    id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     status: varchar("status", { length: 15 }).notNull(),
-    currencyId: bigint("currency_id", { mode: "number" }).references(() => currencies.id).notNull(),
+    currencyId: uuid("currency_id")
+      .references(() => currencies.id)
+      .notNull(),
 
     totalPriceDkk: decimal("total_price_dkk", {
       precision: 12,
@@ -212,12 +211,14 @@ export const orders = pgTable(
       scale: 2,
     }).notNull(),
 
-    deliveryAddressId: bigint("delivery_address_id", {
-      mode: "number",
-    }).references(() => orderAddresses.id, { onDelete: "set null" }),
-    billingAddressId: bigint("billing_address_id", {
-      mode: "number",
-    }).references(() => orderAddresses.id, { onDelete: "set null" }),
+    deliveryAddressId: uuid("delivery_address_id").references(
+      () => orderAddresses.id,
+      { onDelete: "set null" }
+    ),
+    billingAddressId: uuid("billing_address_id").references(
+      () => orderAddresses.id,
+      { onDelete: "set null" }
+    ),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [
@@ -230,18 +231,18 @@ export const orders = pgTable(
     check(
       "orders_status_check",
       sql`${table.status} IN ('PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED')`
-    )
+    ),
   ]
 );
 
 export const orderItems = pgTable(
   "order_items",
   {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
-    orderId: bigint("order_id", { mode: "number" })
+    id: uuid("id").primaryKey().defaultRandom(),
+    orderId: uuid("order_id")
       .notNull()
       .references(() => orders.id, { onDelete: "cascade" }),
-    productId: bigint("product_id", { mode: "number" })
+    productId: uuid("product_id")
       .notNull()
       .references(() => products.id, { onDelete: "cascade" }),
     quantity: integer("quantity").notNull().default(1),
@@ -255,7 +256,7 @@ export const orderItems = pgTable(
 export const blogPosts = pgTable(
   "blog_posts",
   {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
+    id: uuid("id").primaryKey().defaultRandom(),
     title: varchar("title", { length: 255 }).notNull(),
     content: text("content").notNull(),
     authorId: uuid("author_id").references(() => users.id, {
@@ -272,8 +273,8 @@ export const blogPosts = pgTable(
 export const blogMedia = pgTable(
   "blog_media",
   {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
-    blogId: bigint("blog_id", { mode: "number" })
+    id: uuid("id").primaryKey().defaultRandom(),
+    blogId: uuid("blog_id")
       .notNull()
       .references(() => blogPosts.id, { onDelete: "cascade" }),
     mediaUrl: varchar("media_url", { length: 255 }).notNull(),
@@ -284,8 +285,8 @@ export const blogMedia = pgTable(
 export const auctions = pgTable(
   "auctions",
   {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
-    watchId: bigint("watch_id", { mode: "number" })
+    id: uuid("id").primaryKey().defaultRandom(),
+    watchId: uuid("watch_id")
       .notNull()
       .references(() => watches.id, { onDelete: "cascade" }),
     startingPrice: bigint("starting_price", { mode: "number" }).notNull(),
@@ -302,11 +303,11 @@ export const auctions = pgTable(
 export const conversations = pgTable(
   "conversations",
   {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
+    id: uuid("id").primaryKey().defaultRandom(),
     customerId: uuid("customer_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    productId: bigint("product_id", { mode: "number" })
+    productId: uuid("product_id")
       .notNull()
       .references(() => products.id, { onDelete: "cascade" }),
     status: text("status").default("open"), // open, closed, pending
@@ -328,8 +329,8 @@ export const conversations = pgTable(
 export const messages = pgTable(
   "messages",
   {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
-    conversationId: bigint("conversation_id", { mode: "number" })
+    id: uuid("id").primaryKey().defaultRandom(),
+    conversationId: uuid("conversation_id")
       .notNull()
       .references(() => conversations.id, { onDelete: "cascade" }),
     senderId: uuid("sender_id")
@@ -355,7 +356,7 @@ export const messages = pgTable(
 export const currencies = pgTable(
   "currencies",
   {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
+    id: uuid("id").primaryKey().defaultRandom(),
     code: varchar("code", { length: 3 }).notNull().unique(),
     exchangeRate: decimal("exchange_rate", {
       precision: 10,
@@ -373,8 +374,8 @@ export const currencies = pgTable(
 export const currencyHistory = pgTable(
   "currency_history",
   {
-    id: bigserial("id", { mode: "number" }).primaryKey(),
-    currencyId: bigint("currency_id", { mode: "number" })
+    id: uuid("id").primaryKey().defaultRandom(),
+    currencyId: uuid("currency_id")
       .notNull()
       .references(() => currencies.id, { onDelete: "cascade" }),
     exchangeRate: decimal("exchange_rate", {

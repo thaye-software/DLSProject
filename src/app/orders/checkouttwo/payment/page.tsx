@@ -30,7 +30,7 @@ export default async function PaymentPage({ searchParams }: { searchParams: { or
 	}
 	
 
-  const foundOrderItem = await getOrderItemByOrderId(Number(orderId));
+  const foundOrderItem = await getOrderItemByOrderId(orderId);
 	if(!foundOrderItem) {
 		return(
 			<div>

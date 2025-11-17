@@ -3,7 +3,7 @@ import { brands } from "@/database/schema";
 import { eq } from "drizzle-orm";
 
 export const brandService = {
-  async getBrandById(id: number) {
+  async getBrandById(id: string) {
     try {
       const brand = await db.query.brands.findFirst({
         where: eq(brands.id, id),
@@ -61,7 +61,7 @@ export const brandService = {
   },
 
   async editBrand(
-    id: number,
+    id: string,
     data: {
       name?: string;
       addressLine1?: string;

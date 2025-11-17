@@ -18,7 +18,7 @@ export async function createOrderAddress(newOrderAddress: Omit<NewOrderAddressMo
     }
 }
 
-export async function updateOrderAddress(id: number, newOrderAddress: Partial<OrderAddressModel>, tx?: DbTransaction) {
+export async function updateOrderAddress(id: string, newOrderAddress: Partial<OrderAddressModel>, tx?: DbTransaction) {
     try {
         const dbContext = tx || db;
 

@@ -20,7 +20,7 @@ import BuyButton from "@/components/Watches/BuyButton";
 import ContactButton from "@/components/Contact/ContactButton";
 import { Button } from "@/components/ui/button";
 import constants from "@/lib/constants";
-import { getUserLocation } from "@/lib/utils/serverutils/utils";
+import { getUserLocation } from "@/lib/utils/server/utils";
 
 function getOptionName(
   options: { id: number; name: string }[],
@@ -61,8 +61,6 @@ export default async function ViewWatchPage({
       website: product?.watch?.brand.website,
     };
   }
-
-
 
   if (!product) {
     return (
@@ -253,9 +251,7 @@ export default async function ViewWatchPage({
                 className="hover:cursor-pointer h-12 flex-1 bg-[#1A1A1A] hover:bg-[#244B5A] text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               />
 
-              <Button
-                className="hover:cursor-pointer h-12 flex-1 bg-white hover:bg-[#F5F3EE] text-[#1A1A1A] font-semibold py-4 px-8 rounded-lg border-2 border-[#D3C6A3] transition-all"
-              >
+              <Button className="hover:cursor-pointer h-12 flex-1 bg-white hover:bg-[#F5F3EE] text-[#1A1A1A] font-semibold py-4 px-8 rounded-lg border-2 border-[#D3C6A3] transition-all">
                 Contact
               </Button>
 

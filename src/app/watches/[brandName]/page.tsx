@@ -6,15 +6,18 @@ import { WatchesGrid } from "@/components/Watches/WatchesGrid";
 import { getAllProductsByBrandName } from "@/services/productService";
 import { Product } from "../type";
 
-import { getUserLocation } from "@/lib/utils/serverutils/utils";
+import { getUserLocation } from "@/lib/utils/server/utils";
 
-
-export default async function BrandWatchesPage({ params }: { params: Promise<{ brandName: string }> }) {
+export default async function BrandWatchesPage({
+  params,
+}: {
+  params: Promise<{ brandName: string }>;
+}) {
   const userGeoLocationData = await getUserLocation();
   const countryCode = userGeoLocationData.countryCode;
 
   let brandName = (await params).brandName;
-  brandName = capitalizeFirstLetter(brandName)
+  brandName = capitalizeFirstLetter(brandName);
 
   const allWatches: Product[] = await getAllProductsByBrandName(brandName);
 
@@ -24,19 +27,17 @@ export default async function BrandWatchesPage({ params }: { params: Promise<{ b
 
       <div className="flex justify-center">
         <Suspense fallback={<Spinner className="w-8 h-8" />}>
-          <WatchesGrid watches={allWatches} customerGeoLocation={countryCode}/>
+          <WatchesGrid watches={allWatches} customerGeoLocation={countryCode} />
         </Suspense>
       </div>
-
     </div>
   );
 }
 
-
-
 // ---------------------------- helper functions ----------------------------
 function capitalizeFirstLetter(brandName: string): string {
   const capitalFirstLetter = brandName.substring(0, 1).toLocaleUpperCase();
-  const formatedBrandName = capitalFirstLetter + brandName.slice(1, brandName.length)
+  const formatedBrandName =
+    capitalFirstLetter + brandName.slice(1, brandName.length);
   return formatedBrandName;
 }

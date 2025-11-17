@@ -1,1 +1,0 @@
-ALTER TABLE "watches" ADD COLUMN "description" text NOT NULL;

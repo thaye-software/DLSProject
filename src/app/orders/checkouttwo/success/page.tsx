@@ -28,7 +28,7 @@ export default async function SuccessPage({searchParams}: {searchParams: SearchP
   
 
 
-    const foundOrderItem = await getOrderItemByOrderId(Number(orderId));
+    const foundOrderItem = await getOrderItemByOrderId(Array.isArray(orderId) ? orderId[0] : orderId);
     if(!foundOrderItem) {
         return(
             <div>
@@ -104,7 +104,8 @@ export default async function SuccessPage({searchParams}: {searchParams: SearchP
                                 src={productImageSrc}
                                 alt={productName}
                                 fill
-                                className="object-cover"
+                  className="object-cover"
+                  unoptimized
                             />
                         </div>
                         <div className="flex-1">

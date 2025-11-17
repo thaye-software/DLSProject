@@ -2,7 +2,7 @@ import { z } from "zod";
 
 // Coerce string inputs from HTML forms into the correct types for validation.
 export const createNewWatchSchema = z.object({
-  brand: z.coerce.number().int().min(1, "Brand is required"),
+  brand: z.string().min(1, "Brand is required"),
   model: z.string().min(2, "Model is required"),
   description: z.string().min(10, "Description is required"),
   reference: z.string().min(2, "Reference is required"),
