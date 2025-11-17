@@ -63,7 +63,7 @@ export async function getAllUsers() {
 
 export async function getUserById(id: string) {
   if (!id) {
-    throw new Error("User ID is required");
+    return null;
   }
   try {
     const user = await db.query.users.findFirst({
