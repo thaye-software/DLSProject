@@ -8,6 +8,13 @@
       "when": 1763371326219,
       "tag": "20251117092206_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1763405513670,
+      "tag": "20251117185153_made-size-an-int-in-watches-table",
+      "breakpoints": true
     }
   ]
 }
