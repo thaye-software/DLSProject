@@ -123,7 +123,7 @@ export default async function ViewWatchPage({
                 <SpecItem
                   icon={<Ruler size={18} />}
                   label="Size"
-                  value={product.watch.size || "Not specified"}
+                  value={String(product.watch.size) + "mm" || "Not specified"}
                 />
                 <SpecItem
                   icon={<Clock size={18} />}

@@ -18,7 +18,7 @@ export interface Product {
     reference: string;
     serialNumber: string;
     year: number;
-    size: string | null;
+    size: number | null;
     movement: string | null;
     glassType: string | null;
     limited: boolean;
