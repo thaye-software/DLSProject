@@ -51,6 +51,7 @@ export default async function PaymentPage({ searchParams }: { searchParams: { or
 	
 	
   const stripeAmountToBePaid = Number(amount);
+  if (!stripe) throw new Error('Stripe not available');
   const paymentIntent = await stripe.paymentIntents.create({
     amount: stripeAmountToBePaid,
     currency: 'dkk',
