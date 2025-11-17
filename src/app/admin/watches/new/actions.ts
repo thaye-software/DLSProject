@@ -7,7 +7,7 @@ export async function createWatch(formData: FormData): Promise<any> {
   try {
     const res = await watchService.createWatchWithProductAndImages({
       watchData: {
-        brandId: parseInt(newWatch.brandId as string),
+        brandId: newWatch.brandId as string,
         model: newWatch.model as string,
         reference: newWatch.reference as string,
         serialNumber: newWatch.serialNumber as string,

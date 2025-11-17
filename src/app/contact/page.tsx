@@ -8,13 +8,12 @@ import { Button } from "@/components/ui/button";
 export default function ContactPage() {
 
   return (
-    <div className="min-h-screen bg-[#F5F3EE] dark:bg-stone-800">
+    <div className="min-h-screen">
       {/* Header */}
-      <div className="max-w-7xl mx-auto px-4 mt-12">
+      <div className="container mx-auto px-4 mt-12">
         <h1 className="text-4xl font-serif mb-3">Contact Us</h1>
         <p className="dark:text-slate-300 text-lg">We take pride in offering personalized assistance to help you select and care for your distinguished timepiece.</p>
       </div>
-
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-12">
@@ -22,8 +21,8 @@ export default function ContactPage() {
           
           {/* Contact Form - Takes 2 columns */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-sm p-8">
-              <h2 className="text-2xl font-serif text-slate-900">Send Us a Message</h2>
+            <div className="bg-card rounded-lg shadow-sm p-8">
+              <h2 className="text-2xl font-serif">Send Us a Message</h2>
               <p className="text-sm text-gray-600 dark:text-zinc-300">We respond within 1-3 bussines days.</p>
               <p className="text-sm text-gray-600 dark:text-zinc-300 mb-6">Labels marked with * are required.</p>
               

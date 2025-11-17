@@ -58,7 +58,7 @@ export async function getConversationsByCustomerId(customerId: string) {
 
 export async function createConversation(
   customerId: string,
-  productId: number
+  productId: string
 ) {
   const existingConversation = await checkConversationExists(
     customerId,
@@ -82,7 +82,7 @@ export async function createConversation(
 
 // Helper function to check for existing conversation
 // If a conversation exists between the customer and product, just return that, with product and messages loaded
-async function checkConversationExists(customerId: string, productId: number) {
+async function checkConversationExists(customerId: string, productId: string) {
   const existingConversation = await db.query.conversations.findFirst({
     where: and(
       eq(conversations.customerId, customerId),

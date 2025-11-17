@@ -47,7 +47,7 @@ export async function getProductBySlug(
   }
 }
 
-export async function getProductById(id: number, tx?: DbTransaction): Promise<ProductModel | undefined> {
+export async function getProductById(id: string, tx?: DbTransaction): Promise<ProductModel | undefined> {
   try {
     const dbContext = tx || db;
     const foundProduct = await dbContext.query.products.findFirst({
@@ -158,7 +158,7 @@ export async function createProduct(
 
 
 
-export async function updateProductStock(productId: number, stock: number, tx?: DbTransaction) {
+export async function updateProductStock(productId: string, stock: number, tx?: DbTransaction) {
   try {
     const dbContext = tx || db;
     const updatedProduct = await dbContext.update(products).set({stock}).where(eq(products.id, productId)).returning();

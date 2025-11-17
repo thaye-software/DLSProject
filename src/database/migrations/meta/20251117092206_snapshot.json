@@ -1,6 +1,6 @@
 {
-  "id": "68953515-f77d-4b31-bd3f-e87f1ec0655c",
-  "prevId": "1e3d6044-94c3-46ea-a1d0-4bd5ad06d07d",
+  "id": "27922ade-b577-4237-b1a5-3c803b5ac4ee",
+  "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -10,9 +10,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigserial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "user_id": {
           "name": "user_id",
@@ -81,13 +82,14 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigserial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "watch_id": {
           "name": "watch_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -184,13 +186,14 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigserial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "blog_id": {
           "name": "blog_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -245,9 +248,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigserial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "title": {
           "name": "title",
@@ -334,9 +338,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigserial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "slug": {
           "name": "slug",
@@ -451,9 +456,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigserial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "customer_id": {
           "name": "customer_id",
@@ -463,7 +469,7 @@
         },
         "product_id": {
           "name": "product_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -596,9 +602,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigserial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "name": {
           "name": "name",
@@ -614,7 +621,7 @@
         },
         "currency_id": {
           "name": "currency_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         }
@@ -678,9 +685,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigserial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "code": {
           "name": "code",
@@ -762,13 +770,14 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigserial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "currency_id": {
           "name": "currency_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -845,19 +854,117 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.favorites": {
+      "name": "favorites",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "watch_id": {
+          "name": "watch_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_favorites_user_id": {
+          "name": "idx_favorites_user_id",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_favorites_watch_id": {
+          "name": "idx_favorites_watch_id",
+          "columns": [
+            {
+              "expression": "watch_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "favorites_user_id_users_id_fk": {
+          "name": "favorites_user_id_users_id_fk",
+          "tableFrom": "favorites",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "favorites_watch_id_watches_id_fk": {
+          "name": "favorites_watch_id_watches_id_fk",
+          "tableFrom": "favorites",
+          "tableTo": "watches",
+          "columnsFrom": [
+            "watch_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.messages": {
       "name": "messages",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigserial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "conversation_id": {
           "name": "conversation_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -1001,9 +1108,28 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigserial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "first_name": {
+          "name": "first_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "middle_name": {
+          "name": "middle_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_name": {
+          "name": "last_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
         },
         "address_line_1": {
           "name": "address_line_1",
@@ -1056,19 +1182,20 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigserial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "order_id": {
           "name": "order_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
         "product_id": {
           "name": "product_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -1152,9 +1279,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigserial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "user_id": {
           "name": "user_id",
@@ -1162,38 +1290,17 @@
           "primaryKey": false,
           "notNull": true
         },
-        "total_price": {
-          "name": "total_price",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true
-        },
         "status": {
           "name": "status",
-          "type": "varchar(50)",
+          "type": "varchar(15)",
           "primaryKey": false,
           "notNull": true
         },
-        "currency": {
-          "name": "currency",
-          "type": "varchar(10)",
+        "currency_id": {
+          "name": "currency_id",
+          "type": "uuid",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'DKK'"
-        },
-        "currency_code": {
-          "name": "currency_code",
-          "type": "varchar(3)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'DKK'"
-        },
-        "exchange_rate_used": {
-          "name": "exchange_rate_used",
-          "type": "numeric(10, 6)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'1.000000'"
+          "notNull": true
         },
         "total_price_dkk": {
           "name": "total_price_dkk",
@@ -1209,13 +1316,13 @@
         },
         "delivery_address_id": {
           "name": "delivery_address_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
         "billing_address_id": {
           "name": "billing_address_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -1303,11 +1410,11 @@
           "method": "btree",
           "with": {}
         },
-        "idx_orders_currency_code": {
-          "name": "idx_orders_currency_code",
+        "idx_orders_currency_id": {
+          "name": "idx_orders_currency_id",
           "columns": [
             {
-              "expression": "currency_code",
+              "expression": "currency_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1331,6 +1438,19 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "orders_currency_id_currencies_id_fk": {
+          "name": "orders_currency_id_currencies_id_fk",
+          "tableFrom": "orders",
+          "tableTo": "currencies",
+          "columnsFrom": [
+            "currency_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
           "onUpdate": "no action"
         },
         "orders_delivery_address_id_order_addresses_id_fk": {
@@ -1366,7 +1486,7 @@
       "checkConstraints": {
         "orders_status_check": {
           "name": "orders_status_check",
-          "value": "\"orders\".\"status\" IN ('pending', 'paid', 'shipped', 'completed', 'cancelled')"
+          "value": "\"orders\".\"status\" IN ('PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED')"
         }
       },
       "isRLSEnabled": false
@@ -1377,13 +1497,14 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigserial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "product_id": {
           "name": "product_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -1445,9 +1566,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigserial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "product_type": {
           "name": "product_type",
@@ -1603,13 +1725,13 @@
         },
         "country_id": {
           "name": "country_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
         "address_id": {
           "name": "address_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         }
@@ -1701,19 +1823,20 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigserial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "product_id": {
           "name": "product_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
         "brand_id": {
           "name": "brand_id",
-          "type": "bigint",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },

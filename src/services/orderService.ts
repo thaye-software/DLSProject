@@ -27,9 +27,9 @@ export async function createOrder(
             if (userNewestOrder && userNewestOrder.createdAt > fiveMinutesAgo && userNewestOrder.status === "PROCESSING") {
             
                 if(newShippingAddress) {
-                    await updateOrderAddress(userNewestOrder.deliveryAddress?.id as number, newShippingAddress, tx);
+                    await updateOrderAddress(userNewestOrder.deliveryAddress?.id as string, newShippingAddress, tx);
                 }
-                await updateOrderAddress(userNewestOrder.billingAddress?.id as number, newBillingAddress, tx);
+                await updateOrderAddress(userNewestOrder.billingAddress?.id as string, newBillingAddress, tx);
                 
                 return userNewestOrder.id;
             }
@@ -96,6 +96,7 @@ async function getNewestOrder( tx?: DbTransaction) {
         return null;
     }
 
+  console.log("newestOrder:", newestOrder);
     const newestOrderWithOrderAddresses = await dbContext.query.orders.findFirst({
             where: eq(orders.id, newestOrder[0].id),
             columns: { 

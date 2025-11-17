@@ -2,7 +2,7 @@
 // indentify which fields should be optional and which should not
 
 export interface Product {
-  id: number;
+  id: string;
   name: string;
   priceDkk: number;
   stock: number;
@@ -10,10 +10,10 @@ export interface Product {
   description: string;
 
   watch: {
-    id: number;
+    id: string;
     slug: string;
-    productId: number;
-    brandId: number;
+    productId: string;
+    brandId: string;
     model: string;
     reference: string;
     serialNumber: string;
@@ -30,7 +30,7 @@ export interface Product {
     dialColor: string | null;
     vat: number | null;
     brand: {
-      id: number;
+      id: string;
       name: string;  
       country: string | null;
       addressLine1: string | null;
@@ -45,8 +45,8 @@ export interface Product {
   };
 
   productImages: Array<{
-    id: number;
-    productId: number | null;
+    id: string;
+    productId: string | null;
     imageUrl: string | null;
     isThumbnail: boolean | null;
   }>;

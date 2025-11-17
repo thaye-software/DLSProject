@@ -22,6 +22,7 @@ export function useSupabaseAuth() {
     async function getUser() {
       try {
         const { data: { user: currentUser } } = await supabase.auth.getUser();
+        console.log("Supabase current user:", currentUser);
         const dbUser = await getUserById(currentUser?.id || "");
 
         if (!mounted) return;
@@ -48,6 +49,7 @@ export function useSupabaseAuth() {
       const newUser = session?.user ?? null;
       setUser(newUser);
       setUsername(newUser?.user_metadata?.display_name ?? null);
+      console.log("Supabase auth state changed, new user:", newUser);
       const dbUser = await getUserById(newUser?.id || "");
       if (dbUser && !('error' in dbUser)) {
         setRole(dbUser.role);

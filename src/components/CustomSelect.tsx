@@ -13,7 +13,7 @@ export default function CustomSelect({
   onValueChange,
 }: {
   placeholderText: string;
-  array: Array<{ id: number; name: string }>;
+  array: Array<{ id: string | number; name: string }>;
   value?: string;
   onValueChange?: (val: string) => void;
 }) {

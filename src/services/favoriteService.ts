@@ -10,7 +10,7 @@ export async function getUserFavorites(userId: string) {
   });
 }
 
-export async function isFavorite(userId: string, watchId: number) {
+export async function isFavorite(userId: string, watchId: string) {
   const favorite =  await db.query.favorites.findFirst({
     where: and(
       eq(favorites.userId, userId),
@@ -20,7 +20,7 @@ export async function isFavorite(userId: string, watchId: number) {
   return !!favorite;
 }
 
-export async function handleFavoriteToggle(userId: string, watchId: number) {
+export async function handleFavoriteToggle(userId: string, watchId: string) {
   const isFavorite = await db.query.favorites.findFirst({
     where: and(
       eq(favorites.userId, userId),
@@ -35,12 +35,12 @@ export async function handleFavoriteToggle(userId: string, watchId: number) {
 }
 
 // Helper functions for handleFavoriteToggle
-async function addFavorite(userId: string, watchId: number) {
+async function addFavorite(userId: string, watchId: string) {
 
   return await db.insert(favorites).values({ userId, watchId });
 }
 
-async function removeFavorite(userId: string, watchId: number) {
+async function removeFavorite(userId: string, watchId: string) {
 
   return await db.delete(favorites)
     .where(
