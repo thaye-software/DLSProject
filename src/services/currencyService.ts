@@ -76,7 +76,7 @@ export async function updateExchangeRate(
 
 
 
-export async function convertPrice(priceDkkInCents: number, targetCountryCode: string) {
+export async function getLocalCurrencyString(priceDkkInCents: number, targetCountryCode: string) {
   const country = targetCountryCode.toUpperCase();
 
   // If Danish, return DKK

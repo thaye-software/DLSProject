@@ -1,7 +1,7 @@
 import { WatchCard } from "@/components/Watches/WatchCard";
 
 import { Product } from "../../app/watches/type";
-import { convertPrice } from "@/services/currencyService";
+import { getLocalCurrencyString } from "@/services/currencyService";
 
 export async function WatchesGrid({
   watches,
@@ -11,7 +11,7 @@ export async function WatchesGrid({
   customerGeoLocation: string;
 }) {
   async function getFormattedPrice( productPriceDkk: number) {
-    return await convertPrice(productPriceDkk, customerGeoLocation);
+    return await getLocalCurrencyString(productPriceDkk, customerGeoLocation);
   }
 
   return (

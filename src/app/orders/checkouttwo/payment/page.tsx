@@ -5,7 +5,7 @@ import { Separator } from "@/components/ui/separator"
 import ProgressSteps from "@/components/Orders/Info/ProgressSteps"
 
 import { getOrderItemByOrderId } from '@/services/orderItemService'
-import { convertPrice } from '@/services/currencyService'
+import { getLocalCurrencyString } from '@/services/currencyService'
 import Image from 'next/image'
 
 import ToastWrapper from '@/components/Toast/ToastWrapper'
@@ -47,7 +47,7 @@ export default async function PaymentPage({ searchParams }: { searchParams: { or
 	
 	const amount = foundOrderItem?.order.totalPriceDkk;
   const targetCurrencyCode = foundOrderItem?.order.currency.code;
-  const displayAmount = await convertPrice(Number(amount), targetCurrencyCode as string);
+  const displayAmount = await getLocalCurrencyString(Number(amount), targetCurrencyCode as string);
 	
 	
   const stripeAmountToBePaid = Number(amount);

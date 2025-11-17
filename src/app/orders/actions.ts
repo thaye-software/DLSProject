@@ -2,7 +2,7 @@
 
 import { z } from "zod"
 
-import { convertPrice, getCurrencyByCode } from "@/services/currencyService"
+import { getLocalCurrencyString, getCurrencyByCode } from "@/services/currencyService"
 import { deleteBillingAddress, saveBillingAddress } from "@/services/addressService";
 import { saveCustomerNameAndPhone, deleteCustomerNameAndPhone, getUserById } from "@/services/userService";
 import getCountryByName, { saveCustomerCountry, deleteCustomerCountry, getAllCountries, Country } from "@/services/countryServive";
@@ -156,7 +156,7 @@ export async function submitOrderDetails(formData: customerBillingDetails, produ
 
 export async function convertPriceAction(priceInDkkInCents: number, targetCountryCode: string) {
     try {
-        const convertedPrice = await convertPrice(priceInDkkInCents, targetCountryCode);
+        const convertedPrice = await getLocalCurrencyString(priceInDkkInCents, targetCountryCode);
         return convertedPrice;
 
     } catch (error) {

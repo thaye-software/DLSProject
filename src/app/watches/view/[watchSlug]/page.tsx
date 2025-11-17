@@ -14,7 +14,7 @@ import {
   Ruler,
   Star,
 } from "lucide-react";
-import { convertPrice } from "@/services/currencyService";
+import { getLocalCurrencyString } from "@/services/currencyService";
 import ProductSafetyInfo from "@/components/Watches/ProductSafetyInfoCard";
 import BuyButton from "@/components/Watches/BuyButton";
 import ContactButton from "@/components/Contact/ContactButton";
@@ -41,7 +41,7 @@ export default async function ViewWatchPage({
   }
 
   const userGeoLocationData = await getUserLocation();
-  const formattedPrice = await convertPrice(product?.priceDkk, userGeoLocationData.currency);
+  const formattedPrice = await getLocalCurrencyString(product?.priceDkk, userGeoLocationData.currency);
 
   let brandName = "";
   let productSafetyInfo = null;
