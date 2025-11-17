@@ -3,6 +3,7 @@ import "server-only"
 import { headers } from 'next/headers';
 
 import { createClient } from "@/database/supabase/server";
+import { getUserById } from "@/services/userService";
 
 
 
@@ -14,7 +15,24 @@ export async function getSignedInUser() {
   } = await supabase.auth.getUser();
 
 	return {data: { user }, error}
-} 
+}
+
+export async function getAuthUser() {
+  const supabase = await createClient();
+  let loading = true;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    loading = false;
+    return { user: null, loading, role: null, avatarUrl: null, username: null };
+  }
+  const username = user.user_metadata?.display_name || null;
+  const dbUser = await getUserById(user.id);
+  const role = dbUser ? dbUser.role : null;
+  const avatarUrl = dbUser ? dbUser.avatarUrl : null;
+  loading = false;
+  return { user, loading, role, avatarUrl, username };
+
+}
 
 export async function getUserLocation() {
   const headersList = await headers();

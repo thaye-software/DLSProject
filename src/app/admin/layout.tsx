@@ -1,13 +1,15 @@
 import { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
-import { createClient } from "@/database/supabase/server";
-import { getUserByEmail } from "@/services/userService";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { Separator } from "@/components/ui/separator";
 
-import { getSignedInUser } from "@/lib/utils/serverutils/utils";
+import { getAuthUser } from "@/lib/utils/server/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -15,33 +17,12 @@ export default async function AdminLayout({
   children,
 }: {
   children: ReactNode;
-  }) {
-  
+}) {
   // Server-side auth + role check
-  try {
-    const {
-      data: { user },
-      error,
-    } = await getSignedInUser();
+  const { user, role } = await getAuthUser();
 
-    if (error || !user || !user.email) {
-      // Not signed in - send to login
-      redirect("/login");
-    }
-
-    const costumer = await getUserByEmail(user.email);
-    if (!costumer) {
-      // No matching application user
-      redirect("/");
-    }
-
-    if (costumer.role !== "admin") {
-      // Not an admin
-      redirect("/");
-    }
-  } catch (err) {
-    // On unexpected errors, redirect to home
-    console.error("Admin auth check failed:", err);
+  if (!user || role !== "admin") {
+    // Not an admin - redirect to home
     redirect("/");
   }
 
@@ -61,10 +42,9 @@ export default async function AdminLayout({
             orientation="vertical"
             className="mr-2 data-[orientation=vertical]:h-4"
           />
-          
         </header>
         <main className="p-6">{children}</main>
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }

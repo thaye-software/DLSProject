@@ -1,13 +1,25 @@
-"use server"
+"use server";
 
-import { z } from "zod"
+import { z } from "zod";
 
-import { convertPrice, getCurrencyByCode } from "@/services/currencyService"
-import { deleteBillingAddress, saveBillingAddress } from "@/services/addressService";
-import { saveCustomerNameAndPhone, deleteCustomerNameAndPhone, getUserById } from "@/services/userService";
-import getCountryByName, { saveCustomerCountry, deleteCustomerCountry, getAllCountries, Country } from "@/services/countryServive";
+import { convertPrice, getCurrencyByCode } from "@/services/currencyService";
+import {
+  deleteBillingAddress,
+  saveBillingAddress,
+} from "@/services/addressService";
+import {
+  saveCustomerNameAndPhone,
+  deleteCustomerNameAndPhone,
+  getUserById,
+} from "@/services/userService";
+import getCountryByName, {
+  saveCustomerCountry,
+  deleteCustomerCountry,
+  getAllCountries,
+  Country,
+} from "@/services/countryServive";
 
-import { getUserLocation } from "@/lib/utils/serverutils/utils";
+import { getUserLocation } from "@/lib/utils/server/utils";
 import { resend, originEmail } from "@/lib/resend/resend";
 
 import { OrderStatus } from "./type";
@@ -17,21 +29,18 @@ import { createOrder } from "@/services/orderService";
 // import shippingAndBillingForm from "@/components/Orders/Info/ShippingAndBillingForm"
 // z.infer<typeof shippingAndBillingForm>
 
-
-
-
 export interface customerBillingDetails {
   firstName: string;
-  middleName:  string | null;
-  lastName:  string;
-  email:  string;
-  phone:  string | null;
-  address:  string;
+  middleName: string | null;
+  lastName: string;
+  email: string;
+  phone: string | null;
+  address: string;
   city: string;
-  postalCode:  string;
-  country:  string;
-  stateProvince:  string | null;
-  
+  postalCode: string;
+  country: string;
+  stateProvince: string | null;
+
   shippingFirstName: string | null;
   shippingMiddleName: string | null;
   shippingLastName: string | null;
@@ -47,139 +56,156 @@ export interface customerBillingDetails {
 }
 
 export interface Address {
-    userId: string;
-    firstName: string;
-    middleName: string | null;
-    lastName: string | null;
-    address1: string;
-    city: string;
-    zipCode: string;
-    country: string;
-    stateProvince: string | null;
+  userId: string;
+  firstName: string;
+  middleName: string | null;
+  lastName: string | null;
+  address1: string;
+  city: string;
+  zipCode: string;
+  country: string;
+  stateProvince: string | null;
 }
 
 export interface CustomerNameAndPhone {
-    id: string;
-    firstName: string;
-    middleName: string | null;
-    lastName: string;
-    phone: string | null;
+  id: string;
+  firstName: string;
+  middleName: string | null;
+  lastName: string;
+  phone: string | null;
 }
 
+export async function submitOrderDetails(
+  formData: customerBillingDetails,
+  product: Product,
+  country: Country
+) {
+  const userGeoLocationData = await getUserLocation();
+  let currencyCode = userGeoLocationData.currency.toUpperCase();
+  currencyCode = currencyCode == "DKK" ? "DKK" : "EUR";
+  const localeCurrency = await getCurrencyByCode(currencyCode);
 
+  const billingAddressCountry = await getCountryByName(formData.country);
+  // return;
+  // let customerCountry;
+  // if(!country) {
+  //     // customerCountry = await getCountryByCustomerId(formData.customerId);
+  // }
 
-export async function submitOrderDetails(formData: customerBillingDetails, product: Product, country: Country) {
+  const billingAddress: Address = {
+    userId: formData.customerId,
+    firstName: formData.firstName,
+    middleName: formData.middleName,
+    lastName: formData.lastName,
+    address1: formData.address,
+    city: formData.city,
+    zipCode: formData.postalCode,
+    country: formData.country,
+    stateProvince: formData?.stateProvince,
+  };
 
-    const userGeoLocationData = await getUserLocation();
-    let currencyCode = userGeoLocationData.currency.toUpperCase();
-    currencyCode = currencyCode == "DKK" ? "DKK" : "EUR" 
-    const localeCurrency = await getCurrencyByCode(currencyCode);
+  const shippingAddress: Address = {
+    userId: formData.customerId,
+    firstName: formData.shippingFirstName as string,
+    middleName: formData.shippingMiddleName as string,
+    lastName: formData.shippingLastName as string,
+    address1: formData.shippingAddress as string,
+    city: formData.shippingCity as string,
+    zipCode: formData.shippingPostalCode as string,
+    country: formData.shippingCountry as string,
+    stateProvince: formData?.shippingStateProvince as string,
+  };
 
-    const billingAddressCountry = await getCountryByName(formData.country);
-    // return;
-    // let customerCountry;
-    // if(!country) {
-    //     // customerCountry = await getCountryByCustomerId(formData.customerId);
-    // }
+  const customerInfo: CustomerNameAndPhone = {
+    id: formData.customerId,
+    firstName: formData.firstName,
+    middleName: formData.middleName || null,
+    lastName: formData.lastName,
+    phone: formData.phone || null,
+  };
 
-    const billingAddress: Address = {
-        userId: formData.customerId,
-        firstName: formData.firstName,
-        middleName: formData.middleName,
-        lastName: formData.lastName,
-        address1: formData.address,
-        city: formData.city,
-        zipCode: formData.postalCode,
-        country: formData.country,
-        stateProvince: formData?.stateProvince
+  const orderDetails = {
+    userId: formData.customerId,
+    currencyId: billingAddressCountry?.currencyId || localeCurrency.id,
+    status: "PROCESSING",
+    totalPriceDkk: String(product.priceDkk), // In cents
+
+    //todo might just refactor this to use billingaddress
+    totalPriceCurrency:
+      country === null
+        ? String(
+            Math.round(product.priceDkk * Number(localeCurrency.exchangeRate))
+          ) // In cents
+        : String(Math.round(product.priceDkk * country.currency.exchangeRate)), // In cents
+    deliveryAddressId: undefined,
+    billingAddressId: undefined,
+    createdAt: undefined, // this will be populated in db
+
+    productId: product.id,
+  };
+
+  try {
+    const isShippingSameAsBilling =
+      formData.shippingSameAsBilling.toLocaleLowerCase() == "true"
+        ? true
+        : false;
+    const isSaveBillingAddress =
+      formData.saveBillingInfo.toLowerCase() == "true" ? true : false;
+    await updateBillingPreferences(
+      formData,
+      isSaveBillingAddress,
+      billingAddress,
+      customerInfo
+    );
+
+    if (!isShippingSameAsBilling) {
+      const createdOrderId = createOrder(
+        orderDetails,
+        billingAddress,
+        shippingAddress
+      );
+      return createdOrderId;
     }
 
-    const shippingAddress: Address = {
-        userId: formData.customerId,
-        firstName: formData.shippingFirstName as string,
-        middleName: formData.shippingMiddleName as string,
-        lastName: formData.shippingLastName as string,
-        address1: formData.shippingAddress as string,
-        city: formData.shippingCity as string,
-        zipCode: formData.shippingPostalCode as string,
-        country: formData.shippingCountry as string,
-        stateProvince: formData?.shippingStateProvince as string
-    }
-
-    const customerInfo: CustomerNameAndPhone = {
-        id: formData.customerId,
-        firstName: formData.firstName, 
-        middleName: formData.middleName || null,
-        lastName: formData.lastName,
-        phone: formData.phone || null
-    }
-
-    const orderDetails = {
-        userId: formData.customerId,
-        currencyId: billingAddressCountry?.currencyId || localeCurrency.id,
-        status: "PROCESSING",
-        totalPriceDkk: String(product.priceDkk), // In cents
-
-        //todo might just refactor this to use billingaddress
-        totalPriceCurrency: country === null ? 
-            String(Math.round(product.priceDkk * Number(localeCurrency.exchangeRate))) : // In cents
-            String(Math.round(product.priceDkk * country.currency.exchangeRate)), // In cents
-        deliveryAddressId: undefined,
-        billingAddressId: undefined,
-        createdAt: undefined, // this will be populated in db
-        
-        productId: product.id
-    }
-
-
-    try {
-        const isShippingSameAsBilling = formData.shippingSameAsBilling.toLocaleLowerCase() == "true" ? true : false;
-        const isSaveBillingAddress = formData.saveBillingInfo.toLowerCase() == "true" ? true : false;
-        await updateBillingPreferences(formData, isSaveBillingAddress, billingAddress, customerInfo);
-    
-        if (!isShippingSameAsBilling) {
-            const createdOrderId = createOrder(orderDetails, billingAddress, shippingAddress);
-            return createdOrderId;
-        }
-        
-        const createdOrderId = await createOrder(orderDetails, billingAddress);
-        return createdOrderId;
-
-    } catch (error) {
-        throw error;
-    }
-
-
-
+    const createdOrderId = await createOrder(orderDetails, billingAddress);
+    return createdOrderId;
+  } catch (error) {
+    throw error;
+  }
 }
 
-
-export async function convertPriceAction(priceInDkkInCents: number, targetCountryCode: string) {
-    try {
-        const convertedPrice = await convertPrice(priceInDkkInCents, targetCountryCode);
-        return convertedPrice;
-
-    } catch (error) {
-        throw error;
-    }
+export async function convertPriceAction(
+  priceInDkkInCents: number,
+  targetCountryCode: string
+) {
+  try {
+    const convertedPrice = await convertPrice(
+      priceInDkkInCents,
+      targetCountryCode
+    );
+    return convertedPrice;
+  } catch (error) {
+    throw error;
+  }
 }
 
 export async function getAllCountriesNameAction(): Promise<string[]> {
-    try{
-        const allCountries = await getAllCountries();
+  try {
+    const allCountries = await getAllCountries();
 
-        const countryNames = allCountries.map((country) => country.name);
-        return countryNames;
-
-    }catch(error) {
-        throw error;
-    }
+    const countryNames = allCountries.map((country) => country.name);
+    return countryNames;
+  } catch (error) {
+    throw error;
+  }
 }
 
-export async function sendOrderConfirmationEmail(customerEmail: string, orderDetails: any) {
-
+export async function sendOrderConfirmationEmail(
+  customerEmail: string,
+  orderDetails: any
+) {
   try {
-      await resend.emails.send({
+    await resend.emails.send({
       from: originEmail,
       to: customerEmail, // TODO change this to point to actual email adress for reciving costumer mails.
       subject: `Limited Watches - Order confirmation`,
@@ -214,7 +240,9 @@ export async function sendOrderConfirmationEmail(customerEmail: string, orderDet
                       </svg>
                     </div>
                     <h2 style="margin: 0 0 10px; color: #1f2937; font-size: 24px; font-weight: 600;">Order Confirmed!</h2>
-                    <p style="margin: 0; color: #6b7280; font-size: 16px;">Thank you for your purchase, ${orderDetails.customerName}.</p>
+                    <p style="margin: 0; color: #6b7280; font-size: 16px;">Thank you for your purchase, ${
+                      orderDetails.customerName
+                    }.</p>
                   </td>
                 </tr>
 
@@ -225,13 +253,17 @@ export async function sendOrderConfirmationEmail(customerEmail: string, orderDet
                       <tr>
                         <td style="padding: 20px; background-color: #f9fafb; border-bottom: 1px solid #e5e7eb;">
                           <p style="margin: 0; color: #6b7280; font-size: 14px;">Order Number</p> 
-                          <p style="margin: 5px 0 0; color: #1f2937; font-size: 16px; font-weight: 600; font-family: monospace;">#${orderDetails.orderId}</p>
+                          <p style="margin: 5px 0 0; color: #1f2937; font-size: 16px; font-weight: 600; font-family: monospace;">#${
+                            orderDetails.orderId
+                          }</p>
                         </td>
                       </tr>
                       <tr>
                         <td style="padding: 20px; background-color: #f9fafb;">
                           <p style="margin: 0; color: #6b7280; font-size: 14px;">Order Date</p>
-                          <p style="margin: 5px 0 0; color: #1f2937; font-size: 16px;">${orderDetails.orderDate}</p>
+                          <p style="margin: 5px 0 0; color: #1f2937; font-size: 16px;">${
+                            orderDetails.orderDate
+                          }</p>
                         </td>
                       </tr>
                     </table>
@@ -248,14 +280,24 @@ export async function sendOrderConfirmationEmail(customerEmail: string, orderDet
                           <table role="presentation" style="width: 100%;">
                             <tr>
                               <td style="width: 80px; vertical-align: top;">
-                                <img src="${orderDetails.productImageSrc}" alt="${orderDetails.productName}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 6px; display: block;">
+                                <img src="${
+                                  orderDetails.productImageSrc
+                                }" alt="${
+        orderDetails.productName
+      }" style="width: 80px; height: 80px; object-fit: cover; border-radius: 6px; display: block;">
                               </td>
                               <td style="padding-left: 15px; vertical-align: top;">
-                                <p style="margin: 0 0 5px; color: #1f2937; font-size: 16px; font-weight: 600;">${orderDetails.productName}</p>
-                                <p style="margin: 0; color: #6b7280; font-size: 14px;">Quantity: ${orderDetails.quantity}</p>
+                                <p style="margin: 0 0 5px; color: #1f2937; font-size: 16px; font-weight: 600;">${
+                                  orderDetails.productName
+                                }</p>
+                                <p style="margin: 0; color: #6b7280; font-size: 14px;">Quantity: ${
+                                  orderDetails.quantity
+                                }</p>
                               </td>
                               <td style="text-align: right; vertical-align: top;">
-                                <p style="margin: 0; color: #1f2937; font-size: 18px; font-weight: 600;">${orderDetails.totalAmount}</p>
+                                <p style="margin: 0; color: #1f2937; font-size: 18px; font-weight: 600;">${
+                                  orderDetails.totalAmount
+                                }</p>
                               </td>
                             </tr>
                           </table>
@@ -271,7 +313,9 @@ export async function sendOrderConfirmationEmail(customerEmail: string, orderDet
                     <table role="presentation" style="width: 100%;">
                       <tr>
                         <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Subtotal</td>
-                        <td style="padding: 8px 0; text-align: right; color: #1f2937; font-size: 14px;">${orderDetails.totalAmount}</td>
+                        <td style="padding: 8px 0; text-align: right; color: #1f2937; font-size: 14px;">${
+                          orderDetails.totalAmount
+                        }</td>
                       </tr>
                       <tr>
                         <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Shipping</td>
@@ -286,7 +330,9 @@ export async function sendOrderConfirmationEmail(customerEmail: string, orderDet
                       </tr>
                       <tr>
                         <td style="padding: 8px 0; color: #1f2937; font-size: 18px; font-weight: 600;">Total</td>
-                        <td style="padding: 8px 0; text-align: right; color: #667eea; font-size: 20px; font-weight: 700;">${orderDetails.totalAmount}</td>
+                        <td style="padding: 8px 0; text-align: right; color: #667eea; font-size: 20px; font-weight: 700;">${
+                          orderDetails.totalAmount
+                        }</td>
                       </tr>
                     </table>
                   </td>
@@ -328,49 +374,42 @@ export async function sendOrderConfirmationEmail(customerEmail: string, orderDet
       </body>
       </html>
     `,
-      });
+    });
 
-      return true;
-
-    } catch (error) {
-        console.error("Email send failed:", error);
-        return false;
-    }
+    return true;
+  } catch (error) {
+    console.error("Email send failed:", error);
+    return false;
+  }
 }
 
 export async function getCustomerByIdAction(customerUuid: string) {
   try {
     const foundCustomer = await getUserById(customerUuid);
 
-    const fittedCustomer = {}
+    const fittedCustomer = {};
 
     return foundCustomer;
-    
   } catch (error) {
     throw error;
   }
 }
 
-
-
-
-
 //---------------------------------------------------- Helper functions ----------------------------------------------------
 
 async function updateBillingPreferences(
-    formData: customerBillingDetails, 
-    isSaveBillingAddress: boolean, 
-    billingAddress: Address, 
-    customerInfo: CustomerNameAndPhone
+  formData: customerBillingDetails,
+  isSaveBillingAddress: boolean,
+  billingAddress: Address,
+  customerInfo: CustomerNameAndPhone
 ): Promise<void> {
-
-    if (isSaveBillingAddress) {
-        await saveBillingAddress(billingAddress);
-        await saveCustomerCountry(formData.country, formData.customerId);
-        await saveCustomerNameAndPhone(customerInfo);
-    } else {
-        await deleteBillingAddress(formData.customerId);
-        await deleteCustomerCountry(formData.customerId);
-        await deleteCustomerNameAndPhone(customerInfo.id);
-    }
+  if (isSaveBillingAddress) {
+    await saveBillingAddress(billingAddress);
+    await saveCustomerCountry(formData.country, formData.customerId);
+    await saveCustomerNameAndPhone(customerInfo);
+  } else {
+    await deleteBillingAddress(formData.customerId);
+    await deleteCustomerCountry(formData.customerId);
+    await deleteCustomerNameAndPhone(customerInfo.id);
+  }
 }
