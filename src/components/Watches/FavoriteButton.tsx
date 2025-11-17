@@ -7,7 +7,7 @@ import { isFavorite, handleFavoriteToggle } from "@/services/favoriteService";
 import { useState } from "react";
 import { toast } from "sonner";
 
-export default function FavoriteButton({ productId }: { productId: number }) {
+export default function FavoriteButton({ productId }: { productId: string }) {
   const { user } = useSupabaseAuth();
   const [favorited, setFavorited] = useState(false);
 
@@ -16,6 +16,7 @@ export default function FavoriteButton({ productId }: { productId: number }) {
     const favoritedStatus = await isFavorite(user.id, productId);
     setFavorited(favoritedStatus);
   }
+  isFavorited();
 
 
   async function handleButtonClick(event: React.MouseEvent<HTMLButtonElement>) {

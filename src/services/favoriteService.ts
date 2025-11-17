@@ -37,6 +37,7 @@ export async function handleFavoriteToggle(userId: string, watchId: string) {
 // Helper functions for handleFavoriteToggle
 async function addFavorite(userId: string, watchId: string) {
 
+  console.log("Adding favorite:", { userId, watchId });
   return await db.insert(favorites).values({ userId, watchId });
 }
 
