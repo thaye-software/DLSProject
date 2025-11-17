@@ -1,1 +1,0 @@
-ALTER TABLE "watches" DROP COLUMN "description";

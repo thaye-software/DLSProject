@@ -55,9 +55,9 @@ export const watchService = {
 
         // 3) create product images (if any), linking them to the created product via product_id
         const createdImages: Array<{
-          id: number;
+          id: string;
           imageUrl: string;
-          productId: number | null;
+          productId: string | null;
         }> = [];
         if (imageUrls && imageUrls.length) {
           for (const url of imageUrls) {

@@ -20,7 +20,7 @@ export async function createBrand(formData: FormData): Promise<any> {
 
 export async function updateBrand(formData: FormData): Promise<any> {
   const updatedBrand = Object.fromEntries(formData);
-  const brandId = parseInt(updatedBrand.id as string);
+  const brandId = updatedBrand.id as string;
   try {
     const res = await brandService.editBrand(brandId, updatedBrand as any);
     revalidatePath("/admin/masterdata/brands");

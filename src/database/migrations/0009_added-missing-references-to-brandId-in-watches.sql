@@ -1,1 +1,0 @@
-ALTER TABLE "watches" ADD CONSTRAINT "watches_brand_id_brands_id_fk" FOREIGN KEY ("brand_id") REFERENCES "public"."brands"("id") ON DELETE cascade ON UPDATE no action;

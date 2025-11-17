@@ -21,9 +21,7 @@ export async function POST(request: Request) {
   try {
     const form = await request.formData();
     const productIdRaw = form.get("productId");
-    const productId = productIdRaw
-      ? Number(productIdRaw.toString())
-      : undefined;
+    const productId = productIdRaw as string;
 
     // support multiple file fields named 'files' or a single 'file'
     const files: File[] = [];

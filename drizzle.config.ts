@@ -14,4 +14,7 @@ export default defineConfig({
   dbCredentials: {
     url: connectionString!,
   },
+  migrations: {
+    prefix: 'supabase'
+  }
 });

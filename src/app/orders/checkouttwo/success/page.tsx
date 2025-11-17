@@ -28,7 +28,7 @@ export default async function SuccessPage({searchParams}: {searchParams: SearchP
   
 
 
-    const foundOrderItem = await getOrderItemByOrderId(Number(orderId));
+    const foundOrderItem = await getOrderItemByOrderId(orderId[0]);
     if(!foundOrderItem) {
         return(
             <div>

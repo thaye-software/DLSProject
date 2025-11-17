@@ -12,7 +12,7 @@ interface UseRealtimeChatProps {
 
 export interface ChatMessage {
   id?: string;
-  conversationId?: number;
+  conversationId?: string;
   senderId?: string | null;
   sender: {
     id: string | null;
@@ -69,7 +69,7 @@ export function useRealtimeChat({
 
       const message: ChatMessage = {
         id: crypto.randomUUID(),
-        conversationId: Number(conversation.id),
+        conversationId: conversation.id,
         senderId: user?.id ?? null,
         sender: {
           id: user?.id ?? null,
@@ -95,7 +95,7 @@ export function useRealtimeChat({
       });
 
       const messageToPersist: PersistableMessage = {
-        conversationId: Number(conversation.id),
+        conversationId: conversation.id,
         senderId: user?.id ?? "",
         senderType: "customer",
         content,

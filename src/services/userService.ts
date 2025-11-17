@@ -18,11 +18,11 @@ export interface CustomerInfo {
   lastName: string | null;
   phone: string | null;
   country: {
-    id: number;
+    id: string;
     name: string;
     abbreviation: string;
     currency: {
-      id: number;
+      id: string;
       code: string;
       exchangeRate: string;
       isActive: boolean;
@@ -62,6 +62,9 @@ export async function getAllUsers() {
 }
 
 export async function getUserById(id: string) {
+  if (!id) {
+    throw new Error("User ID is required");
+  }
   try {
     const user = await db.query.users.findFirst({
       where: eq(users.id, id),

@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { createConversation } from "@/services/conversationService";
 import { useChatContext } from "@/context/ChatContext";
 
-export default function ContactButton({ productId }: { productId?: number }) {
+export default function ContactButton({ productId }: { productId?: string }) {
   const { user } = useSupabaseAuth();
   const { setChatOpen, setInitialConversation } = useChatContext();
 
