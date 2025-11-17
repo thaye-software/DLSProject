@@ -105,13 +105,8 @@ export const RealtimeChat = ({
           return;
         }
 
-        // ensure conversationId is a number when calling the server
-        const convId =
-          typeof conversation.id === "string"
-            ? Number(conversation.id)
-            : conversation.id;
-        if (Number.isNaN(convId)) return;
-
+        
+        const convId = conversation.id;
         console.log("userId:", userId);
         await markAsRead(convId, userId);
       } catch (err) {
