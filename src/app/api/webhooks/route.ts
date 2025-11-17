@@ -1,15 +1,18 @@
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
+import { NextRequest, NextResponse } from 'next/server'
 
 import { stripe } from '@/lib/stripe/stripe'
+
+
 
 export async function POST(req: NextRequest) {
   let event
 
   try {
+    if (!stripe) throw new Error('Stripe not available');
     event = stripe.webhooks.constructEvent(
       await req.text(),
       (await headers()).get('stripe-signature') as string,
