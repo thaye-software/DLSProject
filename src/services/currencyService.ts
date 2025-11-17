@@ -76,6 +76,32 @@ export async function updateExchangeRate(
 
 
 
+export async function convertCurrency(priceDkkInCents: number, targetCountryCode: string) {
+  const country = targetCountryCode.toUpperCase();
+
+  // If Danish, return DKK
+  if (country === "DKK" || country === "DK") {
+    const convertedPrice = priceDkkInCents / 100;
+    return convertedPrice;
+  }
+
+  try {
+    // For all non-DK users, use EUR
+    const targetCurrencyCode = "EUR"; // Requirement: non-DK users see EUR
+    const { exchangeRate } = await getCurrencyByCode(targetCurrencyCode);
+    const rate = parseFloat(exchangeRate);
+    
+    const convertedPrice = (priceDkkInCents * rate) / 100;
+    return convertedPrice;
+
+  } catch (error) {
+    console.error("(Server) Error getting exchange rate", error);
+    throw error;
+  }
+}
+
+
+
 export async function getLocalCurrencyString(priceDkkInCents: number, targetCountryCode: string) {
   const country = targetCountryCode.toUpperCase();
 

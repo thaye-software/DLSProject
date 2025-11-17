@@ -5,7 +5,7 @@ import { products, brands, watches } from "@/database/schema.ts";
 import { NewProductModel, ProductModel } from "@/database/types";
 
 import { Product } from "../app/watches/type";
-import { eq } from "drizzle-orm";
+import { eq, desc, asc } from "drizzle-orm";
 
 type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -139,6 +139,32 @@ export async function searchProducts(query: string) {
   } catch (error) {
     console.error("Error searching products:", error);
     throw new Error("Failed to search products in database");
+  }
+}
+
+
+export async function getFilterPriceRange() {
+  try {
+    const [lowest] = await db
+      .select()
+      .from(products)
+      .orderBy(asc(products.priceDkk))
+      .limit(1);
+
+    const [highest] = await db
+      .select()
+      .from(products)
+      .orderBy(desc(products.priceDkk))
+      .limit(1);
+
+    return {
+      lowest: lowest.priceDkk ?? 0,
+      highest: highest.priceDkk ?? 42069,
+    };
+
+  } catch (error) {
+    console.error("(server) failed to get price extremes", error);
+    throw error;
   }
 }
 

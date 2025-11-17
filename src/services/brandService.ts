@@ -23,11 +23,11 @@ export const brandService = {
   async getAllBrands() {
     try {
       const allBrands = await db.query.brands.findMany();
+      return allBrands;
 
-      return { data: allBrands };
     } catch (error) {
-      console.error("Error fetching brands:", error);
-      return { error: "Failed to fetch brands" };
+      console.error("(server) Failed to get all brands:", error);
+      throw error;
     }
   },
 
