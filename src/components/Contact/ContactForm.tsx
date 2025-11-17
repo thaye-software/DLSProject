@@ -50,7 +50,6 @@ export default function ContactForm() {
   })
 
   async function onSubmit(values: z.infer<typeof contactFormSchema>) {
-    console.log(values)
     
     const sentSuccessfully = await sendEmail(values);
     if (!sentSuccessfully) {
@@ -64,7 +63,7 @@ export default function ContactForm() {
   }
 
   return (
-    <div>
+    <div className="pb-4">
       {isSuccess === undefined ? (
       <div></div>
     ) : isSuccess ? (
@@ -145,9 +144,9 @@ export default function ContactForm() {
 
 
           {isLoading ? (
-            <Button className="bg-slate-900" type="submit" disabled> <Spinner/> Submitting...</Button>
+            <Button type="submit" disabled> <Spinner/> Submitting...</Button>
           ) : (
-            <Button className="bg-slate-900 hover:cursor-pointer" type="submit">Submit</Button>
+            <Button className="mt-4 hover:cursor-pointer" type="submit">Submit</Button>
           )}
         </form>
       </Form>
