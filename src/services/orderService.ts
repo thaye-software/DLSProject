@@ -92,7 +92,7 @@ async function getNewestOrder( tx?: DbTransaction) {
         .orderBy(desc(orders.createdAt))
         .limit(1);
 
-    if(!newestOrder) {
+    if(!newestOrder[0]) {
         return null;
     }
 
