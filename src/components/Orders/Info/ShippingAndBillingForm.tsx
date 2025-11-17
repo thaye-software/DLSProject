@@ -17,7 +17,7 @@ import { CustomerInfo } from "@/services/userService";
 import ToastWrapper from "@/components/Toast/ToastWrapper";
 
 import { Product } from "@/app/watches/type";
-import { getAllCountriesNameAction, submitOrderDetails } from "@/app/orders/actions";
+import { getAllCountriesNameAction, getCustomerByIdAction, submitOrderDetails } from "@/app/orders/actions";
 
 import { getProductBySlug } from "@/services/productService"
 import { Spinner } from "@/components/ui/spinner";
@@ -97,6 +97,8 @@ export default function ShippingAndBillingForm({customer, productSlug, customerG
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const [isBuyLoading, setIsBuyLoading] = useState<boolean>(false);
 
+	const [customerUpdated, setCustomerUpdated] = useState(customer);
+
 	const [product, setProduct] = useState<Product | null>(null);
 	const [formatedPrice, setFormatedPrice] = useState<string>("");
 	const [formatedTax, setFormatedTax] = useState<string>("");
@@ -104,7 +106,7 @@ export default function ShippingAndBillingForm({customer, productSlug, customerG
 
 	const [sameAsShipping, setSameAsShipping] = useState<boolean>(true);
   	const [saveBillingInfo, setSaveBillingInfo] = useState<boolean>(true);
-	const [isBillingInfoSaved, setIsBillingInfoSaved] = useState<boolean>(customer.country != null && customer.address != null);
+	const [isBillingInfoSaved, setIsBillingInfoSaved] = useState<boolean>(customerUpdated.country != null && customerUpdated.address != null);
 
 	const [errorState, setErrorState] = useState<{
 		success: boolean;
@@ -128,6 +130,13 @@ export default function ShippingAndBillingForm({customer, productSlug, customerG
 			setCountries(allCountries);
 		}
 		getAllCountries();
+
+
+		async function updateCustomerInfo() {
+			const mostUpdatedCustomer = await getCustomerByIdAction(customerUpdated.id);
+			setCustomerUpdated(mostUpdatedCustomer as CustomerInfo);
+		}
+		updateCustomerInfo();
 
 		async function getProduct() {
 			try{
@@ -169,9 +178,9 @@ export default function ShippingAndBillingForm({customer, productSlug, customerG
 
     	data.saveBillingInfo = String(saveBillingInfo);
 		data.shippingSameAsBilling = String(sameAsShipping);
-		data.customerId = customer.id;
+		data.customerId = customerUpdated.id;
 
-		const customerCountry = customer.country || null;
+		const customerCountry = customerUpdated.country || null;
 		
 		try {
 			setIsBuyLoading(true);
@@ -230,7 +239,7 @@ export default function ShippingAndBillingForm({customer, productSlug, customerG
 														id="firstName" 
 														name="firstName" 
 														placeholder="your first name" 
-														defaultValue={isBillingInfoSaved && customer.firstName != null ? customer.firstName : undefined}
+														defaultValue={isBillingInfoSaved && customerUpdated.firstName != null ? customerUpdated.firstName : undefined}
 														required
 													/>
 												</div>
@@ -241,7 +250,7 @@ export default function ShippingAndBillingForm({customer, productSlug, customerG
 														id="middleName" 
 														name="middleName"
 														placeholder="your middle name"
-														defaultValue={isBillingInfoSaved && customer.middleName != null ? customer.middleName : undefined}
+														defaultValue={isBillingInfoSaved && customerUpdated.middleName != null ? customerUpdated.middleName : undefined}
 													/>
 												</div>
 												<div className="space-y-2">
@@ -250,14 +259,14 @@ export default function ShippingAndBillingForm({customer, productSlug, customerG
 														id="lastName" 
 														name="lastName" 
 														placeholder="your last name" 
-														defaultValue={isBillingInfoSaved && customer.lastName != null ? customer.lastName : undefined}
+														defaultValue={isBillingInfoSaved && customerUpdated.lastName != null ? customerUpdated.lastName : undefined}
 														required />
 												</div>
 											</div>
 
 											<div className="space-y-2">
 												<Label htmlFor="email">Email*</Label>
-												<Input id="email" type="email" name="email" placeholder="your email" defaultValue={customer.email} required/>
+												<Input id="email" type="email" name="email" placeholder="your email" defaultValue={customerUpdated.email} required/>
 											</div>
 
 											<div className="space-y-2">
@@ -267,7 +276,7 @@ export default function ShippingAndBillingForm({customer, productSlug, customerG
 													type="tel" 
 													name="phone" 
 													placeholder="+45 26 46 95 96"
-													defaultValue={isBillingInfoSaved && customer.phone != null ? customer.phone : undefined} 
+													defaultValue={isBillingInfoSaved && customerUpdated.phone != null ? customerUpdated.phone : undefined} 
 												/>
 											</div>
 
@@ -277,7 +286,7 @@ export default function ShippingAndBillingForm({customer, productSlug, customerG
 													id="address" 
 													name="address" 
 													placeholder="123 Main Street" 
-													defaultValue={isBillingInfoSaved && customer.address?.address1 != null ? customer.address.address1 : undefined}
+													defaultValue={isBillingInfoSaved && customerUpdated.address?.address1 != null ? customerUpdated.address.address1 : undefined}
 													required
 												/>
 											</div>
@@ -289,7 +298,7 @@ export default function ShippingAndBillingForm({customer, productSlug, customerG
 														id="city" 
 														name="city" 
 														placeholder="Copenhagen" 
-														defaultValue={isBillingInfoSaved && customer.address?.city != null ? customer.address.city : undefined}
+														defaultValue={isBillingInfoSaved && customerUpdated.address?.city != null ? customerUpdated.address.city : undefined}
 														required
 													/>
 												</div>
@@ -299,7 +308,7 @@ export default function ShippingAndBillingForm({customer, productSlug, customerG
 														id="postalCode" 
 														name="postalCode" 
 														placeholder="2300" 
-														defaultValue={isBillingInfoSaved && customer.address?.zipCode != null ? customer.address.zipCode : undefined}
+														defaultValue={isBillingInfoSaved && customerUpdated.address?.zipCode != null ? customerUpdated.address.zipCode : undefined}
 														required
 													/>
 												</div>
@@ -311,7 +320,7 @@ export default function ShippingAndBillingForm({customer, productSlug, customerG
 													id="country" 
 													name="country" 
 													required
-													defaultValue={isBillingInfoSaved && customer.country?.name != null ? customer.country.name : undefined}
+													defaultValue={isBillingInfoSaved && customerUpdated.country?.name != null ? customerUpdated.country.name : undefined}
 													className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 												>
 													<option value="" disabled>
@@ -333,7 +342,7 @@ export default function ShippingAndBillingForm({customer, productSlug, customerG
 													id="stateProvince" 
 													name="stateProvince" 
 													placeholder="Hovedstaden"
-													defaultValue={isBillingInfoSaved && customer.address?.stateProvince != null ? customer.address.stateProvince : undefined}
+													defaultValue={isBillingInfoSaved && customerUpdated.address?.stateProvince != null ? customerUpdated.address.stateProvince : undefined}
 												/>
 											</div>
 										</div>

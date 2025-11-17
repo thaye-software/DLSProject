@@ -65,6 +65,14 @@ export async function getUserById(id: string) {
   try {
     const user = await db.query.users.findFirst({
       where: eq(users.id, id),
+      with: {
+        country: {
+          with: {
+            currency: true
+          }
+        },
+        address: true
+      }
     })
     return user;
 
