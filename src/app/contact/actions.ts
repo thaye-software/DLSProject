@@ -1,12 +1,13 @@
 "use server";
 
 import { z } from "zod"
-import { Resend } from "resend";
 
 import { contactFormSchema } from "@/components/Contact/ContactForm";
 
-const resend = new Resend(process.env.RESEND_API_KEY!);
-const originEmail = process.env.RESEND_ORIGIN_EMAIL as string;
+import { resend, originEmail } from "@/lib/resend/resend";
+
+// const resend = new Resend(process.env.RESEND_API_KEY!);
+// const originEmail = process.env.RESEND_ORIGIN_EMAIL as string;
 
 export async function sendEmail(data: z.infer<typeof contactFormSchema>) {
 

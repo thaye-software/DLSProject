@@ -43,12 +43,3 @@ export async function getUserLocation() {
     currency: data.currency as string
   };
 }
-
-
-import { Resend } from "resend";
-export function getResendClientAndOriginEmail() {
-  const resend = new Resend(process.env.RESEND_API_KEY!);
-  const originEmail = process.env.RESEND_ORIGIN_EMAIL as string;
-
-  return {resend, originEmail};
-}
