@@ -6,7 +6,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { AdminSidebar } from "@/components/Admin/AdminSidebar";
 import { Separator } from "@/components/ui/separator";
 
 import { getAuthUser } from "@/lib/utils/server/utils";

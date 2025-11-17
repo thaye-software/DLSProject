@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Navbar } from "@/components/navbar/Navbar";
+import { Navbar } from "@/components/Navbar/Navbar";
 import { Footer } from "@/components/Footer";
-import { ModeToggle } from "@/components/navbar/ModeToggle";
+import { ModeToggle } from "@/components/Navbar/ModeToggle";
 import React from "react";
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
