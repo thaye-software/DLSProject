@@ -4,7 +4,7 @@ import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { Button } from "../ui/button";
 import { Heart } from "lucide-react";
 import { isFavorite, handleFavoriteToggle } from "@/services/favoriteService";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function FavoriteButton({ productId }: { productId: string }) {
@@ -16,7 +16,10 @@ export default function FavoriteButton({ productId }: { productId: string }) {
     const favoritedStatus = await isFavorite(user.id, productId);
     setFavorited(favoritedStatus);
   }
-  isFavorited();
+
+  useEffect(() => {
+    isFavorited();
+  }, [user, productId]);
 
 
   async function handleButtonClick(event: React.MouseEvent<HTMLButtonElement>) {
