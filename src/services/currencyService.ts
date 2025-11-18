@@ -21,8 +21,6 @@ export async function getCurrencyByCode(currencyCode: string) {
   return currency;
 }
 
-
-
 export async function getActiveCurrencies() {
   return await db.query.currencies.findMany({
     where: eq(currencies.isActive, true),
@@ -30,13 +28,13 @@ export async function getActiveCurrencies() {
   });
 }
 
-
-
 export async function updateExchangeRate(
-  currencyCode: string,
-  newRate: string,
-  updatedBy: string
+  formData: FormData
 ) {
+  const currencyCode = formData.get("currencyCode") as string;
+  const newRate = formData.get("exchangeRate") as string;
+  const updatedBy = formData.get("username") as string;
+  console.log("Updating exchange rate", currencyCode, newRate, updatedBy);
   return await db.transaction(async (tx) => {
     // 1. Get current currency
     const currency = await tx.query.currencies.findFirst({
@@ -56,25 +54,15 @@ export async function updateExchangeRate(
     });
 
     // 3. Update to new rate
-    const [updated] = await tx
+    await tx
       .update(currencies)
       .set({
         exchangeRate: newRate,
         updatedAt: new Date(),
       })
       .where(eq(currencies.id, currency.id))
-      .returning();
-
-    return {
-      success: true,
-      oldRate: currency.exchangeRate,
-      newRate: updated.exchangeRate,
-      currency: updated,
-    };
   });
 }
-
-
 
 export async function convertPrice(priceDkkInCents: number, targetCountryCode: string) {
   const country = targetCountryCode.toUpperCase();
