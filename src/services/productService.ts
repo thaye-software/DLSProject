@@ -1,11 +1,12 @@
 "use server";
 
 import { db } from "@/database/drizzle";
-import { products, brands, watches } from "@/database/schema.ts";
+import { products, brands, watches, productImages } from "@/database/schema.ts";
 import { NewProductModel, ProductModel } from "@/database/types";
 
 import { Product } from "../app/watches/type";
-import { eq, desc, asc } from "drizzle-orm";
+import { and, gte, lte, inArray, eq, desc, asc } from "drizzle-orm";
+import { SearchFiltersParams } from "@/components/Watches/Filters/ProductFilterSheet";
 
 type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -78,6 +79,68 @@ export async function getAllProducts(): Promise<Product[]> {
   } catch (error) {
     console.error("Error fetching products:", error);
     throw new Error("Failed to fetch products from database");
+  }
+}
+
+export async function getFilteredProducts(filters: Partial<SearchFiltersParams>): Promise<Product[]> {
+  try {
+    const appliedSearchFilters = getAppliedSerachFilters(filters);
+    const where = appliedSearchFilters.length ? and(...appliedSearchFilters) : undefined;
+
+    const rows = await db
+      .select({
+        watch: watches,
+        product: products,
+        brand: brands,
+        image: productImages.imageUrl,
+      })
+      .from(watches)
+      .innerJoin(products, eq(products.id, watches.productId))
+      .innerJoin(brands, eq(brands.id, watches.brandId))
+      .leftJoin(
+        productImages,
+        and(
+          eq(productImages.productId, products.id),
+          eq(productImages.isThumbnail, true)
+        )
+      )
+      .where(where);
+
+
+      
+    const filteredProduct: Product[] = rows.map((row) => ({
+      id: row.product.id,
+      name: row.product.name,
+      priceDkk: row.product.priceDkk,
+      stock: row.product.stock,
+      productType: row.product.productType,
+      description: row.product.description,
+
+      watch: {
+        ...row.watch,
+        brand: {
+          ...row.brand
+        }
+      },
+
+      productImages: row.image
+        ? [
+            {
+              id: "thumbnial",
+              productId: row.product.id,
+              imageUrl: row.image,
+              isThumbnail: true,
+            },
+          ]
+        : [],
+    }));
+
+    console.log("sadasdasd",filteredProduct[0].productImages)
+    return filteredProduct;
+
+  } catch (error) {
+    console.error(`(server) failed to filter products with filters: ${filters}`, error);
+    throw error;
   }
 }
 
@@ -194,4 +257,53 @@ export async function updateProductStock(productId: string, stock: number, tx?: 
     console.error("(server) failed to update the stock on product...", error);
     throw error;
   }
+}
+
+
+
+//------------------------------------------ helper functions ------------------------------------------
+function getAppliedSerachFilters(filters: Partial<SearchFiltersParams>) {
+
+  const appliedSearchFilters = [];
+
+  if (filters.brandNames && filters.brandNames?.length > 0) {
+    const brandArray = Array.isArray(filters.brandNames) ? filters.brandNames : [filters.brandNames]; // force single string into array
+    appliedSearchFilters.push(inArray(brands.name, brandArray));
+  }
+
+
+
+  if (filters.conditionValues && filters.conditionValues.length > 0) {
+    const conditionArray = Array.isArray(filters.conditionValues) ? filters.conditionValues.map(Number) : [Number(filters.conditionValues)] // convert all to numbers
+    appliedSearchFilters.push(inArray(watches.condition, conditionArray));
+  }
+
+
+
+  if (filters.maxPrice) {
+    appliedSearchFilters.push(lte(products.priceDkk, Number(filters.maxPrice) * 100));
+  }
+  if (filters.minPrice) {
+    appliedSearchFilters.push(gte(products.priceDkk, Number(filters.minPrice) * 100)); // convert back to cents/øre
+  }
+  
+
+
+  if (filters.yearStart) {
+    appliedSearchFilters.push(gte(watches.year, Number(filters.yearStart)));
+  }
+  if (filters.yearEnd) {
+    appliedSearchFilters.push(lte(watches.year, Number(filters.yearEnd)));
+  }
+
+
+
+  if (filters.minSize) {
+    appliedSearchFilters.push(gte(watches.size, Number(filters.minSize)));
+  }
+  if (filters.maxSize) {
+    appliedSearchFilters.push(lte(watches.size, Number(filters.maxSize)));
+  }
+
+  return appliedSearchFilters;
 }
