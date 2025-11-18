@@ -6,18 +6,18 @@ import { Open_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Logo from "@/components/Logo";
-import { Navbar } from "@/components/navbar/Navbar";
+import { Navbar } from "@/components/Navbar/Navbar";
 import { Footer } from "@/components/Footer";
-import { ModeToggle } from "@/components/navbar/ModeToggle";
+import { ModeToggle } from "@/components/Navbar/ModeToggle";
 import { usePathname, redirect } from "next/navigation";
 import {} from "react";
 import { ChatProvider, useChatContext } from "@/context/ChatContext";
-import { FloatingChatButton } from "@/components/chat/FloatingChatButton";
-import { ChatPanel } from "@/components/chat/ChatPanel";
+import { FloatingChatButton } from "@/components/Chat/FloatingChatButton";
+import { ChatPanel } from "@/components/Chat/ChatPanel";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "framer-motion";
-import ChatBox from "@/components/chat/ChatBox";
+import ChatBox from "@/components/Chat/ChatBox";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { Toaster } from "sonner";
 
@@ -105,7 +105,7 @@ export default function RootLayout({
     >
       <body className="antialiased min-h-screen flex flex-col">
         <ChatProvider>
-        <Toaster />
+          <Toaster />
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
