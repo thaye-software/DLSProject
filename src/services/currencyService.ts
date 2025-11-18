@@ -30,13 +30,13 @@ export async function getActiveCurrencies() {
   });
 }
 
-
-
 export async function updateExchangeRate(
-  currencyCode: string,
-  newRate: string,
-  updatedBy: string
+  formData: FormData
 ) {
+  const currencyCode = formData.get("currencyCode") as string;
+  const newRate = formData.get("exchangeRate") as string;
+  const updatedBy = formData.get("username") as string;
+  console.log("Updating exchange rate", currencyCode, newRate, updatedBy);
   return await db.transaction(async (tx) => {
     // 1. Get current currency
     const currency = await tx.query.currencies.findFirst({
@@ -65,14 +65,57 @@ export async function updateExchangeRate(
       .where(eq(currencies.id, currency.id))
       .returning();
 
-    return {
-      success: true,
-      oldRate: currency.exchangeRate,
-      newRate: updated.exchangeRate,
-      currency: updated,
-    };
+    // return {
+    //   success: true,
+    //   oldRate: currency.exchangeRate,
+    //   newRate: updated.exchangeRate,
+    //   currency: updated,
+    // };
   });
 }
+
+
+// export async function updateExchangeRate(
+//   currencyCode: string,
+//   newRate: string,
+//   updatedBy: string
+// ) {
+//   return await db.transaction(async (tx) => {
+//     // 1. Get current currency
+//     const currency = await tx.query.currencies.findFirst({
+//       where: eq(currencies.code, currencyCode.toUpperCase()),
+//     });
+
+//     if (!currency) {
+//       throw new Error(`Currency ${currencyCode} not found`);
+//     }
+
+//     // 2. Save old rate to history
+//     await tx.insert(currencyHistory).values({
+//       currencyId: currency.id,
+//       exchangeRate: currency.exchangeRate,
+//       changedAt: new Date(),
+//       changedBy: updatedBy,
+//     });
+
+//     // 3. Update to new rate
+//     const [updated] = await tx
+//       .update(currencies)
+//       .set({
+//         exchangeRate: newRate,
+//         updatedAt: new Date(),
+//       })
+//       .where(eq(currencies.id, currency.id))
+//       .returning();
+
+//     return {
+//       success: true,
+//       oldRate: currency.exchangeRate,
+//       newRate: updated.exchangeRate,
+//       currency: updated,
+//     };
+//   });
+// }
 
 
 

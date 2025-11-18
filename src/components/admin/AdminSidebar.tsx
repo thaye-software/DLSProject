@@ -75,6 +75,11 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname.startsWith("/admin/exchange-rate")}> 
+                <Link href="/admin/exchange-rate">Exchange Rate</Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname.startsWith("/admin/orders")}> 
                 <Link href="/admin/orders">Orders</Link>
               </SidebarMenuButton>
