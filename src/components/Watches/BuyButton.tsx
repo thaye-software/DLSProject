@@ -10,13 +10,13 @@ export default function BuyButton({product, className}: {product: Product, class
     <div>
       { product.stock > 0 ? (
         <Link href={`/orders/checkouttwo/infomation?product=${product.watch.slug}`}>
-          <Button className={className}>
+          <Button className="h-12 cursor-pointer font-bold py-4 px-20 transition-all">
             Buy
           </Button>
         </Link>
         ) : 
-        <Button>
-          Notify When Available TODO 
+        <Button className="h-12 cursor-pointer font-bold py-4 px-8 transition-all">
+          Notify When Available TODO
         </Button>
       }
     </div>

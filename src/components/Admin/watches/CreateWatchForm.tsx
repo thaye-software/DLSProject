@@ -131,7 +131,7 @@ export default function CreateWatchForm({
       if (res?.success) {
         const watchId = res?.data?.watch?.id ?? res?.data?.id;
         if (watchId) {
-          router.push(`/admin/watches/${watchId}`);
+          router.push(`/admin/watches`);
           return;
         }
       }

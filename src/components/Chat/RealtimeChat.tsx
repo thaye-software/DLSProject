@@ -1,14 +1,16 @@
 "use client";
 
 import { cn } from "@/lib/tailwindUtils";
-import { ChatMessageItem } from "@/components/chat/ChatMessage";
+import { ChatMessageItem } from "@/components/Chat/ChatMessage";
 import { useChatScroll } from "@/hooks/use-chat-scroll";
 import { type ChatMessage, useRealtimeChat } from "@/hooks/use-realtime-chat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowDown, Send } from "lucide-react";
+import { ArrowDown, HandCoins, Send } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { markAsRead } from "@/services/messageService";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { OfferPricePopover } from "./OfferPricePopover";
 
 interface RealtimeChatProps {
   conversation: any;
@@ -49,6 +51,8 @@ export const RealtimeChat = ({
     username,
   });
   const [newMessage, setNewMessage] = useState("");
+  const [focused, setFocused] = useState(false);
+  const { role } = useSupabaseAuth();
 
   // Merge realtime messages with initial messages
   const allMessages = useMemo(() => {
@@ -105,7 +109,6 @@ export const RealtimeChat = ({
           return;
         }
 
-        
         const convId = conversation.id;
         console.log("userId:", userId);
         await markAsRead(convId, userId);
@@ -133,6 +136,7 @@ export const RealtimeChat = ({
     setAutoScrollEnabled(true);
     scrollToBottom();
   };
+  console.log("conversation:", conversation);
 
   return (
     <div className="flex flex-col h-full w-full antialiased">
@@ -181,6 +185,9 @@ export const RealtimeChat = ({
           placeholder="Type a message..."
           disabled={!isConnected}
         />
+        {role === "admin" && (
+          <OfferPricePopover product={conversation?.product} />
+        )}
         {isConnected && newMessage.trim() && (
           <Button
             className="aspect-square rounded-full animate-in fade-in slide-in-from-right-4 duration-300"
@@ -188,7 +195,8 @@ export const RealtimeChat = ({
             disabled={!isConnected}
           >
             <Send className="size-4" />
-          </Button>
+            </Button>
+            
         )}
       </form>
       {/* scroll-to-bottom button when auto-scroll is disabled */}

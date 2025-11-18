@@ -248,12 +248,8 @@ export default async function ViewWatchPage({
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <BuyButton
                 product={product}
-                className="hover:cursor-pointer h-12 flex-1 bg-[#1A1A1A] hover:bg-[#244B5A] text-white font-bold py-4 px-8 rounded-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className="hover:cursor-pointer flex-1 transition-all transform"
               />
-
-              <Button className="hover:cursor-pointer h-12 flex-1 bg-white hover:bg-[#F5F3EE] text-[#1A1A1A] font-semibold py-4 px-8 rounded-lg border-2 border-[#D3C6A3] transition-all">
-                Contact
-              </Button>
 
               <ContactButton productId={product.id} />
             </div>
