@@ -96,7 +96,6 @@ async function getNewestOrder( tx?: DbTransaction) {
         return null;
     }
 
-  console.log("newestOrder:", newestOrder);
     const newestOrderWithOrderAddresses = await dbContext.query.orders.findFirst({
             where: eq(orders.id, newestOrder[0].id),
             columns: { 

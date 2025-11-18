@@ -293,7 +293,6 @@ export function buildFilterParams(appliedFilters: Partial<WatchFilters>, default
   }
 
   if (appliedFilters.yearStart && appliedFilters.yearStart !== defaultFilter.yearStart) {
-    console.log("insisisisisisisiisis")
     params.set("yearStart", appliedFilters.yearStart);
   }
   if (appliedFilters.yearEnd && appliedFilters.yearEnd !== defaultFilter.yearEnd){

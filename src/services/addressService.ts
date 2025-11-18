@@ -65,7 +65,7 @@ export async function updateBillingAddress(id: string, newBillingAddress: Omit<N
         if(!updatedBillingAddress[0]) {
             return null;
         }
-console.log("åplalsfdådåfp¨saå¨plsad",updatedBillingAddress[0])
+
         return updatedBillingAddress[0];
 
     } catch (error) {

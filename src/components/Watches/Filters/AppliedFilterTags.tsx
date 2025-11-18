@@ -190,7 +190,6 @@ export default function AppliedFiltersTag({ defaultFilter, appliedFilters, local
     }
 
 
-    console.log(updatedFilters);
     const params = buildFilterParams(updatedFilters, defaultFilter);
   
     // params is type URLSearchParams so if nothign set calling toString() will return

@@ -135,7 +135,6 @@ export async function getFilteredProducts(filters: Partial<WatchFilters>): Promi
         : [],
     }));
 
-    console.log("sadasdasd",filteredProduct[0].productImages)
     return filteredProduct;
 
   } catch (error) {
