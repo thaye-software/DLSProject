@@ -21,7 +21,7 @@ export async function createWatch(formData: FormData): Promise<any> {
         braceletColor: newWatch.braceletColor as string,
         dialColor: newWatch.dialColor as string,
         vat: newWatch.vat ? parseFloat(newWatch.vat as string) : null,
-        size: newWatch.size as string,
+        size: Number(newWatch.size),
         movement: newWatch.movement as string,
       },
       productData: {

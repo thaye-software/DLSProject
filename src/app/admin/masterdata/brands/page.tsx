@@ -7,7 +7,7 @@ import { getAllProducts } from "@/services/productService";
 import Link from "next/link";
 
 export default async function BrandsPage() {
-  const initialBrands = (await brandService.getAllBrands()).data || [];
+  const initialBrands = (await brandService.getAllBrands()) || [];
   const initialProducts = (await getAllProducts()) || [];
 
   return (
