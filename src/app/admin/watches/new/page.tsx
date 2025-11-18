@@ -6,7 +6,7 @@ import { brandService } from "@/services/brandService";
 export default async function NewWatchPage() {
   // fetch brands on the server (avoids passing functions / handlers to client)
 
-  const initialBrands = (await brandService.getAllBrands()).data || [];
+  const initialBrands = (await brandService.getAllBrands()) || [];
 
   return (
     <div>
