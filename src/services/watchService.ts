@@ -1,7 +1,7 @@
 import { db } from "@/database/drizzle";
 import { watches, brands, products, productImages } from "@/database/schema";
 import { NewWatchModel, NewProductModel } from "@/database/types";
-import { eq } from "drizzle-orm";
+import { asc, desc, eq, sql } from "drizzle-orm";
 
 export const watchService = {
 
@@ -85,4 +85,72 @@ export const watchService = {
       };
     }
   },
+
+  async getFilterSizeRange() {
+    try { 
+      const [largest] = await db
+        .select()
+        .from(watches)
+        .orderBy(desc(watches.size))
+        .limit(1);
+
+      const [smallest] = await db
+        .select()
+        .from(watches)
+        .orderBy(asc(watches.size))
+        .limit(1);
+
+      return {
+        smallest: smallest.size ?? 23,
+        largest: largest.size ?? 52
+      }
+      
+    } catch (error) {
+      console.error("(server) failed to get watch size filter range", error);
+      throw error;
+    }
+  },
+
+  async getFilterYearRange() {
+    try { 
+      const [newest] = await db
+        .select()
+        .from(watches)
+        .orderBy(desc(watches.year))
+        .limit(1);
+
+      const [oldest] = await db
+        .select()
+        .from(watches)
+        .orderBy(asc(watches.year))
+        .limit(1);
+
+      return {
+        oldest: oldest.year ?? null,
+        newest: newest.year ?? null
+      }
+    } catch (error) {
+      console.error("(server) failed to get watch year filter range", error);
+      throw error;
+    }
+  },
+
+  async getUniqueConditions() {
+    try {
+      const results = await db
+        .select({
+          condition: watches.condition,
+          count: sql<number>`COUNT(*)`
+        })
+        .from(watches)
+        .groupBy(watches.condition)
+        .orderBy(watches.condition);
+
+      return results;
+
+    } catch (error) {
+      console.error("(server) failed to get watch condition stats", error);
+      throw error;
+    }
+  }
 } as const;

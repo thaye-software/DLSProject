@@ -5,7 +5,7 @@ import { SearchParams } from "next/dist/server/request/search-params";
 import ToastWrapper from "@/components/Toast/ToastWrapper";
 import ProgressSteps from "@/components/Orders/Info/ProgressSteps";
 
-import { convertPrice } from "@/services/currencyService";
+import { getLocalCurrencyString } from "@/services/currencyService";
 import { getOrderItemByOrderId } from "@/services/orderItemService";
 import { sendOrderConfirmationEmail } from "../../actions";
 
@@ -50,7 +50,7 @@ export default async function SuccessPage({searchParams}: {searchParams: SearchP
 
     const amount = foundOrderItem?.order.totalPriceDkk;
     const targetCurrencyCode = foundOrderItem?.order.currency.code;
-    const displayAmount = await convertPrice(Number(amount), targetCurrencyCode as string);
+    const displayAmount = await getLocalCurrencyString(Number(amount), targetCurrencyCode as string);
 
 
     

@@ -152,7 +152,7 @@ export const watches = pgTable(
     reference: varchar("reference", { length: 255 }).notNull(),
     serialNumber: varchar("serial_number", { length: 255 }).notNull(),
     year: integer("year").notNull(),
-    size: varchar("size", { length: 50 }),
+    size: integer("size"),
     movement: varchar("movement", { length: 100 }),
     glassType: varchar("glass_type", { length: 100 }),
     limited: boolean("limited").notNull().default(false),

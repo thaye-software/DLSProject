@@ -21,8 +21,8 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     const errorMessage = err.message
     // On error, log and return the error message.
-    if (err) console.log(err)
-    console.log(`Error message: ${errorMessage}`)
+    if (err) console.error("(server) error in stripe webhook",err)
+
     return NextResponse.json(
       { message: `Webhook Error: ${errorMessage}` },
       { status: 400 }
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
           throw new Error(`Unhandled event: ${event.type}`)
       }
     } catch (error) {
-      console.log(error)
+      console.error("(server) error in stripe webhook handler ",error)
       return NextResponse.json(
         { message: 'Webhook handler failed' },
         { status: 500 }
