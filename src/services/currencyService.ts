@@ -21,8 +21,6 @@ export async function getCurrencyByCode(currencyCode: string) {
   return currency;
 }
 
-
-
 export async function getActiveCurrencies() {
   return await db.query.currencies.findMany({
     where: eq(currencies.isActive, true),
@@ -56,68 +54,15 @@ export async function updateExchangeRate(
     });
 
     // 3. Update to new rate
-    const [updated] = await tx
+    await tx
       .update(currencies)
       .set({
         exchangeRate: newRate,
         updatedAt: new Date(),
       })
       .where(eq(currencies.id, currency.id))
-      .returning();
-
-    // return {
-    //   success: true,
-    //   oldRate: currency.exchangeRate,
-    //   newRate: updated.exchangeRate,
-    //   currency: updated,
-    // };
   });
 }
-
-
-// export async function updateExchangeRate(
-//   currencyCode: string,
-//   newRate: string,
-//   updatedBy: string
-// ) {
-//   return await db.transaction(async (tx) => {
-//     // 1. Get current currency
-//     const currency = await tx.query.currencies.findFirst({
-//       where: eq(currencies.code, currencyCode.toUpperCase()),
-//     });
-
-//     if (!currency) {
-//       throw new Error(`Currency ${currencyCode} not found`);
-//     }
-
-//     // 2. Save old rate to history
-//     await tx.insert(currencyHistory).values({
-//       currencyId: currency.id,
-//       exchangeRate: currency.exchangeRate,
-//       changedAt: new Date(),
-//       changedBy: updatedBy,
-//     });
-
-//     // 3. Update to new rate
-//     const [updated] = await tx
-//       .update(currencies)
-//       .set({
-//         exchangeRate: newRate,
-//         updatedAt: new Date(),
-//       })
-//       .where(eq(currencies.id, currency.id))
-//       .returning();
-
-//     return {
-//       success: true,
-//       oldRate: currency.exchangeRate,
-//       newRate: updated.exchangeRate,
-//       currency: updated,
-//     };
-//   });
-// }
-
-
 
 export async function convertPrice(priceDkkInCents: number, targetCountryCode: string) {
   const country = targetCountryCode.toUpperCase();
