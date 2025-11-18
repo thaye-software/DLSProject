@@ -61,14 +61,6 @@ export async function updateExchangeRate(
         updatedAt: new Date(),
       })
       .where(eq(currencies.id, currency.id))
-      .returning();
-
-    return {
-      success: true,
-      oldRate: currency.exchangeRate,
-      newRate: updated.exchangeRate,
-      currency: updated,
-    };
   });
 }
 
