@@ -6,7 +6,7 @@ import { NewProductModel, ProductModel } from "@/database/types";
 
 import { Product } from "../app/watches/type";
 import { and, gte, lte, inArray, eq, desc, asc } from "drizzle-orm";
-import { SearchFiltersParams } from "@/components/Watches/Filters/ProductFilterSheet";
+import { WatchFilters } from "@/components/Watches/Filters/ProductFilterSheet";
 
 type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -82,7 +82,7 @@ export async function getAllProducts(): Promise<Product[]> {
   }
 }
 
-export async function getFilteredProducts(filters: Partial<SearchFiltersParams>): Promise<Product[]> {
+export async function getFilteredProducts(filters: Partial<WatchFilters>): Promise<Product[]> {
   try {
     const appliedSearchFilters = getAppliedSerachFilters(filters);
     const where = appliedSearchFilters.length ? and(...appliedSearchFilters) : undefined;
@@ -107,7 +107,7 @@ export async function getFilteredProducts(filters: Partial<SearchFiltersParams>)
       .where(where);
 
 
-      
+
     const filteredProduct: Product[] = rows.map((row) => ({
       id: row.product.id,
       name: row.product.name,
@@ -262,7 +262,7 @@ export async function updateProductStock(productId: string, stock: number, tx?: 
 
 
 //------------------------------------------ helper functions ------------------------------------------
-function getAppliedSerachFilters(filters: Partial<SearchFiltersParams>) {
+function getAppliedSerachFilters(filters: Partial<WatchFilters>) {
 
   const appliedSearchFilters = [];
 
