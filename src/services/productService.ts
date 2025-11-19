@@ -218,6 +218,13 @@ export async function getFilterPriceRange() {
       .from(products)
       .orderBy(desc(products.priceDkk))
       .limit(1);
+    
+    if (!lowest || !highest) {
+      return {
+        lowest: 0,
+        highest: 42069,
+      };
+    }
 
     return {
       lowest: lowest.priceDkk ?? 0,
