@@ -126,8 +126,8 @@ export const watchService = {
         .limit(1);
 
       return {
-        oldest: oldest.year ?? null,
-        newest: newest.year ?? null
+        oldest: oldest?.year ?? null,
+        newest: newest?.year ?? null
       }
     } catch (error) {
       console.error("(server) failed to get watch year filter range", error);
