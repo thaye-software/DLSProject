@@ -15,6 +15,13 @@
       "when": 1763405513670,
       "tag": "20251117185153_made-size-an-int-in-watches-table",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1763556672334,
+      "tag": "20251119125112_add-shippingPrice-to-orders",
+      "breakpoints": true
     }
   ]
 }

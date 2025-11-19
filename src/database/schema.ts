@@ -201,7 +201,14 @@ export const orders = pgTable(
     currencyId: uuid("currency_id")
       .references(() => currencies.id)
       .notNull(),
-
+    shippingPriceDkk: decimal("shipping_price_dkk", {
+      precision: 12,
+      scale: 2,
+    }).notNull().default("0"),
+    shippingPriceCurrency: decimal("shipping_price_currency", {
+      precision: 12,
+      scale: 2,
+    }).notNull().default("0"),
     totalPriceDkk: decimal("total_price_dkk", {
       precision: 12,
       scale: 2,
