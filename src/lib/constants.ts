@@ -31,11 +31,14 @@ const FUNCTION_OPTIONS = [
 
 ]
 
+const SHIPPING_PRICE_EUR = 50; // Flat rate shipping price in EUR
+
 const constants = {
   MOVEMENT_OPTIONS,
   GLASS_OPTIONS,
   BRACELET_OPTIONS,
   FUNCTION_OPTIONS,
+  SHIPPING_PRICE_EUR,
 };
 
 export default constants;

@@ -2,7 +2,10 @@
 
 import { z } from "zod";
 
-import { getLocalCurrencyString, getCurrencyByCode } from "@/services/currencyService";
+import {
+  getLocalCurrencyString,
+  getCurrencyByCode,
+} from "@/services/currencyService";
 import {
   deleteBillingAddress,
   saveBillingAddress,
@@ -174,15 +177,34 @@ export async function submitOrderDetails(
   }
 }
 
+export async function convertPriceAction(
+  priceInDkkInCents: number,
+  targetCountryCode: string
+) {
+  try {
+    const convertedPrice = await getLocalCurrencyString(
+      priceInDkkInCents,
+      targetCountryCode
+    );
+    return convertedPrice;
+  } catch (error) {
+    throw error;
+  }
+}
 
-export async function convertPriceAction(priceInDkkInCents: number, targetCountryCode: string) {
-    try {
-        const convertedPrice = await getLocalCurrencyString(priceInDkkInCents, targetCountryCode);
-        return convertedPrice;
-
-    } catch (error) {
-        throw error;
-    }
+// Convert an amount in EUR cents to DKK cents using the stored EUR exchange rate.
+export async function convertEuroToDkkCents(priceEurInCents: number) {
+  try {
+    const targetCurrencyCode = "EUR";
+    const { exchangeRate } = await getCurrencyByCode(targetCurrencyCode);
+    const rate = parseFloat(exchangeRate);
+    // convert euro cents to dkk cents: priceEurInCents / rate
+    const convertedPriceDkkCents = Math.round(priceEurInCents / rate);
+    return convertedPriceDkkCents;
+  } catch (error) {
+    console.error("convertEuroToDkkCents failed", error);
+    throw error;
+  }
 }
 
 export async function getAllCountriesNameAction(): Promise<string[]> {
