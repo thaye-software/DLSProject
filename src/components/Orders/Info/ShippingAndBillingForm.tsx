@@ -165,6 +165,7 @@ export default function ShippingAndBillingForm({
     data.saveBillingInfo = String(saveBillingInfo);
     data.shippingSameAsBilling = String(sameAsShipping);
     data.customerId = customerUpdated.id;
+    data.shippingPriceDkk = String(await convertEuroToDkk(constants.SHIPPING_PRICE_EUR * 100));
 
     const customerCountry = customerUpdated.country || null;
 
@@ -563,7 +564,8 @@ export default function ShippingAndBillingForm({
                           src={product.productImages[0].imageUrl || ""}
                           alt={product.name}
                           fill
-                          className="w-full h-full object-cover"
+                            className="w-full h-full object-cover"
+                            unoptimized
                         />
                       </div>
                       <div className="flex-1">

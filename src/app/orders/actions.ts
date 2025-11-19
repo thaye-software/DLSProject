@@ -52,6 +52,7 @@ export interface customerBillingDetails {
   shippingPostalCode: string | null;
   shippingCountry: string | null;
   shippingStateProvince: string | null;
+  shippingPriceDkk: string;
 
   saveBillingInfo: string;
   shippingSameAsBilling: string;
@@ -131,7 +132,9 @@ export async function submitOrderDetails(
     userId: formData.customerId,
     currencyId: billingAddressCountry?.currencyId || localeCurrency.id,
     status: "PROCESSING",
-    totalPriceDkk: String(product.priceDkk), // In cents
+    shippingPriceDkk: formData.shippingPriceDkk,
+    totalPriceDkk: String(product.priceDkk + parseInt(formData.shippingPriceDkk)),
+
 
     //todo might just refactor this to use billingaddress
     totalPriceCurrency:
@@ -140,10 +143,6 @@ export async function submitOrderDetails(
             Math.round(product.priceDkk * Number(localeCurrency.exchangeRate))
           ) // In cents
         : String(Math.round(product.priceDkk * country.currency.exchangeRate)), // In cents
-    deliveryAddressId: undefined,
-    billingAddressId: undefined,
-    createdAt: undefined, // this will be populated in db
-
     productId: product.id,
   };
 
