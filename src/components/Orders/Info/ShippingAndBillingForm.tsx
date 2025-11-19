@@ -25,12 +25,8 @@ import {
 
 import { getProductBySlug } from "@/services/productService";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  convertPriceAction,
-  convertEuroToDkkCents,
-} from "@/app/orders/actions";
+import { convertEuroToDkk } from "@/app/orders/actions";
 
-import { watch } from "fs";
 import { toast } from "sonner";
 
 import ProgressSteps from "@/components/Orders/Info/ProgressSteps";
@@ -39,57 +35,6 @@ import BackButton from "@/components/BackButton";
 
 import constants from "@/lib/constants";
 import { getLocalCurrencyString } from "@/services/currencyService";
-
-// export const shippingAndBillingForm = z.object({
-// 	firstName: z.string().nonempty("Your first name is required"),
-// 	middleName: z.string().optional(),
-// 	lastName: z.string().nonempty("Your last name is required"),
-
-// 	email: z.email().nonempty("Your email is required"),
-// 	phone: z.string().optional().refine((val) => !val || /^[+\d\s-]{6,20}$/.test(val), {
-// 		message: "Invalid phone number format",
-// 	}),
-
-// 	address: z.string().nonempty("Your address is required"),
-// 	city: z.string().nonempty("Your city is required"),
-// 	postalCode: z.string().nonempty("Your postal code is required"),
-// 	country: z.string().nonempty("Your country is required"),
-
-// 	// shipping
-// 	shippingFirstName: z.string().optional(),
-// 	shippingMiddleName: z.string().optional(),
-// 	shippingLastName: z.string().optional(),
-// 	shippingAddress: z.string().optional(),
-// 	shippingCity: z.string().optional(),
-// 	shippingPostalCode: z.string().optional(),
-// 	shippingCountry: z.string().optional(),
-// })
-
-// const form = useForm<z.infer<typeof shippingAndBillingForm>>({
-// 	resolver: zodResolver(shippingAndBillingForm),
-// 	defaultValues: {
-// 		firstName: "bobo",
-// 		middleName: "",
-// 		lastName: "",
-
-// 		email: "",
-// 		phone: "",
-
-// 		address: "",
-// 		city: "",
-// 		postalCode: "",
-// 		country: "",
-
-// 		// shipping
-// 		shippingFirstName: "",
-// 		shippingMiddleName:"",
-// 		shippingLastName: "",
-// 		shippingAddress: "",
-// 		shippingCity: "",
-// 		shippingPostalCode: "",
-// 		shippingCountry: "",
-// 	}
-// })
 
 export default function ShippingAndBillingForm({
   customer,
@@ -111,10 +56,7 @@ export default function ShippingAndBillingForm({
   const [product, setProduct] = useState<Product | null>(null);
   const [formattedPrice, setFormattedPrice] = useState<string>("");
   const [formattedTax, setFormattedTax] = useState<string>("");
-  const [formattedShipping, setFormattedShipping] = useState<string>(
-    constants.SHIPPING_PRICE_EUR.toString()
-  );
-  const [shippingPriceDkkCents, setShippingPriceDkkCents] = useState<number>(0);
+  const [formattedShipping, setFormattedShipping] = useState<string>("");
   const [formattedTotal, setFormattedTotal] = useState<string>("");
   const [countries, setCountries] = useState<string[]>([]);
 
@@ -163,7 +105,7 @@ export default function ShippingAndBillingForm({
             `(Client) ${product.watch.brand.name} ${product.watch.model} is out of stock`
           );
 
-        const formattedPrice = await convertPriceAction(
+        const formattedPrice = await getLocalCurrencyString(
           product.priceDkk,
           customerGeoLocation
         );
@@ -172,55 +114,32 @@ export default function ShippingAndBillingForm({
         const taxValue = Math.round(
           (product.priceDkk * (product.watch.vat as number)) / 100
         );
-        const formattedTaxValue = await convertPriceAction(
+        const formattedTaxValue = await getLocalCurrencyString(
           taxValue,
           customerGeoLocation
         );
         setFormattedTax(formattedTaxValue);
-        const customerLocation = customerGeoLocation;
-        if (customerLocation === "DK") {
-          // Convert the flat EUR shipping (in EUR) to DKK cents and format
-          const shippingDkkCents = await convertEuroToDkkCents(
-            constants.SHIPPING_PRICE_EUR * 100
-          );
-          setShippingPriceDkkCents(shippingDkkCents);
-          const formattedShip = await convertPriceAction(
-            shippingDkkCents,
-            customerGeoLocation
-          );
-          setFormattedShipping(formattedShip);
-        }
-        // default shipping for non-DK customers: show EUR amount formatted
-        if (customerLocation !== "DK") {
-          // shippingPriceDkkCents remains 0; we'll convert EUR shipping to DKK cents for total below
-          const shippingCurrencyString = await getLocalCurrencyString(
-            await convertEuroToDkkCents(constants.SHIPPING_PRICE_EUR * 100),
-            customerGeoLocation
-          );
-          setFormattedShipping(shippingCurrencyString);
-        }
 
-        // Set product and compute total (if shipping price known)
+        // we need to convert shipping cost from EUR to DKK for total calculation
+        const shippingDkk = await convertEuroToDkk(constants.SHIPPING_PRICE_EUR * 100);
+        // Set formatted shipping display based on location
+        const formattedShipping = await getLocalCurrencyString(
+          shippingDkk,
+          customerGeoLocation
+        );
+        setFormattedShipping(formattedShipping);
+
         setProduct(product);
-
-        // Compute total if we can determine shipping in DKK cents
-        // If shippingPriceDkkCents is 0 (not yet converted), attempt conversion for total
+        // Calculate total price
         try {
-          let shippingCents = shippingPriceDkkCents;
-          if (!shippingCents) {
-            // Convert EUR shipping to DKK cents regardless of customer country so we can add totals in DKK
-            shippingCents = await convertEuroToDkkCents(
-              constants.SHIPPING_PRICE_EUR * 100
-            );
-            setShippingPriceDkkCents(shippingCents);
-          }
-
-          const totalCents = product.priceDkk + shippingCents;
-          const formattedTotalPrice = await convertPriceAction(
-            totalCents,
+          const shippingDkk = await convertEuroToDkk(constants.SHIPPING_PRICE_EUR * 100)
+          const total = product.priceDkk + shippingDkk;
+          const formattedTotalPrice = await getLocalCurrencyString(
+            total,
             customerGeoLocation
           );
           setFormattedTotal(formattedTotalPrice);
+
         } catch (err) {
           console.warn("Could not compute total price at fetch time", err);
         }

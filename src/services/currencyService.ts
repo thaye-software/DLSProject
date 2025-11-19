@@ -97,18 +97,17 @@ export async function convertEuroToDkk(priceEurInCents: number) {
     const rate = parseFloat(exchangeRate);
     
     const convertedPriceDkk = (priceEurInCents / rate);
-    return new Intl.NumberFormat("da-DK", {
-      style: "currency",
-      currency: "DKK",
-    }).format(convertedPriceDkk / 100);
+    return convertedPriceDkk;
+    // return new Intl.NumberFormat("da-DK", {
+    //   style: "currency",
+    //   currency: "DKK",
+    // }).format(convertedPriceDkk / 100);
 
   } catch (error) {
     console.error("(Server) Error getting exchange rate", error);
     throw error;
   }
 }
-
-
 
 export async function getLocalCurrencyString(priceDkkInCents: number, targetCountryCode: string) {
   const country = targetCountryCode.toUpperCase();
