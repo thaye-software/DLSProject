@@ -101,8 +101,8 @@ export const watchService = {
         .limit(1);
 
       return {
-        smallest: smallest.size ?? 23,
-        largest: largest.size ?? 52
+        smallest: smallest?.size ?? 23,
+        largest: largest?.size ?? 52
       }
       
     } catch (error) {
