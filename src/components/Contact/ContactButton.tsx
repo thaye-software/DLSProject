@@ -15,7 +15,11 @@ export default function ContactButton({ productId }: { productId?: string }) {
       redirect("/login");
     }
     if (productId) {
-      const newConversation = await createConversation(user.id, productId);
+      const conversationToCreate = {
+        customerId: user.id,
+        productId: productId,
+      };
+      const newConversation = await createConversation(conversationToCreate);
       setInitialConversation(newConversation);
       setChatOpen(true);
     }

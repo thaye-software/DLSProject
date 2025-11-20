@@ -84,7 +84,7 @@ export type NewAuctionModel = InferInsertModel<typeof auctions>;
 
 export type ConversationModel = InferSelectModel<typeof conversations> & {
   messages: MessageModel[];
-  user: UserModel;
+  product: ProductModel;
 };
 export type NewConversationModel = InferInsertModel<typeof conversations>;
 
