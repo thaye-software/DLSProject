@@ -95,6 +95,8 @@ jobs:
                     stripe_public_key=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}}
                     resend_key=${{ secrets.RESEND_API_KEY}}
                     resend_origin_email_key=${{ secrets.RESEND_ORIGIN_EMAIL }}
+                    posthog_key=${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
+                    posthog_host=${{ secrets.NEXT_PUBLIC_POSTHOG_HOST }}
 
 
             - name: (Prod) Build and push image (with registry cache)
