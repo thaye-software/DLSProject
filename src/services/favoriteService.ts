@@ -29,7 +29,7 @@ export async function getUserFavorites(userId: string): Promise<Omit<FavoriteMod
   }
 }
 
-export async function isFavorite(userId: string, productId: string) {
+export async function isFavorite(userId: string, productId: string): Promise<boolean> {
   const favorite =  await db.query.favorites.findFirst({
     where: and(
       eq(favorites.userId, userId),
@@ -39,7 +39,7 @@ export async function isFavorite(userId: string, productId: string) {
   return !!favorite;
 }
 
-export async function handleFavoriteToggle(userId: string, productId: string) {
+export async function handleFavoriteToggle(userId: string, productId: string): Promise<void> {
   const isFavorite = await db.query.favorites.findFirst({
     where: and(
       eq(favorites.userId, userId),
@@ -54,15 +54,14 @@ export async function handleFavoriteToggle(userId: string, productId: string) {
 }
 
 // Helper functions for handleFavoriteToggle
-async function addFavorite(userId: string, productId: string) {
+async function addFavorite(userId: string, productId: string): Promise<void> {
 
-  console.log("Adding favorite:", { userId, productId });
-  return await db.insert(favorites).values({ userId, productId });
+  await db.insert(favorites).values({ userId, productId });
 }
 
-async function removeFavorite(userId: string, productId: string) {
+async function removeFavorite(userId: string, productId: string): Promise<void> {
 
-  return await db.delete(favorites)
+  await db.delete(favorites)
     .where(
       and(
         (eq(favorites.userId, userId), eq(favorites.productId, productId))
