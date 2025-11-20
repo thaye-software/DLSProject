@@ -6,8 +6,10 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/database/supabase/server";
 import { RegisterSchema, LoginSchema } from "./validation";
 import { createUser } from "@/services/userService";
+import posthog from "posthog-js";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+
 
 export type RegisterFormState = {
   fieldErrors?: Partial<Record<"username" | "email" | "password", string>>;
