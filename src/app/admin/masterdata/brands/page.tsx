@@ -1,14 +1,10 @@
-import { AddBrandDialog } from "@/components/Admin/AddBrandDialog";
 import { BrandTable } from "@/components/Admin/BrandTable";
-import { Button } from "@/components/ui/button";
-import { BrandModel } from "@/database/types";
-import { brandService } from "@/services/brandService";
+import { getAllBrands } from "@/services/brandService";
 import { getAllProducts } from "@/services/productService";
-import Link from "next/link";
 
 export default async function BrandsPage() {
-  const initialBrands = (await brandService.getAllBrands()) || [];
-  const initialProducts = (await getAllProducts()) || [];
+  const initialBrands = await getAllBrands() || [];
+  const initialProducts = await getAllProducts() || [];
 
   return (
     <div>

@@ -1,15 +1,16 @@
 "use server";
-import { brandService } from "@/services/brandService";
+import { BrandModel } from "@/database/types";
+import { createBrand, editBrand, getAllBrands } from "@/services/brandService";
 import { revalidatePath } from "next/cache";
 
 export async function getBrands() {
-  return await brandService.getAllBrands();
+  return await getAllBrands();
 }
 
-export async function createBrand(formData: FormData): Promise<any> {
+export async function createNewBrand(formData: FormData): Promise<BrandModel> {
   const newBrand = Object.fromEntries(formData);
   try {
-    const res = await brandService.createBrand(newBrand as any);
+    const res = await createBrand(newBrand as any);
     revalidatePath("/admin/masterdata/brands");
     return res;
   } catch (err) {
@@ -18,11 +19,11 @@ export async function createBrand(formData: FormData): Promise<any> {
   }
 }
 
-export async function updateBrand(formData: FormData): Promise<any> {
+export async function updateBrand(formData: FormData): Promise<BrandModel> {
   const updatedBrand = Object.fromEntries(formData);
   const brandId = updatedBrand.id as string;
   try {
-    const res = await brandService.editBrand(brandId, updatedBrand as any);
+    const res = await editBrand(brandId, updatedBrand as any);
     revalidatePath("/admin/masterdata/brands");
     return res;
   } catch (err) {
