@@ -16,7 +16,7 @@ import BackButton from '@/components/BackButton'
 //view all transaction at this link: https://dashboard.stripe.com/acct_1SKHlN6xjyBvX39o/test/payments
 export default async function PaymentPage({ searchParams }: { searchParams: { orderId?: string; } }) {
 	
-  const { orderId } = await searchParams
+  const { orderId } = await searchParams;
 	if(!orderId) {
 		return(
 			<div>
@@ -41,16 +41,20 @@ export default async function PaymentPage({ searchParams }: { searchParams: { or
 				}}/>
 			</div>
 		)
-	}
+  }
+  console.log("found order item in payment page:", foundOrderItem);
 	const productImageSrc = foundOrderItem?.product.productImages[0].imageUrl;
 	const productName = foundOrderItem?.product.watch.brand.name + " " + foundOrderItem?.product.watch.model;
 	
-	const amount = foundOrderItem?.order.totalPriceDkk;
+  const shippingAmount = foundOrderItem?.order.shippingPriceDkk;
+	const totalAmount = foundOrderItem?.order.totalPriceDkk;
   const targetCurrencyCode = foundOrderItem?.order.currency.code;
-  const displayAmount = await getLocalCurrencyString(Number(amount), targetCurrencyCode as string);
+  const displayAmount = await getLocalCurrencyString(Number(foundOrderItem?.product.priceDkk), targetCurrencyCode as string);
+  const displayTotalAmount = await getLocalCurrencyString(Number(totalAmount), targetCurrencyCode as string);
+  const displayShippingAmount = await getLocalCurrencyString(Number(shippingAmount), targetCurrencyCode as string);
 	
 	
-  const stripeAmountToBePaid = Number(amount);
+  const stripeAmountToBePaid = Number(totalAmount);
   if (!stripe) throw new Error('Stripe not available');
   const paymentIntent = await stripe.paymentIntents.create({
     amount: stripeAmountToBePaid,
@@ -92,7 +96,8 @@ export default async function PaymentPage({ searchParams }: { searchParams: { or
 											src={productImageSrc || ""}
 											alt={productName}
 											fill
-											className="w-full h-full object-cover"
+                      className="w-full h-full object-cover"
+                      unoptimized
 										/>
                   </div>
                   <div className="flex-1">
@@ -114,7 +119,7 @@ export default async function PaymentPage({ searchParams }: { searchParams: { or
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Shipping</span>
-                    <span className="text-foreground">Free</span>
+                    <span className="text-foreground">{displayShippingAmount}</span>
                   </div>
                 </div>
 
@@ -123,7 +128,7 @@ export default async function PaymentPage({ searchParams }: { searchParams: { or
                 <div className="flex justify-between text-lg font-semibold">
                   <span className="text-foreground">Total</span>
                   <span className="text-foreground">
-                    {displayAmount}
+                    {displayTotalAmount}
                   </span>
                 </div>
 								<p>Todo show tax or no?</p>

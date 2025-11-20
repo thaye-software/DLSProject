@@ -110,7 +110,7 @@ export async function getUserByEmail(email: string) {
   }
 }
 
-export async function getCostumerInfoByEmail(email: string): Promise<CustomerInfo | undefined> {
+export async function getCustomerInfoByEmail(email: string): Promise<CustomerInfo | undefined> {
   try {
     // Get user with country and currency info
     const customerInfo = await db.query.users.findFirst({

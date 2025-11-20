@@ -4,7 +4,7 @@ import { SearchParams } from "next/dist/server/request/search-params";
 import ToastWrapper from "@/components/Toast/ToastWrapper";
 import ShippingAndBillingForm from "@/components/Orders/Info/ShippingAndBillingForm";
 
-import { getCostumerInfoByEmail } from "@/services/userService";
+import { getCustomerInfoByEmail } from "@/services/userService";
 
 import { getSignedInUser, getUserLocation } from "@/lib/utils/server/utils";
 import { Suspense } from "react";
@@ -33,7 +33,7 @@ export default async function OrdersInfoPage({
     );
   }
 
-  const customer = await getCostumerInfoByEmail(user.email as string);
+  const customer = await getCustomerInfoByEmail(user.email as string);
   if (!customer) {
     state.message = "Something went wrong when signing in, try again later...";
     state.redirectUrl = "/";

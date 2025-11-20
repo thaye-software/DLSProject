@@ -16,8 +16,9 @@ export async function getOrderItemByOrderId(orderId: string) {
             with: {
                 order: {
                     columns: {
-                        totalPriceDkk: true,
-                        createdAt: true,
+                    totalPriceDkk: true,
+                    shippingPriceDkk: true,
+                    createdAt: true,
                     },
                     with: {
                         user: {
@@ -40,8 +41,7 @@ export async function getOrderItemByOrderId(orderId: string) {
                     }
                 },
                 product: {
-                    columns: { },
-                    with: {
+                  with: {
                         productImages: true,
                         watch: {
                             columns: {

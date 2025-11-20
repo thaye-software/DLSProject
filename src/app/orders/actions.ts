@@ -2,7 +2,10 @@
 
 import { z } from "zod";
 
-import { getLocalCurrencyString, getCurrencyByCode } from "@/services/currencyService";
+import {
+  getLocalCurrencyString,
+  getCurrencyByCode,
+} from "@/services/currencyService";
 import {
   deleteBillingAddress,
   saveBillingAddress,
@@ -49,6 +52,7 @@ export interface customerBillingDetails {
   shippingPostalCode: string | null;
   shippingCountry: string | null;
   shippingStateProvince: string | null;
+  shippingPriceDkk: string;
 
   saveBillingInfo: string;
   shippingSameAsBilling: string;
@@ -104,7 +108,7 @@ export async function submitOrderDetails(
     stateProvince: formData?.stateProvince,
   };
 
-  const shippingAddress: Address = {
+  let shippingAddress: Address = {
     userId: formData.customerId,
     firstName: formData.shippingFirstName as string,
     middleName: formData.shippingMiddleName as string,
@@ -128,7 +132,9 @@ export async function submitOrderDetails(
     userId: formData.customerId,
     currencyId: billingAddressCountry?.currencyId || localeCurrency.id,
     status: "PROCESSING",
-    totalPriceDkk: String(product.priceDkk), // In cents
+    shippingPriceDkk: formData.shippingPriceDkk,
+    totalPriceDkk: String(product.priceDkk + parseInt(formData.shippingPriceDkk)),
+
 
     //todo might just refactor this to use billingaddress
     totalPriceCurrency:
@@ -137,10 +143,6 @@ export async function submitOrderDetails(
             Math.round(product.priceDkk * Number(localeCurrency.exchangeRate))
           ) // In cents
         : String(Math.round(product.priceDkk * country.currency.exchangeRate)), // In cents
-    deliveryAddressId: undefined,
-    billingAddressId: undefined,
-    createdAt: undefined, // this will be populated in db
-
     productId: product.id,
   };
 
@@ -167,34 +169,40 @@ export async function submitOrderDetails(
       return createdOrderId;
     }
 
-    const createdOrderId = await createOrder(orderDetails, billingAddress);
+    // if shipping is same as billing
+    shippingAddress = billingAddress;
+    const createdOrderId = await createOrder(orderDetails, billingAddress, shippingAddress);
     return createdOrderId;
   } catch (error) {
     throw error;
   }
 }
 
-
-export async function convertPriceAction(priceInDkkInCents: number, targetCountryCode: string) {
-    try {
-        const convertedPrice = await getLocalCurrencyString(priceInDkkInCents, targetCountryCode);
-        return convertedPrice;
-
-    } catch (error) {
-        throw error;
-    }
-}
-
-export async function getAllCountriesNameAction(): Promise<string[]> {
+// Convert an amount in EUR cents to DKK cents using the stored EUR exchange rate.
+export async function convertEuroToDkk(priceEur: number) {
   try {
-    const allCountries = await getAllCountries();
-
-    const countryNames = allCountries.map((country) => country.name);
-    return countryNames;
+    const targetCurrencyCode = "EUR";
+    const { exchangeRate } = await getCurrencyByCode(targetCurrencyCode);
+    const rate = parseFloat(exchangeRate);
+    // convert euro cents to dkk cents: priceEurInCents / rate
+    const convertedPriceDkk = Math.round(priceEur / rate);
+    return convertedPriceDkk;
   } catch (error) {
+    console.error("convertEuroToDkkCents failed", error);
     throw error;
   }
 }
+
+// export async function getAllCountriesNameAction(): Promise<string[]> {
+//   try {
+//     const allCountries = await getAllCountries();
+
+//     const countryNames = allCountries.map((country) => country.name);
+//     return countryNames;
+//   } catch (error) {
+//     throw error;
+//   }
+// }
 
 export async function sendOrderConfirmationEmail(
   customerEmail: string,
@@ -376,18 +384,6 @@ export async function sendOrderConfirmationEmail(
   } catch (error) {
     console.error("Email send failed:", error);
     return false;
-  }
-}
-
-export async function getCustomerByIdAction(customerUuid: string) {
-  try {
-    const foundCustomer = await getUserById(customerUuid);
-
-    const fittedCustomer = {};
-
-    return foundCustomer;
-  } catch (error) {
-    throw error;
   }
 }
 

@@ -14,9 +14,6 @@ import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { baseUrl } from "@/lib/tailwindUtils"
 
-
-
-
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
 function PaymentForm({ orderId }: { orderId: string }) {
@@ -41,6 +38,8 @@ function PaymentForm({ orderId }: { orderId: string }) {
         return_url: `${baseUrl}/orders/checkouttwo/success?orderId=${orderId}`,
       },
     })
+
+    console.log("THIS STILL RUNS AFTER CONFIRM PAYMENT");
 
     if (error) {
       setMessage(error.message || "An unexpected error occurred.")
@@ -92,9 +91,9 @@ export default function CheckoutForm({
   const appearance = {
     theme: 'stripe' as const,
     variables: {
-      colorPrimary: '#0f172a',
+      colorPrimary: '#ffffff',
       colorBackground: '#ffffff',
-      colorText: '#0f172a',
+      colorText: '#ffffff',
       colorDanger: '#df1b41',
       fontFamily: 'system-ui, sans-serif',
       spacingUnit: '4px',
@@ -103,7 +102,7 @@ export default function CheckoutForm({
   }
 
   return (
-    <Elements stripe={stripePromise} options={{ appearance, clientSecret }}>
+    <Elements stripe={stripePromise} options={{ clientSecret }}>
       <PaymentForm orderId={orderId} />
     </Elements>
   )
