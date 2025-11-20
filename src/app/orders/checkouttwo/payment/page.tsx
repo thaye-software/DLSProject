@@ -96,7 +96,8 @@ export default async function PaymentPage({ searchParams }: { searchParams: { or
 											src={productImageSrc || ""}
 											alt={productName}
 											fill
-											className="w-full h-full object-cover"
+                      className="w-full h-full object-cover"
+                      unoptimized
 										/>
                   </div>
                   <div className="flex-1">

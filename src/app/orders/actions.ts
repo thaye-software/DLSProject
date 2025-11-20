@@ -108,7 +108,7 @@ export async function submitOrderDetails(
     stateProvince: formData?.stateProvince,
   };
 
-  const shippingAddress: Address = {
+  let shippingAddress: Address = {
     userId: formData.customerId,
     firstName: formData.shippingFirstName as string,
     middleName: formData.shippingMiddleName as string,
@@ -169,7 +169,9 @@ export async function submitOrderDetails(
       return createdOrderId;
     }
 
-    const createdOrderId = await createOrder(orderDetails, billingAddress);
+    // if shipping is same as billing
+    shippingAddress = billingAddress;
+    const createdOrderId = await createOrder(orderDetails, billingAddress, shippingAddress);
     return createdOrderId;
   } catch (error) {
     throw error;

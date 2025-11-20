@@ -14,9 +14,6 @@ import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { baseUrl } from "@/lib/tailwindUtils"
 
-
-
-
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
 function PaymentForm({ orderId }: { orderId: string }) {
@@ -41,6 +38,8 @@ function PaymentForm({ orderId }: { orderId: string }) {
         return_url: `${baseUrl}/orders/checkouttwo/success?orderId=${orderId}`,
       },
     })
+
+    console.log("THIS STILL RUNS AFTER CONFIRM PAYMENT");
 
     if (error) {
       setMessage(error.message || "An unexpected error occurred.")
