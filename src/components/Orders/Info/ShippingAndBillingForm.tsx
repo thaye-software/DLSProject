@@ -13,13 +13,11 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { CustomerInfo } from "@/services/userService";
+import { CustomerInfo, getUserById } from "@/services/userService";
 import ToastWrapper from "@/components/Toast/ToastWrapper";
 
 import { Product } from "@/app/watches/type";
 import {
-  getAllCountriesNameAction,
-  getCustomerByIdAction,
   submitOrderDetails,
 } from "@/app/orders/actions";
 
@@ -35,6 +33,8 @@ import BackButton from "@/components/BackButton";
 
 import constants from "@/lib/constants";
 import { getLocalCurrencyString } from "@/services/currencyService";
+import { getAllCountries } from "@/services/countryServive";
+import { CountryModel } from "@/database/types";
 
 export default function ShippingAndBillingForm({
   customer,
@@ -82,14 +82,15 @@ export default function ShippingAndBillingForm({
       setIsLoading(false);
     }
 
-    async function getAllCountries() {
-      const allCountries = await getAllCountriesNameAction();
-      setCountries(allCountries);
+    async function getCountries() {
+      const allCountries: CountryModel[] = await getAllCountries();
+      const countryNames = allCountries.map((country) => country.name);
+      setCountries(countryNames);
     }
-    getAllCountries();
+    getCountries();
 
     async function updateCustomerInfo() {
-      const mostUpdatedCustomer = await getCustomerByIdAction(
+      const mostUpdatedCustomer = await getUserById(
         customerUpdated.id
       );
       setCustomerUpdated(mostUpdatedCustomer as CustomerInfo);

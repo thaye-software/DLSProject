@@ -178,21 +178,6 @@ export async function submitOrderDetails(
   }
 }
 
-// export async function convertPriceAction(
-//   priceInDkkInCents: number,
-//   targetCountryCode: string
-// ) {
-//   try {
-//     const convertedPrice = await getLocalCurrencyString(
-//       priceInDkkInCents,
-//       targetCountryCode
-//     );
-//     return convertedPrice;
-//   } catch (error) {
-//     throw error;
-//   }
-// }
-
 // Convert an amount in EUR cents to DKK cents using the stored EUR exchange rate.
 export async function convertEuroToDkk(priceEur: number) {
   try {
@@ -208,16 +193,16 @@ export async function convertEuroToDkk(priceEur: number) {
   }
 }
 
-export async function getAllCountriesNameAction(): Promise<string[]> {
-  try {
-    const allCountries = await getAllCountries();
+// export async function getAllCountriesNameAction(): Promise<string[]> {
+//   try {
+//     const allCountries = await getAllCountries();
 
-    const countryNames = allCountries.map((country) => country.name);
-    return countryNames;
-  } catch (error) {
-    throw error;
-  }
-}
+//     const countryNames = allCountries.map((country) => country.name);
+//     return countryNames;
+//   } catch (error) {
+//     throw error;
+//   }
+// }
 
 export async function sendOrderConfirmationEmail(
   customerEmail: string,
@@ -399,18 +384,6 @@ export async function sendOrderConfirmationEmail(
   } catch (error) {
     console.error("Email send failed:", error);
     return false;
-  }
-}
-
-export async function getCustomerByIdAction(customerUuid: string) {
-  try {
-    const foundCustomer = await getUserById(customerUuid);
-
-    const fittedCustomer = {};
-
-    return foundCustomer;
-  } catch (error) {
-    throw error;
   }
 }
 
