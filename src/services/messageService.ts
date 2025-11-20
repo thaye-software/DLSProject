@@ -2,7 +2,6 @@
 
 import { db } from "@/database/drizzle";
 import { messages } from "@/database/schema";
-import { ChatMessage } from "@/hooks/use-realtime-chat";
 import { and, eq, ne } from "drizzle-orm";
 
 export type PersistableMessage = {
@@ -14,7 +13,7 @@ export type PersistableMessage = {
   createdAt?: string | Date;
 };
 
-export async function persistMessage(message: PersistableMessage) {
+export async function persistMessage(message: PersistableMessage): Promise<any> {
   // ensure types align with the DB schema
   console.log("Persisting message:", message);
   const insertResult = await db.insert(messages).values({
@@ -31,8 +30,7 @@ export async function persistMessage(message: PersistableMessage) {
 export async function markAsRead(
   conversationId: string,
   userId: string
-) {
-  console.log("Marking messages as read for conversation:", conversationId, "and user:", userId);
+): Promise<void> {
   try {
     await db
       .update(messages)

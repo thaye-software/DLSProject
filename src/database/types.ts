@@ -104,6 +104,5 @@ export type FavoriteModel = InferSelectModel<typeof favorites> & {
 export type NewFavoriteModel = InferInsertModel<typeof favorites>;
 
 
-
 // Import the specific types directly, e.g.:
-// import { WatchModel, NewWatch } from "~/src/database/types";
+// import { WatchModel, NewWatchModel } from "~/src/database/types";
