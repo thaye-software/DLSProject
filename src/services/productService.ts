@@ -10,8 +10,6 @@ import { WatchFilters } from "@/components/Watches/Filters/ProductFilterSheet";
 
 type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-
-
 export async function getProductBySlug(
   watchSlug: string
 ): Promise<Product | null> {
@@ -52,7 +50,15 @@ export async function getProductById(id: string, tx?: DbTransaction): Promise<Pr
   try {
     const dbContext = tx || db;
     const foundProduct = await dbContext.query.products.findFirst({
-      where: eq(products.id, id)
+      where: eq(products.id, id),
+      with: {
+        productImages: true,
+        watch: {
+          with: {
+            brand: true
+          }
+        }
+      }
     });
     return foundProduct;
 

@@ -6,20 +6,7 @@ import { eq } from "drizzle-orm";
 import { getUserById } from "./userService";
 import { CountryModel } from "@/database/types";
 
-export interface Country {
-    id: string;
-    name: string;
-    abbreviation: string;
-    currency: {
-        id: number;
-        code: string;
-        exchangeRate: number;
-        isActive: boolean;
-        updatedAt: Date | string;
-    } 
-}
-
-export default async function getCountryByName(name: string): Promise<CountryModel | null> {
+export default async function getCountryByName(name: string): Promise<Omit<CountryModel, "currency"> | null> {
     try {
         const foundCountry = await db.query.countries.findFirst({
             where: eq(countries.name, name)

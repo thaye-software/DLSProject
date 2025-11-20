@@ -7,8 +7,6 @@ import { Suspense } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { getUserLocation } from "@/lib/utils/server/utils";
 import { ProductFilterSheet } from "@/components/Watches/Filters/ProductFilterSheet";
-
-import { brandService } from "@/services/brandService"
 import { getFilterPriceRange } from "@/services/productService";
 import { convertCurrency } from "@/services/currencyService";
 import { watchService } from "@/services/watchService";
