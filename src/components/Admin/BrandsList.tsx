@@ -1,11 +1,11 @@
 import { BrandModel } from "@/database/types";
-import { brandService } from "@/services/brandService";
+import { getAllBrands } from "@/services/brandService";
 
 export default async function BrandsList() {
 
   // hmm 1
   async function getBrands() {
-    return (await brandService.getAllBrands()) || [];
+    return (await getAllBrands()) || [];
   }
   // hmm 2 lul
   const brands = await getBrands();

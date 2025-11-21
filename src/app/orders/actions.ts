@@ -18,9 +18,7 @@ import {
 import getCountryByName, {
   saveCustomerCountry,
   deleteCustomerCountry,
-  getAllCountries,
-  Country,
-} from "@/services/countryServive";
+} from "@/services/countryService";
 
 import { getUserLocation } from "@/lib/utils/server/utils";
 import { resend, originEmail } from "@/lib/resend/resend";
@@ -28,6 +26,7 @@ import { resend, originEmail } from "@/lib/resend/resend";
 import { OrderStatus } from "./type";
 import { Product } from "../watches/type";
 import { createOrder } from "@/services/orderService";
+import { CountryModel } from "@/database/types";
 
 // import shippingAndBillingForm from "@/components/Orders/Info/ShippingAndBillingForm"
 // z.infer<typeof shippingAndBillingForm>
@@ -82,7 +81,7 @@ export interface CustomerNameAndPhone {
 export async function submitOrderDetails(
   formData: customerBillingDetails,
   product: Product,
-  country: Country
+  country: CountryModel
 ) {
   const userGeoLocationData = await getUserLocation();
   let currencyCode = userGeoLocationData.currency.toUpperCase();
@@ -142,7 +141,7 @@ export async function submitOrderDetails(
         ? String(
             Math.round(product.priceDkk * Number(localeCurrency.exchangeRate))
           ) // In cents
-        : String(Math.round(product.priceDkk * country.currency.exchangeRate)), // In cents
+        : String(Math.round(product.priceDkk * parseInt(country.currency.exchangeRate))), // In cents
     productId: product.id,
   };
 

@@ -33,7 +33,7 @@ import BackButton from "@/components/BackButton";
 
 import constants from "@/lib/constants";
 import { getLocalCurrencyString } from "@/services/currencyService";
-import { getAllCountries } from "@/services/countryServive";
+import { getAllCountries } from "@/services/countryService";
 import { CountryModel } from "@/database/types";
 
 export default function ShippingAndBillingForm({

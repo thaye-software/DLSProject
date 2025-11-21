@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  createBrand,
+  createNewBrand,
   updateBrand,
 } from "@/app/admin/masterdata/brands/actions";
 
@@ -24,7 +24,6 @@ export function AddBrandDialog({
   onCreated?: (created: any) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [brand, setBrand] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -33,8 +32,8 @@ export function AddBrandDialog({
     try {
       const form = e.currentTarget;
       const formData = new FormData(form);
-      const res = await createBrand(formData); // server action call
-      const created = res?.data ?? res;
+      const res = await createNewBrand(formData); // server action call
+      const created = res;
       if (onCreated) onCreated(created);
       setOpen(false);
     } catch (err) {

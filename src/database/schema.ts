@@ -126,14 +126,14 @@ export const favorites = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    watchId: uuid("watch_id")
+    productId: uuid("product_id")
       .notNull()
-      .references(() => watches.id, { onDelete: "cascade" }),
+      .references(() => products.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [
     index("idx_favorites_user_id").on(table.userId),
-    index("idx_favorites_watch_id").on(table.watchId),
+    index("idx_favorites_product_id").on(table.productId),
   ]
 );
 
@@ -570,8 +570,8 @@ export const favoritesRelations = relations(favorites, ({ one }) => ({
     fields: [favorites.userId],
     references: [users.id],
   }),
-  watch: one(watches, {
-    fields: [favorites.watchId],
-    references: [watches.id],
+  product: one(products, {
+    fields: [favorites.productId],
+    references: [products.id],
   }),
 }));

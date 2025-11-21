@@ -7,7 +7,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { getUserLocation } from "@/lib/utils/server/utils";
 import { ProductFilterSheet, WatchFilters } from "@/components/Watches/Filters/ProductFilterSheet";
 
-import { brandService } from "@/services/brandService"
+import { getAllBrands } from "@/services/brandService"
 import { getFilterPriceRange } from "@/services/productService";
 import { convertCurrency } from "@/services/currencyService";
 import { watchService } from "@/services/watchService";
@@ -65,7 +65,7 @@ export default async function FilterdWatches({searchParams}: {searchParams: Sear
 //------------------------------------------- helper functions -------------------------------------------
   
 export async function getFilterRanges(localCurrencyCode: string): Promise<WatchFilters> {
-  const allBrands = await brandService.getAllBrands();
+  const allBrands = await getAllBrands();
   const allBrandNames = allBrands.map((brand) => brand.name);
   
   const filterPriceRange = await getFilterPriceRange();

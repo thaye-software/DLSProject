@@ -2,40 +2,56 @@
 
 import { db } from "@/database/drizzle";
 import { conversations } from "@/database/schema";
-import { and, desc, eq, or } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
+import { ConversationModel, NewConversationModel, ProductModel } from "@/database/types";
 
-export async function getConversations(userId: string, role: string) {
-  let conversationsResult;
-
-  if (role === "admin") {
-    conversationsResult = await getAllConversations();
-  } else {
-    conversationsResult = await getConversationsByCustomerId(userId);
+export async function getConversations(userId: string, role: string): Promise<ConversationModel[]> {
+  try {
+    let conversationsResult;
+    
+    if (role === "admin") {
+      conversationsResult = await getAllConversations();
+    } else {
+      conversationsResult = await getConversationsByCustomerId(userId);
+    }
+      return conversationsResult;
+  } catch (error) {
+    console.error(`(server) failed to get conversations for userId: ${userId} with role: ${role}`, error);
+    throw error;
   }
-  return conversationsResult;
 }
 
-export async function getAllConversations() {
-  const conversationsResult = await db.query.conversations.findMany({
-    with: {
-      messages: {
-        with: {
-          sender: true,
+export async function getAllConversations(): Promise<ConversationModel[]> {
+  try {
+    const conversationsResult = await db.query.conversations.findMany({
+      with: {
+        messages: {
+          with: {
+            sender: true,
+          },
+          orderBy: [desc(conversations.createdAt)],
         },
-        orderBy: [desc(conversations.createdAt)],
-      },
-      product: {
-        with: {
-          productImages: true,
-          watch: true,
+        product: {
+          with: {
+            productImages: true,
+            watch: {
+              with: {
+                brand: true,
+              }
+            },
+          },
         },
       },
-    },
-  });
-  return conversationsResult;
+    });
+    return conversationsResult;
+  } catch (error) {
+    console.error("(server) failed to get all conversations", error);
+    throw error;
+  }
 }
 
-export async function getConversationsByCustomerId(customerId: string) {
+export async function getConversationsByCustomerId(customerId: string): Promise<ConversationModel[]> {
+  try {
   const conversationsResult = await db.query.conversations.findMany({
     where: eq(conversations.customerId, customerId),
     with: {
@@ -48,21 +64,27 @@ export async function getConversationsByCustomerId(customerId: string) {
       product: {
         with: {
           productImages: true,
-          watch: true,
+          watch: {
+            with: {
+              brand: true,
+            },
+          },
         },
       },
     },
   });
-  return conversationsResult;
+    return conversationsResult;
+  } catch (error) {
+    console.error(`(server) failed to get conversations for customerId: ${customerId}`, error);
+    throw error;
+  }
 }
 
-export async function createConversation(
-  customerId: string,
-  productId: string
-) {
+export async function createConversation(newConversation: NewConversationModel): Promise<ConversationModel | null> {
+  try {
   const existingConversation = await checkConversationExists(
-    customerId,
-    productId
+    newConversation.customerId,
+    newConversation.productId
   );
   if (existingConversation) {
     return existingConversation;
@@ -70,19 +92,24 @@ export async function createConversation(
 
   // Insert the conversation, then fetch the complete record (with relations)
   await db.insert(conversations).values({
-    customerId,
-    productId,
+    customerId: newConversation.customerId,
+    productId: newConversation.productId,
     status: "open",
   });
 
   // Return the conversation with messages and product loaded
-  const created = await checkConversationExists(customerId, productId);
-  return created;
+  const created = await checkConversationExists(newConversation.customerId, newConversation.productId);
+    return created;
+  } catch (error) {
+    console.error("(server) failed to create conversation", error);
+    throw error;
+  }
 }
 
 // Helper function to check for existing conversation
 // If a conversation exists between the customer and product, just return that, with product and messages loaded
-async function checkConversationExists(customerId: string, productId: string) {
+async function checkConversationExists(customerId: string, productId: string): Promise<ConversationModel | null> {
+  try {
   const existingConversation = await db.query.conversations.findFirst({
     where: and(
       eq(conversations.customerId, customerId),
@@ -98,10 +125,21 @@ async function checkConversationExists(customerId: string, productId: string) {
       product: {
         with: {
           productImages: true,
-          watch: true,
+          watch: {
+            with: {
+              brand: true,
+            },
+          },
         },
       },
     },
   });
-  return existingConversation;
+  if (!existingConversation) {
+    return null;
+  }
+    return existingConversation;
+  } catch (error) {
+    console.error("(server) failed to check if conversation exists", error);
+    throw error;
+  }
 }

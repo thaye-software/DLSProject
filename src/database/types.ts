@@ -16,7 +16,8 @@ import {
   conversations,
   messages,
   currencies,
-  currencyHistory
+  currencyHistory,
+  favorites
 } from "./schema";
 
 // This file provides convenient TypeScript types for the database models
@@ -25,31 +26,48 @@ import {
 // - <TableName>Model: the type returned when selecting rows (InferSelectModel<Table>)
 // - New<TableName>: the type used for inserts/creates (InferSelectModel<Table, 'insert'>)
 
-export type CountryModel = InferSelectModel<typeof countries>;
+export type CountryModel = InferSelectModel<typeof countries> & {
+  currency: CurrencyModel;
+};
 export type NewCountryModel = InferInsertModel<typeof countries>;
 
-export type AddressModel = InferSelectModel<typeof addresses>;
+export type AddressModel = InferSelectModel<typeof addresses> & {
+  user: UserModel;
+};
 export type NewAddressModel = InferInsertModel<typeof addresses>;
 
 export type ProductImageModel = InferSelectModel<typeof productImages>;
 export type NewProductImageModel = InferInsertModel<typeof productImages>;
 
-export type WatchModel = InferSelectModel<typeof watches>;
+export type WatchModel = InferSelectModel<typeof watches> & {
+  brand: BrandModel;
+};
 export type NewWatchModel = InferInsertModel<typeof watches>;
 
 export type BrandModel = InferSelectModel<typeof brands>;
 export type NewBrandModel = InferInsertModel<typeof brands>;
 
-export type UserModel = InferSelectModel<typeof users>;
+export type UserModel = InferSelectModel<typeof users> & {
+  addresses: AddressModel[];
+  favorites: FavoriteModel[];
+  orders: OrderModel[];
+  conversations: ConversationModel[];
+};
 export type NewUserModel = InferInsertModel<typeof users>;
 
-export type ProductModel = InferSelectModel<typeof products>;
+export type ProductModel = InferSelectModel<typeof products> & {
+  productImages: ProductImageModel[];
+  watch: WatchModel;
+};
 export type NewProductModel = InferInsertModel<typeof products>;
 
 export type OrderAddressModel = InferSelectModel<typeof orderAddresses>;
 export type NewOrderAddressModel = InferInsertModel<typeof orderAddresses>;
 
-export type OrderModel = InferSelectModel<typeof orders>;
+export type OrderModel = InferSelectModel<typeof orders> & {
+  orderItems: OrderItemModel[];
+  orderAddress: OrderAddressModel;
+};
 export type NewOrderModel = InferInsertModel<typeof orders>;
 
 export type OrderItemModel = InferSelectModel<typeof orderItems>;
@@ -64,7 +82,10 @@ export type NewBlogMediaModel = InferInsertModel<typeof blogMedia>;
 export type AuctionModel = InferSelectModel<typeof auctions>;
 export type NewAuctionModel = InferInsertModel<typeof auctions>;
 
-export type ConversationModel = InferSelectModel<typeof conversations>;
+export type ConversationModel = InferSelectModel<typeof conversations> & {
+  messages: MessageModel[];
+  product: ProductModel;
+};
 export type NewConversationModel = InferInsertModel<typeof conversations>;
 
 export type MessageModel = InferSelectModel<typeof messages>;
@@ -75,5 +96,13 @@ export type NewCurrencyModel = InferInsertModel<typeof currencies>;
 
 export type CurrencyHistoryModel = InferSelectModel<typeof currencyHistory>;
 export type NewCurrencyHistoryModel = InferInsertModel<typeof currencyHistory>;
+
+export type FavoriteModel = InferSelectModel<typeof favorites> & {
+  user: UserModel;
+  product: ProductModel;
+};
+export type NewFavoriteModel = InferInsertModel<typeof favorites>;
+
+
 // Import the specific types directly, e.g.:
-// import { WatchModel, NewWatch } from "~/src/database/types";
+// import { WatchModel, NewWatchModel } from "~/src/database/types";

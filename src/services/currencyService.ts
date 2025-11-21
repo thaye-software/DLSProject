@@ -3,9 +3,10 @@
 import { db } from "@/database/drizzle";
 import { currencies, currencyHistory } from "@/database/schema";
 import { eq, desc } from "drizzle-orm";
+import { CurrencyHistoryModel, CurrencyModel, NewCurrencyModel } from "@/database/types";
 
 
-export async function getCurrencyByCode(currencyCode: string) {
+export async function getCurrencyByCode(currencyCode: string): Promise<CurrencyModel> {
   const currency = await db.query.currencies.findFirst({
     where: eq(currencies.code, currencyCode.toUpperCase()),
   });
@@ -21,7 +22,7 @@ export async function getCurrencyByCode(currencyCode: string) {
   return currency;
 }
 
-export async function getActiveCurrencies() {
+export async function getActiveCurrencies(): Promise<CurrencyModel[]> {
   return await db.query.currencies.findMany({
     where: eq(currencies.isActive, true),
     orderBy: currencies.code,
@@ -30,7 +31,7 @@ export async function getActiveCurrencies() {
 
 export async function updateExchangeRate(
   formData: FormData
-) {
+): Promise<void> {
   const currencyCode = formData.get("currencyCode") as string;
   const newRate = formData.get("exchangeRate") as string;
   const updatedBy = formData.get("username") as string;
@@ -66,7 +67,7 @@ export async function updateExchangeRate(
 
 
 
-export async function convertCurrency(priceDkkInCents: number, targetCountryCode: string) {
+export async function convertCurrency(priceDkkInCents: number, targetCountryCode: string): Promise<number> {
   const country = targetCountryCode.toUpperCase();
 
   // If Danish, return DKK
@@ -90,7 +91,7 @@ export async function convertCurrency(priceDkkInCents: number, targetCountryCode
   }
 }
 
-export async function convertEuroToDkk(priceEurInCents: number) {
+export async function convertEuroToDkk(priceEurInCents: number): Promise<number> {
   try {
     const targetCurrencyCode = "EUR";
     const { exchangeRate } = await getCurrencyByCode(targetCurrencyCode);
@@ -109,7 +110,7 @@ export async function convertEuroToDkk(priceEurInCents: number) {
   }
 }
 
-export async function getLocalCurrencyString(priceDkkInCents: number, targetCountryCode: string) {
+export async function getLocalCurrencyString(priceDkkInCents: number, targetCountryCode: string): Promise<string> {
   const country = targetCountryCode.toUpperCase();
 
   // If Danish, return DKK
@@ -143,7 +144,7 @@ export async function getLocalCurrencyString(priceDkkInCents: number, targetCoun
 
  
 
-export async function getCurrencyHistory(currencyCode: string, limit: number = 50) {
+export async function getCurrencyHistory(currencyCode: string, limit: number = 50): Promise<CurrencyHistoryModel[]> {
   const currency = await db.query.currencies.findFirst({
     where: eq(currencies.code, currencyCode.toUpperCase()),
   });
@@ -162,16 +163,14 @@ export async function getCurrencyHistory(currencyCode: string, limit: number = 5
 
 
 export async function createCurrency(
-  code: string,
-  exchangeRate: string,
-  isActive: boolean = true
-) {
+  newCurrency: NewCurrencyModel
+): Promise<CurrencyModel> {
   const [currency] = await db
     .insert(currencies)
     .values({
-      code: code.toUpperCase(),
-      exchangeRate,
-      isActive,
+      code: newCurrency.code.toUpperCase(),
+      exchangeRate: newCurrency.exchangeRate,
+      isActive: newCurrency.isActive,
       updatedAt: new Date(),
     })
     .returning();
@@ -181,7 +180,7 @@ export async function createCurrency(
 
 
 
-export async function toggleCurrencyStatus(currencyCode: string, isActive: boolean) {
+export async function toggleCurrencyStatus(currencyCode: string, isActive: boolean): Promise<CurrencyModel> {
   const [updated] = await db
     .update(currencies)
     .set({

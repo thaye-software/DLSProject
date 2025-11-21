@@ -10,8 +10,6 @@ import { WatchFilters } from "@/components/Watches/Filters/ProductFilterSheet";
 
 type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-
-
 export async function getProductBySlug(
   watchSlug: string
 ): Promise<Product | null> {
@@ -52,7 +50,15 @@ export async function getProductById(id: string, tx?: DbTransaction): Promise<Pr
   try {
     const dbContext = tx || db;
     const foundProduct = await dbContext.query.products.findFirst({
-      where: eq(products.id, id)
+      where: eq(products.id, id),
+      with: {
+        productImages: true,
+        watch: {
+          with: {
+            brand: true
+          }
+        }
+      }
     });
     return foundProduct;
 
@@ -169,7 +175,7 @@ export async function getAllProductsByBrandName(
   }
 }
 
-export async function searchProducts(query: string) {
+export async function searchProducts(query: string): Promise<Product[]> {
   const lowerQuery = query.trim().toLowerCase();
   try {
     const results = await db.query.products.findMany({
@@ -234,23 +240,22 @@ export async function getFilterPriceRange() {
 
 export async function createProduct(
   data: Omit<NewProductModel, "id" | "createdAt">
-) {
+): Promise<Omit<ProductModel, "productImages" | "watch">> {
   try {
     const result = await db.insert(products).values(data).returning();
-    return { success: true, data: result[0] };
+    return result[0];
   } catch (error) {
     console.error("Error creating product:", error);
-    return { success: false, error: "Failed to create product" };
+    throw error;
   }
 }
 
 
 
-export async function updateProductStock(productId: string, stock: number, tx?: DbTransaction) {
+export async function updateProductStock(productId: string, stock: number, tx?: DbTransaction): Promise<void> {
   try {
     const dbContext = tx || db;
-    const updatedProduct = await dbContext.update(products).set({stock}).where(eq(products.id, productId)).returning();
-    return updatedProduct[0];
+    await dbContext.update(products).set({stock}).where(eq(products.id, productId)).returning();
 
   } catch (error) {
     console.error("(server) failed to update the stock on product...", error);

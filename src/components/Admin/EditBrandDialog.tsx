@@ -32,7 +32,7 @@ export function EditBrandDialog({
       const form = e.currentTarget;
       const formData = new FormData(form);
       const res = await updateBrand(formData); // server action call
-      const updated = res?.data ?? res;
+      const updated = res;
       if (onUpdated) onUpdated(updated);
       setOpen(false);
     } catch (err) {
