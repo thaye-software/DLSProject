@@ -68,6 +68,12 @@ export async function login(
     password,
   });
 
+  if(error?.code === "email_not_confirmed") { // supabase error code
+    await resendEmailConfirmation(email, supabase);
+    error.message += ". The confirmation email has been resend.";
+  }
+ 
+
   // If sign in failed, return immediately
   if (error) {
     return {
@@ -184,4 +190,23 @@ export async function register(
   }
 
   return { success: true };
+}
+
+
+
+//---------------------------- helper functions ----------------------------
+
+async function resendEmailConfirmation(recipientEmail: string, supabase: any): Promise<void> {
+  const env = process.env.APP_ENV?.toLocaleLowerCase();
+
+  const {error} = await supabase.auth.resend({
+    type: "signup",
+    email: recipientEmail,
+    options: {
+      emailRedirectTo: 
+        env == "dev" ? "https://watches.thaulow.tech/" : env == "prod" ? "TODO impleent prod url" : "http://localhost:3000/"
+    }
+  });
+  console.log("asd",error)
+  if(error) throw error;
 }
