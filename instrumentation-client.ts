@@ -7,7 +7,7 @@ if (PH_KEY) {
     ui_host: "https://eu.posthog.com",
     defaults: "2025-05-24",
     capture_exceptions: true,
-    debug: process.env.NODE_ENV === "development",
+    // debug: process.env.NODE_ENV === "development",
   });
 } else {
   // Avoid initializing PostHog without a token (prevents runtime error in production)

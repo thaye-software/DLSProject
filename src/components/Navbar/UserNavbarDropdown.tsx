@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
-import { LogOut, Settings, Truck, User } from "lucide-react";
+import { LogOut, Scroll, Settings, Truck, User } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Avatar } from "../ui/avatar";
@@ -47,6 +47,13 @@ export function UserNavbarDropdown() {
               Admin Panel
             </Link>
           ) : null}
+          <Link
+            href="/watchlist"
+            className="cursor-pointer hover:bg-accent relative flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+          >
+            <Scroll className="opacity-60" />
+            Watchlist
+          </Link>
           <Link
             href="/settings"
             className="cursor-pointer hover:bg-accent relative flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
