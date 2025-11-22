@@ -19,7 +19,8 @@ export function WatchCard({
   formattedPrice: string;
   index?: number;
   onFavoriteClick?: () => void;
-}) {
+  }) {
+  console.log("rendering product:", product);
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}

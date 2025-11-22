@@ -2,7 +2,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { WatchesGrid } from "@/components/Watches/WatchesGrid";
 import { Suspense } from "react";
 import { getAuthUser, getUserLocation } from "@/lib/utils/server/utils";
-import { getFavoritedProductsByUserId } from "@/services/favoriteService";
+import { getFavoritedProductsByUserId, getUserFavorites } from "@/services/favoriteService";
 import { redirect } from "next/navigation";
 
 export default async function WatchlistPage() {
@@ -10,7 +10,7 @@ export default async function WatchlistPage() {
   if (!user) {
     redirect("/");
   }
-  const watches = await getFavoritedProductsByUserId(user.id);
+  const watches = await getUserFavorites(user.id);
   const userGeoLocationData = await getUserLocation();
   const countryCode = userGeoLocationData.countryCode;
 
