@@ -17,22 +17,16 @@ interface RealtimeChatProps {
   userId: string;
   username: string;
   onMessage?: (messages: ChatMessage[]) => void;
+  onLatestMessage?: (conversationId: string, message: ChatMessage) => void; // NEW
   messages?: ChatMessage[];
 }
 
-/**
- * Realtime chat component
- * @param conversationName - The name of the conversation to join. Each conversation is a unique chat.
- * @param username - The username of the user
- * @param onMessage - The callback function to handle the messages. Useful if you want to store the messages in a database.
- * @param messages - The messages to display in the chat. Useful if you want to display messages from a database.
- * @returns The chat component
- */
 export const RealtimeChat = ({
   conversation,
   userId,
   username,
   onMessage,
+  onLatestMessage, // used to sync parent component ie. admin ConversationDashboard
   messages: initialMessages = [],
 }: RealtimeChatProps) => {
   const {
@@ -108,10 +102,7 @@ export const RealtimeChat = ({
           console.warn("markMessagesAsRead: missing conversation or userId");
           return;
         }
-
-        const convId = conversation.id;
-        console.log("userId:", userId);
-        await markAsRead(convId, userId);
+        await markAsRead(conversation.id, userId);
       } catch (err) {
         console.error("markAsRead failed", err);
       }
@@ -119,6 +110,14 @@ export const RealtimeChat = ({
     // run when conversation or userId becomes available
     markMessagesAsRead();
   }, [conversation, userId]);
+
+  // used to sync dashboard sidebar ie notify the parent
+  useEffect(() => {
+    if (onLatestMessage && allMessages.length > 0) {
+      const latestMessage = allMessages[allMessages.length - 1];
+      onLatestMessage(conversation.id, latestMessage);
+    }
+  }, [allMessages, conversation.id, onLatestMessage]);
 
   const handleSendMessage = useCallback(
     (e: React.FormEvent) => {
@@ -136,43 +135,48 @@ export const RealtimeChat = ({
     setAutoScrollEnabled(true);
     scrollToBottom();
   };
-  console.log("conversation:", conversation);
 
   return (
-    <div className="flex flex-col h-full w-full antialiased">
-      {/* Messages */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+    // FIXED: Added min-h-0 and relative for the scroll button positioning
+    <div className="relative flex flex-col h-full min-h-0 w-full antialiased">
+      {/* Messages container - flex-1 min-h-0 allows it to shrink and scroll */}
+      <div 
+        ref={containerRef} 
+        className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4"
+      >
         {allMessages.length === 0 ? (
           <div className="text-center text-sm">
             No messages yet. Ask a question!
           </div>
-        ) : null}
-        <div className="space-y-1">
-          {allMessages.map((message, index) => {
-            const prevMessage = index > 0 ? allMessages[index - 1] : null;
-            const showHeader =
-              !prevMessage ||
-              prevMessage.sender.username !== message.sender.username;
+        ) : (
+          <div className="space-y-1">
+            {allMessages.map((message, index) => {
+              const prevMessage = index > 0 ? allMessages[index - 1] : null;
+              const showHeader =
+                !prevMessage ||
+                prevMessage.sender.username !== message.sender.username;
 
-            return (
-              <div
-                key={message.id}
-                className="animate-in fade-in slide-in-from-bottom-4 duration-300"
-              >
-                <ChatMessageItem
-                  message={message}
-                  isOwnMessage={String(message.sender.id) === String(userId)}
-                  showHeader={showHeader}
-                />
-              </div>
-            );
-          })}
-        </div>
+              return (
+                <div
+                  key={message.id}
+                  className="animate-in fade-in slide-in-from-bottom-4 duration-300"
+                >
+                  <ChatMessageItem
+                    message={message}
+                    isOwnMessage={String(message.sender.id) === String(userId)}
+                    showHeader={showHeader}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
+      {/* FIXED: Added shrink-0 to prevent form from disappearing */}
       <form
         onSubmit={handleSendMessage}
-        className="flex w-full gap-2 border-t border-border p-4"
+        className="shrink-0 flex w-full gap-2 border-t border-border p-4"
       >
         <Input
           className={cn(
@@ -195,11 +199,11 @@ export const RealtimeChat = ({
             disabled={!isConnected}
           >
             <Send className="size-4" />
-            </Button>
-            
+          </Button>
         )}
       </form>
-      {/* scroll-to-bottom button when auto-scroll is disabled */}
+
+      {/* Scroll-to-bottom button */}
       {!autoScrollEnabled && (
         <div className="absolute left-2 bottom-[75px] z-40 cursor-pointer">
           <Button size="icon" onClick={handleScrollToBottomClick}>

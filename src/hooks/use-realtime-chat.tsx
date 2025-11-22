@@ -42,11 +42,24 @@ export function useRealtimeChat({
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const newChannel = supabase.channel(conversation);
+    // Guard: Don't create channel if no conversation ID
+    if (!conversation?.id) {
+      console.warn("useRealtimeChat: No conversation ID provided");
+      return;
+    }
+
+    // FIX: Use a unique channel name based on conversation ID
+    const channelName = `chat:${conversation.id}`;
+    const newChannel = supabase.channel(channelName);
 
     newChannel
       .on("broadcast", { event: EVENT_MESSAGE_TYPE }, (payload) => {
-        setMessages((current) => [...current, payload.payload as ChatMessage]);
+        const incomingMessage = payload.payload as ChatMessage;
+        
+        // EXTRA SAFETY: Only add message if it belongs to this conversation
+        if (incomingMessage.conversationId === conversation.id) {
+          setMessages((current) => [...current, incomingMessage]);
+        }
       })
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
@@ -58,18 +71,20 @@ export function useRealtimeChat({
 
     setChannel(newChannel);
 
+    // Cleanup: remove channel AND reset messages when conversation changes
     return () => {
       supabase.removeChannel(newChannel);
+      setMessages([]); // Clear messages when switching conversations
     };
-  }, [conversation, username, supabase]);
+  }, [conversation?.id, supabase]); // Only depend on conversation.id, not the whole object
 
   const sendMessage = useCallback(
     async (content: string) => {
-      if (!channel || !isConnected) return;
+      if (!channel || !isConnected || !conversation?.id) return;
 
       const message: ChatMessage = {
         id: crypto.randomUUID(),
-        conversationId: conversation.id,
+        conversationId: conversation.id, // This is crucial for filtering
         senderId: user?.id ?? null,
         sender: {
           id: user?.id ?? null,
@@ -82,8 +97,6 @@ export function useRealtimeChat({
         content,
         createdAt: new Date().toISOString(),
       };
-
-      console.log("Sending message:", message);
 
       // Update local state immediately for the sender
       setMessages((current) => [...current, message]);
@@ -106,7 +119,7 @@ export function useRealtimeChat({
       // Persist message to backend
       await persistMessage(messageToPersist);
     },
-    [channel, isConnected, username, user?.id]
+    [channel, isConnected, conversation?.id, username, user?.id]
   );
 
   return { messages, sendMessage, isConnected };
