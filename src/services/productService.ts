@@ -169,7 +169,7 @@ export async function getFilteredProducts(filters: Partial<WatchFilters>): Promi
 // TODO: optimise this function
 export async function getAllProductsByBrandName(
   brandName: string
-): Promise<Product[]> {
+): Promise<ProductModel[]> {
   try {
     const brand = await db.query.brands.findFirst({
       where: eq(brands.slug, brandName.toLocaleLowerCase()),
@@ -179,7 +179,7 @@ export async function getAllProductsByBrandName(
       return [];
     }
 
-    const allProducts: Product[] = await getAllProducts();
+    const allProducts: ProductModel[] = await getAllProducts();
 
     const filteredProducts = allProducts.filter(
       (product) => product.watch?.brand.id === brand.id
