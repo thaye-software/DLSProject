@@ -89,7 +89,6 @@ export async function getAllProducts(): Promise<ProductModel[]> {
 }
 
 export async function getFilteredProducts(filters: Partial<WatchFilters>): Promise<Product[]> {
-  console.log("Filtering products with filters:", filters);
   try {
     const appliedSearchFilters = getAppliedSerachFilters(filters);
     const filter = appliedSearchFilters.length ? appliedSearchFilters : undefined;
@@ -105,9 +104,9 @@ export async function getFilteredProducts(filters: Partial<WatchFilters>): Promi
         productImages: true,
       },
     });
-
-    console.log("Filtered products results:", results);
     return results;
+
+    // old version of the code below
 
     // const rows = await db
     //   .select({
