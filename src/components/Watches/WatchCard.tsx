@@ -13,10 +13,12 @@ export function WatchCard({
   product,
   formattedPrice,
   index,
+  onFavoriteClick,
 }: {
   product: Product;
-  formattedPrice: Promise<string>;
+  formattedPrice: string;
   index?: number;
+  onFavoriteClick?: () => void;
 }) {
   return (
     <motion.div
@@ -39,15 +41,10 @@ export function WatchCard({
               />
 
               <div className="absolute top-4 right-4 flex gap-2 group">
-                <FavoriteButton productId={product.id} />
-                {/* {product.stock > 0 ? (
-                  <Badge variant="secondary" className="bg-background/95  shadow-lg">
-                      In Stock
-                  </Badge>
-              ): 
-                                    <Badge variant="secondary" className="bg-background/95 shadow-lg">
-                                        Sold out
-                                    </Badge>} */}
+                <FavoriteButton
+                  productId={product.id}
+                  onFavoriteClick={onFavoriteClick}
+                />
               </div>
             </div>
           </CardHeader>

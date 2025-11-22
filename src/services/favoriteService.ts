@@ -3,7 +3,8 @@
 import { db } from "@/database/drizzle";
 import { favorites } from "@/database/schema";
 import { and, eq } from "drizzle-orm";
-import { FavoriteModel, NewFavoriteModel } from "@/database/types";
+import { FavoriteModel, NewFavoriteModel, ProductModel } from "@/database/types";
+import { Product } from "@/app/watches/type";
 
 export async function getUserFavorites(userId: string): Promise<Omit<FavoriteModel, "user">[]> {
   try {
@@ -67,4 +68,29 @@ async function removeFavorite(userId: string, productId: string): Promise<void> 
         (eq(favorites.userId, userId), eq(favorites.productId, productId))
       )
     );
+}
+
+export async function getFavoritedProductsByUserId(userId: string): Promise<ProductModel[]> {
+  try {
+    // Assuming there's a 'favorites' table that links users to their favorited products
+    const results = await db.query.favorites.findMany({
+      where: eq(favorites.userId, userId),
+      with: {
+        product: {
+          with: {
+            watch: {
+              with: {
+                brand: true,
+              },
+            },
+            productImages: true,
+          },
+        },
+      },
+    });
+    return results.map(fav => fav.product);
+  } catch (error) {
+    console.error("Error fetching favorited products:", error);
+    throw new Error("Failed to fetch favorited products from database");
+  }
 }
