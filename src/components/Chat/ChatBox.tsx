@@ -1,22 +1,22 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Button } from "../ui/button";
+import { motion } from "framer-motion";
 import { ArrowLeft, X } from "lucide-react";
-import { ChatPanel } from "./ChatPanel";
 import { useEffect, useState } from "react";
-import { getConversations } from "@/services/conversationService";
+
+import { ChatPanel } from "./ChatPanel";
+
+import { useChatContext } from "@/context/ChatContext";
+
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 
-export default function ChatBox({
-  setChatOpen,
-  initialConversation,
-  setInitialConversation,
-}: {
-  setChatOpen: (open: boolean) => void;
-  initialConversation?: any;
-  setInitialConversation: React.Dispatch<React.SetStateAction<any>>;
-}) {
+import { getConversations } from "@/services/conversationService";
+
+
+
+export default function ChatBox() {
+  const { setChatOpen, initialConversation, setInitialConversation } = useChatContext();
   const [conversations, setConversations] = useState<any[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<any | null>(
     initialConversation
@@ -110,7 +110,6 @@ export default function ChatBox({
           conversations={conversations}
           selectedConversation={selectedConversation}
           setSelectedConversation={setSelectedConversation}
-          onClose={() => setChatOpen(false)}
         />
       </div>
     </motion.div>
