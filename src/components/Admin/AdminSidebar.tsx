@@ -89,6 +89,12 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 <Link href="/admin/watches">Watches</Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname.startsWith("/admin/conversations")}> 
+                <Link href="/admin/conversations">Conversations</Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            {/* Master Data */}
             {data.navMain.map((item, index) => (
               <Collapsible
                 key={item.title}
