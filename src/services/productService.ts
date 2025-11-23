@@ -68,9 +68,9 @@ export async function getProductById(id: string, tx?: DbTransaction): Promise<Pr
   }
 }
 
-export async function getAllProducts(): Promise<Product[]> {
+export async function getAllProducts(): Promise<ProductModel[]> {
   try {
-    const allProducts: Product[] = await db.query.products.findMany({
+    const allProducts: ProductModel[] = await db.query.products.findMany({
       with: {
         watch: {
           with: {
@@ -91,57 +91,73 @@ export async function getAllProducts(): Promise<Product[]> {
 export async function getFilteredProducts(filters: Partial<WatchFilters>): Promise<Product[]> {
   try {
     const appliedSearchFilters = getAppliedSerachFilters(filters);
-    const where = appliedSearchFilters.length ? and(...appliedSearchFilters) : undefined;
+    const filter = appliedSearchFilters.length ? appliedSearchFilters : undefined;
 
-    const rows = await db
-      .select({
-        watch: watches,
-        product: products,
-        brand: brands,
-        image: productImages.imageUrl,
-      })
-      .from(watches)
-      .innerJoin(products, eq(products.id, watches.productId))
-      .innerJoin(brands, eq(brands.id, watches.brandId))
-      .leftJoin(
-        productImages,
-        and(
-          eq(productImages.productId, products.id),
-          eq(productImages.isThumbnail, true)
-        )
-      )
-      .where(where);
-
-
-
-    const filteredProduct: Product[] = rows.map((row) => ({
-      id: row.product.id,
-      name: row.product.name,
-      priceDkk: row.product.priceDkk,
-      stock: row.product.stock,
-      productType: row.product.productType,
-      description: row.product.description,
-
-      watch: {
-        ...row.watch,
-        brand: {
-          ...row.brand
-        }
+    const results = await db.query.products.findMany({
+      where: and(...(filter || []), gte(products.stock, 1)),
+      with: {
+        watch: {
+          with: {
+            brand: true,
+          },
+        },
+        productImages: true,
       },
+    });
+    return results;
 
-      productImages: row.image
-        ? [
-            {
-              id: "thumbnial",
-              productId: row.product.id,
-              imageUrl: row.image,
-              isThumbnail: true,
-            },
-          ]
-        : [],
-    }));
+    // old version of the code below
 
-    return filteredProduct;
+    // const rows = await db
+    //   .select({
+    //     watch: watches,
+    //     product: products,
+    //     brand: brands,
+    //     image: productImages.imageUrl,
+    //   })
+    //   .from(watches)
+    //   .innerJoin(products, eq(products.id, watches.productId))
+    //   .innerJoin(brands, eq(brands.id, watches.brandId))
+    //   .leftJoin(
+    //     productImages,
+    //     and(
+    //       eq(productImages.productId, products.id),
+    //       eq(productImages.isThumbnail, true)
+    //     )
+    // )
+    //   // show products where stock >= 1
+    //   .where(and(filter));
+
+
+
+    // const filteredProducts: Product[] = rows.map((row) => ({
+    //   id: row.product.id,
+    //   name: row.product.name,
+    //   priceDkk: row.product.priceDkk,
+    //   stock: row.product.stock,
+    //   productType: row.product.productType,
+    //   description: row.product.description,
+
+    //   watch: {
+    //     ...row.watch,
+    //     brand: {
+    //       ...row.brand
+    //     }
+    //   },
+
+    //   productImages: row.image
+    //     ? [
+    //         {
+    //           id: "thumbnial",
+    //           productId: row.product.id,
+    //           imageUrl: row.image,
+    //           isThumbnail: true,
+    //         },
+    //       ]
+    //     : [],
+    // }));
+
+    // return filteredProducts;
 
   } catch (error) {
     console.error(`(server) failed to filter products with filters: ${filters}`, error);
@@ -149,10 +165,11 @@ export async function getFilteredProducts(filters: Partial<WatchFilters>): Promi
   }
 }
 
+
 // TODO: optimise this function
 export async function getAllProductsByBrandName(
   brandName: string
-): Promise<Product[]> {
+): Promise<ProductModel[]> {
   try {
     const brand = await db.query.brands.findFirst({
       where: eq(brands.slug, brandName.toLocaleLowerCase()),
@@ -162,7 +179,7 @@ export async function getAllProductsByBrandName(
       return [];
     }
 
-    const allProducts: Product[] = await getAllProducts();
+    const allProducts: ProductModel[] = await getAllProducts();
 
     const filteredProducts = allProducts.filter(
       (product) => product.watch?.brand.id === brand.id

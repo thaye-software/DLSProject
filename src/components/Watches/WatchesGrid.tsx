@@ -1,27 +1,66 @@
+"use client";
 import { WatchCard } from "@/components/Watches/WatchCard";
 
 import { Product } from "../../app/watches/type";
 import { getLocalCurrencyString } from "@/services/currencyService";
+import { useEffect, useState } from "react";
+import { ProductModel } from "@/database/types";
 
-export async function WatchesGrid({
+export function WatchesGrid({
   watches,
   customerGeoLocation,
+  removeOnFavorite,
 }: {
-  watches: Product[];
+  watches: ProductModel[];
   customerGeoLocation: string;
+  removeOnFavorite?: boolean;
 }) {
-  async function getFormattedPrice( productPriceDkk: number) {
-    return await getLocalCurrencyString(productPriceDkk, customerGeoLocation);
-  }
+  const [products, setProducts] = useState<ProductModel[]>([]);
+  const [formattedPrices, setFormattedPrices] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    setProducts(watches);
+
+    // compute formatted prices asynchronously and store them in state
+    let mounted = true;
+    (async () => {
+      try {
+        const entries = await Promise.all(
+          watches.map(
+            async (p) =>
+              [
+                p.id,
+                await getLocalCurrencyString(p.priceDkk, customerGeoLocation),
+              ] as const
+          )
+        );
+        if (!mounted) return;
+        setFormattedPrices(Object.fromEntries(entries));
+      } catch (e) {
+        // don't block rendering on formatting errors
+        // eslint-disable-next-line no-console
+        console.error("Failed to format prices", e);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [watches, customerGeoLocation]);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 w-full">
-      {watches.map((watch, i) => (
+      {products.map((product, i) => (
         <WatchCard
-          key={watch.id}
-          product={watch}
-          formattedPrice={getFormattedPrice(watch.priceDkk)}
+          key={product.id}
+          product={product}
+          formattedPrice={formattedPrices[product.id] ?? ""}
           index={i}
+          onFavoriteClick={() => {
+            if (removeOnFavorite) {
+              setProducts((prev) => prev.filter((p) => p.id !== product.id));
+            }
+          }}
         />
       ))}
     </div>

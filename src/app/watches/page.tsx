@@ -26,8 +26,6 @@ export default async function FilterdWatches({searchParams}: {searchParams: Sear
 
   const defaultFilters = await getFilterRanges(userGeoLocationData.currency);
   const syncedFilters = syncFilters(defaultFilters, appliedFilters);
-  
-
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -47,7 +45,8 @@ export default async function FilterdWatches({searchParams}: {searchParams: Sear
 
       <div className="flex justify-center mt-10">
         {filteredProducts && filteredProducts.length > 0 ? (
-          <Suspense fallback={<Spinner className="w-8 h-8"/>}>
+          <Suspense fallback={<Spinner className="w-8 h-8" />}>
+            {/*@ts-ignore*/}
             <WatchesGrid watches={filteredProducts} customerGeoLocation={countryCode}/>
           </Suspense>
         ) : (

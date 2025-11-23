@@ -4,11 +4,11 @@ import { Spinner } from "@/components/ui/spinner";
 import { WatchesGrid } from "@/components/Watches/WatchesGrid";
 
 import { getAllProductsByBrandName } from "@/services/productService";
-import { Product } from "../type";
 
 import { getUserLocation } from "@/lib/utils/server/utils";
 import { getFilterRanges } from "../page";
 import { ProductFilterSheet } from "@/components/Watches/Filters/ProductFilterSheet";
+import { ProductModel } from "@/database/types";
 
 export default async function BrandWatchesPage({
   params,
@@ -21,7 +21,7 @@ export default async function BrandWatchesPage({
   let brandName = (await params).brandName;
   brandName = capitalizeFirstLetter(brandName);
 
-  const allWatches: Product[] = await getAllProductsByBrandName(brandName);
+  const allWatches: ProductModel[] = await getAllProductsByBrandName(brandName);
 
   const localCurrencyCode = userGeoLocationData.currency;
 
