@@ -55,8 +55,10 @@ export const ChatPanel: React.FC<{
                     {conv.messages && conv.messages.length > 0 ? (
                       <>
                         <div className="flex items-center">
-                          {conv.messages[0].sender?.id === user?.id && (
+                          {conv.messages[0].sender?.id === user?.id ? (
                             <span className="font-bold mr-1">You:</span>
+                          ) : (
+                            <span className="font-bold mr-1">{conv.messages[0].senderType.toLowerCase() === "customer" ? (conv.messages[0].sender.username) : ""}:</span>
                           )}
                           <span
                             className={`${

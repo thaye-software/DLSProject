@@ -91,73 +91,75 @@ export async function getAllProducts(): Promise<ProductModel[]> {
 export async function getFilteredProducts(filters: Partial<WatchFilters>): Promise<Product[]> {
   try {
     const appliedSearchFilters = getAppliedSerachFilters(filters);
-    const filter = appliedSearchFilters.length ? appliedSearchFilters : undefined;
+    const filter = appliedSearchFilters.length > 0 ? and(...appliedSearchFilters) : undefined;
 
-    const results = await db.query.products.findMany({
-      where: and(...(filter || []), gte(products.stock, 1)),
-      with: {
-        watch: {
-          with: {
-            brand: true,
-          },
-        },
-        productImages: true,
-      },
-    });
-    return results;
+    // this does not seem to work, filtering by brandname, condition, etc is broken
+
+    // const results = await db.query.products.findMany({
+    //   where: and(...(filter || []), gte(products.stock, 1)),
+    //   with: {
+    //     watch: {
+    //       with: {
+    //         brand: true,
+    //       },
+    //     },
+    //     productImages: true,
+    //   },
+    // });
+    // return results;
+
 
     // old version of the code below
 
-    // const rows = await db
-    //   .select({
-    //     watch: watches,
-    //     product: products,
-    //     brand: brands,
-    //     image: productImages.imageUrl,
-    //   })
-    //   .from(watches)
-    //   .innerJoin(products, eq(products.id, watches.productId))
-    //   .innerJoin(brands, eq(brands.id, watches.brandId))
-    //   .leftJoin(
-    //     productImages,
-    //     and(
-    //       eq(productImages.productId, products.id),
-    //       eq(productImages.isThumbnail, true)
-    //     )
-    // )
-    //   // show products where stock >= 1
-    //   .where(and(filter));
+    const rows = await db
+      .select({
+        watch: watches,
+        product: products,
+        brand: brands,
+        image: productImages.imageUrl,
+      })
+      .from(watches)
+      .innerJoin(products, eq(products.id, watches.productId))
+      .innerJoin(brands, eq(brands.id, watches.brandId))
+      .leftJoin(
+        productImages,
+        and(
+          eq(productImages.productId, products.id),
+          eq(productImages.isThumbnail, true)
+        )
+      )
+      .where(filter);
 
 
 
-    // const filteredProducts: Product[] = rows.map((row) => ({
-    //   id: row.product.id,
-    //   name: row.product.name,
-    //   priceDkk: row.product.priceDkk,
-    //   stock: row.product.stock,
-    //   productType: row.product.productType,
-    //   description: row.product.description,
+    const filteredProducts: Product[] = rows.map((row) => ({
+      id: row.product.id,
+      name: row.product.name,
+      priceDkk: row.product.priceDkk,
+      stock: row.product.stock,
+      productType: row.product.productType,
+      description: row.product.description,
 
-    //   watch: {
-    //     ...row.watch,
-    //     brand: {
-    //       ...row.brand
-    //     }
-    //   },
+      watch: {
+        ...row.watch,
+        brand: {
+          ...row.brand
+        }
+      },
 
-    //   productImages: row.image
-    //     ? [
-    //         {
-    //           id: "thumbnial",
-    //           productId: row.product.id,
-    //           imageUrl: row.image,
-    //           isThumbnail: true,
-    //         },
-    //       ]
-    //     : [],
-    // }));
+      productImages: row.image
+        ? [
+            {
+              id: "thumbnial",
+              productId: row.product.id,
+              imageUrl: row.image,
+              isThumbnail: true,
+            },
+          ]
+        : [],
+    }));
 
-    // return filteredProducts;
+    return filteredProducts;
 
   } catch (error) {
     console.error(`(server) failed to filter products with filters: ${filters}`, error);
@@ -286,6 +288,10 @@ export async function updateProductStock(productId: string, stock: number, tx?: 
 function getAppliedSerachFilters(filters: Partial<WatchFilters>) {
 
   const appliedSearchFilters = [];
+
+  appliedSearchFilters.push(gte(products.stock, 1))
+
+
 
   if (filters.brandNames && filters.brandNames?.length > 0) {
     const brandArray = Array.isArray(filters.brandNames) ? filters.brandNames : [filters.brandNames]; // force single string into array

@@ -6,33 +6,29 @@ import { useChatScroll } from "@/hooks/use-chat-scroll";
 import { type ChatMessage, useRealtimeChat } from "@/hooks/use-realtime-chat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowDown, HandCoins, Send } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { ArrowDown, Send } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { markAsRead } from "@/services/messageService";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { OfferPricePopover } from "./OfferPricePopover";
+import { toast } from "sonner";
+import { Badge } from "../ui/badge";
 
 interface RealtimeChatProps {
   conversation: any;
   userId: string;
   username: string;
   onMessage?: (messages: ChatMessage[]) => void;
+  onMessageReceived?: (message: ChatMessage) => void;
   messages?: ChatMessage[];
 }
 
-/**
- * Realtime chat component
- * @param conversationName - The name of the conversation to join. Each conversation is a unique chat.
- * @param username - The username of the user
- * @param onMessage - The callback function to handle the messages. Useful if you want to store the messages in a database.
- * @param messages - The messages to display in the chat. Useful if you want to display messages from a database.
- * @returns The chat component
- */
 export const RealtimeChat = ({
   conversation,
   userId,
   username,
   onMessage,
+  onMessageReceived,
   messages: initialMessages = [],
 }: RealtimeChatProps) => {
   const {
@@ -49,39 +45,35 @@ export const RealtimeChat = ({
   } = useRealtimeChat({
     conversation,
     username,
+    onMessageReceived, 
   });
-  const [newMessage, setNewMessage] = useState("");
-  const [focused, setFocused] = useState(false);
-  const { role } = useSupabaseAuth();
 
-  // Merge realtime messages with initial messages
+  const [newMessage, setNewMessage] = useState("");
+  const { role } = useSupabaseAuth();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Merge messages
   const allMessages = useMemo(() => {
     const mergedMessages = [...initialMessages, ...realtimeMessages];
-
-    // Normalize id to string when present and normalize createdAt to ISO strings
     const seen = new Set<string>();
     const uniqueMessages = [] as typeof mergedMessages;
 
     for (const orig of mergedMessages) {
-      // normalize createdAt to an ISO string so sorting/comparisons are reliable
-      const createdAtStr =
-        typeof orig.createdAt === "string"
+      const createdAtStr = typeof orig.createdAt === "string"
           ? orig.createdAt
           : orig.createdAt
           ? new Date(orig.createdAt).toISOString()
           : new Date().toISOString();
 
-      // use id if present, otherwise fallback to createdAt+content as dedupe key
       const key = orig.id ?? `${createdAtStr}:${orig.content}`;
       if (!seen.has(String(key))) {
         seen.add(String(key));
         uniqueMessages.push({ ...orig, createdAt: createdAtStr } as any);
       }
     }
-    // Sort by creation date (use numeric timestamp compare to avoid type issues)
+    
     uniqueMessages.sort(
-      (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
     return uniqueMessages;
@@ -94,116 +86,167 @@ export const RealtimeChat = ({
   }, [allMessages, onMessage]);
 
   useEffect(() => {
-    // Scroll to bottom when messages change only if auto-scroll is enabled.
     if (autoScrollEnabled) {
       scrollToBottom();
     }
   }, [allMessages, autoScrollEnabled, scrollToBottom]);
 
-  // set message.isRead to true for all messages where isOwnMessage is false when component mounts
+  // Mark as read logic
   useEffect(() => {
-    const markMessagesAsRead = async () => {
-      try {
-        if (!conversation || !conversation.id || !userId) {
-          console.warn("markMessagesAsRead: missing conversation or userId");
-          return;
-        }
+    const handleReadStatus = async () => {
+      if (!conversation?.id || !userId) return;
 
-        const convId = conversation.id;
-        console.log("userId:", userId);
-        await markAsRead(convId, userId);
-      } catch (err) {
-        console.error("markAsRead failed", err);
+      const lastMsg = realtimeMessages.length > 0 
+        ? realtimeMessages[realtimeMessages.length - 1] 
+        : initialMessages[initialMessages.length - 1];
+
+      if (lastMsg && String(lastMsg.senderId) !== String(userId)) {
+         try {
+           await markAsRead(conversation.id, userId);
+         } catch (err) {
+           console.error("Failed to mark as read", err);
+         }
       }
     };
-    // run when conversation or userId becomes available
-    markMessagesAsRead();
-  }, [conversation, userId]);
+
+    handleReadStatus();
+  }, [realtimeMessages, conversation?.id, userId, initialMessages]); 
+
+  // ✅ Auto-resize textarea as user types
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = 'auto';
+    
+    // Set height to scrollHeight, but cap at max-height (200px)
+    const maxHeight = 200; // Match max-h-[200px] in className
+    const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+    textarea.style.height = `${newHeight}px`;
+  }, [newMessage]);
 
   const handleSendMessage = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
-      if (!newMessage.trim() || !isConnected) return;
+      if (!newMessage.trim()) return;
+
+      if(newMessage.length > 2000) {
+        toast.error("Your message is to long cant exceed more than 2000 characters.")
+        return;
+      }
 
       sendMessage(newMessage);
       setNewMessage("");
+      
+      // Reset textarea height after sending
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
     },
-    [newMessage, isConnected, sendMessage]
+    [newMessage, sendMessage]
   );
 
-  // helper to let the user manually jump back to bottom
   const handleScrollToBottomClick = () => {
     setAutoScrollEnabled(true);
     scrollToBottom();
   };
-  console.log("conversation:", conversation);
 
   return (
-    <div className="flex flex-col h-full w-full antialiased">
-      {/* Messages */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+    <div className="relative flex flex-col h-full min-h-0 w-full antialiased">
+      <div 
+        ref={containerRef} 
+        className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4"
+      >
         {allMessages.length === 0 ? (
-          <div className="text-center text-sm">
+          <div className="text-center text-sm text-muted-foreground mt-10">
             No messages yet. Ask a question!
           </div>
-        ) : null}
-        <div className="space-y-1">
-          {allMessages.map((message, index) => {
-            const prevMessage = index > 0 ? allMessages[index - 1] : null;
-            const showHeader =
-              !prevMessage ||
-              prevMessage.sender.username !== message.sender.username;
+        ) : (
+          <div className="space-y-1">
+            {allMessages.map((message, index) => {
+              const prevMessage = index > 0 ? allMessages[index - 1] : null;
+              const showHeader = !prevMessage || prevMessage.sender.username !== message.sender.username;
 
-            return (
-              <div
-                key={message.id}
-                className="animate-in fade-in slide-in-from-bottom-4 duration-300"
-              >
-                <ChatMessageItem
-                  message={message}
-                  isOwnMessage={String(message.sender.id) === String(userId)}
-                  showHeader={showHeader}
-                />
-              </div>
-            );
-          })}
-        </div>
+              return (
+                <div key={message.id || index} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <ChatMessageItem
+                    message={message}
+                    isOwnMessage={String(message.sender.id) === String(userId)}
+                    showHeader={showHeader}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <form
         onSubmit={handleSendMessage}
-        className="flex w-full gap-2 border-t border-border p-4"
+        className="shrink-0 flex w-full items-end gap-2 border-t border-border p-4 bg-background"
       >
-        <Input
-          className={cn(
-            "rounded-full bg-background text-sm transition-all duration-300",
-            isConnected && newMessage.trim() ? "w-[calc(100%-36px)]" : "w-full"
-          )}
-          type="text"
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type a message..."
-          disabled={!isConnected}
-        />
-        {role === "admin" && (
-          <OfferPricePopover product={conversation?.product} />
-        )}
-        {isConnected && newMessage.trim() && (
-          <Button
-            className="aspect-square rounded-full animate-in fade-in slide-in-from-right-4 duration-300"
-            type="submit"
-            disabled={!isConnected}
-          >
-            <Send className="size-4" />
-            </Button>
+        <div className="flex items-end gap-3 w-full">
+    
+          {/* Textarea container (now flex-1 and flex-col to stack badge and textarea) */}
+          <div className="flex-1 flex flex-col">
+            {/* Badge stays above the textarea */}
+            <Badge
+                variant="secondary"
+                className="text-xs mb-2 self-start" // Added self-start for better alignment
+            >
+                {newMessage.length}/2000
+            </Badge>
             
-        )}
+            <textarea
+              ref={textareaRef}
+              className={cn(
+                "w-full rounded-2xl bg-background text-sm px-4 py-2.5",
+                "border border-input resize-none",
+                "placeholder:text-muted-foreground",
+                "min-h-[42px] max-h-[200px]",
+                "overflow-y-auto"
+              )}
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (isConnected && newMessage.trim()) {
+                    handleSendMessage(e as any);
+                  }
+                }
+              }}
+              placeholder={isConnected ? "Type a message..." : "Connecting..."}
+              rows={1}
+              maxLength={-1} // no max length
+            />
+          </div>
+            
+            {/* Action buttons (aligned to the bottom by the parent div) */}
+            {role === "admin" && (
+                <OfferPricePopover product={conversation?.product} />
+            )}
+            
+            <Button
+                className="aspect-square rounded-full shrink-0"
+                type="submit"
+                disabled={!isConnected || !newMessage.trim()}
+            >
+                <Send className="size-4" />
+            </Button>
+        </div>
       </form>
-      {/* scroll-to-bottom button when auto-scroll is disabled */}
+
       {!autoScrollEnabled && (
-        <div className="absolute left-2 bottom-[75px] z-40 cursor-pointer">
-          <Button size="icon" onClick={handleScrollToBottomClick}>
-            <ArrowDown />
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-20 z-40">
+          <Button 
+            size="sm" 
+            className="rounded-full shadow-md mb-10"
+            onClick={handleScrollToBottomClick}
+          >
+            <ArrowDown className="mr-2 h-4 w-4" />
+            New messages
           </Button>
         </div>
       )}

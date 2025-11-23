@@ -3,11 +3,15 @@
 import { createClient } from "@/database/supabase/client";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { persistMessage, PersistableMessage } from "@/services/messageService";
-import { useCallback, useEffect, useState } from "react";
+import { getUserById } from "@/services/userService";
+import { useCallback, useEffect, useState, useRef } from "react";
+import { toast } from "sonner";
 
 interface UseRealtimeChatProps {
   conversation: any;
   username: string;
+  // Callback to notify parent (Dashboard) to update sidebar
+  onMessageReceived?: (message: ChatMessage) => void; 
 }
 
 export interface ChatMessage {
@@ -32,23 +36,42 @@ const EVENT_MESSAGE_TYPE = "message";
 export function useRealtimeChat({
   conversation,
   username,
+  onMessageReceived,
 }: UseRealtimeChatProps) {
   const { user } = useSupabaseAuth();
   const supabase = createClient();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [channel, setChannel] = useState<ReturnType<
-    typeof supabase.channel
-  > | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  
+  // Ref to track current channel to prevent race conditions in cleanup
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
-    const newChannel = supabase.channel(conversation);
+    if (!conversation?.id) return;
+
+    // Cleanup previous channel if exists (Safety for Bug 4)
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
+
+    const channelName = `chat:${conversation.id}`;
+    const newChannel = supabase.channel(channelName);
+    channelRef.current = newChannel;
 
     newChannel
       .on("broadcast", { event: EVENT_MESSAGE_TYPE }, (payload) => {
-        setMessages((current) => [...current, payload.payload as ChatMessage]);
+        const incomingMessage = payload.payload as ChatMessage;
+        
+        if (incomingMessage.conversationId === conversation.id) {
+          setMessages((current) => [...current, incomingMessage]);
+          
+          // Notify parent to update sidebar
+          if (onMessageReceived) {
+            onMessageReceived(incomingMessage);
+          }
+        }
       })
-      .subscribe(async (status) => {
+      .subscribe((status) => {
         if (status === "SUBSCRIBED") {
           setIsConnected(true);
         } else {
@@ -56,57 +79,82 @@ export function useRealtimeChat({
         }
       });
 
-    setChannel(newChannel);
-
     return () => {
-      supabase.removeChannel(newChannel);
+      setIsConnected(false);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      setMessages([]); 
     };
-  }, [conversation, username, supabase]);
+  }, [conversation?.id, supabase, onMessageReceived]);
 
   const sendMessage = useCallback(
     async (content: string) => {
-      if (!channel || !isConnected) return;
+      // Allow sending if we have a user, even if socket momentarily disconnected (optimistic), 
+      // though usually we want to wait for connection.
+      if (!conversation?.id || !user?.id) return;
 
-      const message: ChatMessage = {
-        id: crypto.randomUUID(),
-        conversationId: conversation.id,
-        senderId: user?.id ?? null,
-        sender: {
-          id: user?.id ?? null,
-          username,
-          email: "",
-          country: "",
-          role: "customer",
-        },
-        senderType: "customer",
-        content,
-        createdAt: new Date().toISOString(),
-      };
+      try {
+        const foundUser = await getUserById(user.id);
+        if(!foundUser) {
+          toast.error("User not found");
+          return;
+        }
 
-      console.log("Sending message:", message);
+        const userRole = foundUser.role;
+        
+        const message: ChatMessage = {
+          id: crypto.randomUUID(),
+          conversationId: conversation.id,
+          senderId: user.id,
+          sender: {
+            id: user.id,
+            username,
+            email: foundUser.email || "",
+            country: foundUser.country?.name || "",
+            role: userRole === "admin" ? "seller" : "customer",
+          },
+          senderType: userRole === "admin" ? "seller" : "customer",
+          content,
+          createdAt: new Date().toISOString(),
+        };
 
-      // Update local state immediately for the sender
-      setMessages((current) => [...current, message]);
+        // Update local state
+        setMessages((current) => [...current, message]);
+        
+        // Notify Parent (Dashboard) immediately for own message too
+        if (onMessageReceived) {
+          onMessageReceived(message);
+        }
+        
+        // Broadcast
+        if (channelRef.current && isConnected) {
+          await channelRef.current.send({
+            type: "broadcast",
+            event: EVENT_MESSAGE_TYPE,
+            payload: message,
+          });
+        }
+        
+        // Persist
+        const messageToPersist: PersistableMessage = {
+          conversationId: conversation.id,
+          senderId: user.id,
+          senderType: userRole === "admin" ? "seller" : "customer",
+          content,
+          isRead: false,
+          createdAt: new Date().toISOString(),
+        };
+        
+        await persistMessage(messageToPersist);
 
-      await channel.send({
-        type: "broadcast",
-        event: EVENT_MESSAGE_TYPE,
-        payload: message,
-      });
-
-      const messageToPersist: PersistableMessage = {
-        conversationId: conversation.id,
-        senderId: user?.id ?? "",
-        senderType: "customer",
-        content,
-        isRead: false,
-        createdAt: new Date().toISOString(),
-      };
-
-      // Persist message to backend
-      await persistMessage(messageToPersist);
+      } catch (error) {
+        console.error("Failed to send message", error);
+        toast.error("Failed to send message");
+      }
     },
-    [channel, isConnected, username, user?.id]
+    [isConnected, conversation?.id, username, user?.id, onMessageReceived]
   );
 
   return { messages, sendMessage, isConnected };
