@@ -1,13 +1,13 @@
 "use client";
 
-import {useState, useMemo, useCallback} from "react";
+import {useState, useMemo, useCallback, useEffect} from "react";
 import {
   Search,
   MessageSquare,
   Box,
 } from "lucide-react";
 
-import { cn } from "@/lib/tailwindUtils"; // Ensure this path is correct for your project
+import { cn } from "@/lib/tailwindUtils";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,19 +34,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-// --- Imports from your types/schema ---
-// You might need to adjust this import path to where you keep your types
-import type { ConversationModel } from "@/database/types"; // or wherever you export ConversationModel
+import type { ConversationModel } from "@/database/types";
 import Image from "next/image";
 import Link from "next/link";
-import { init } from "next/dist/compiled/webpack/webpack";
-import { ChatMessageItem } from "@/components/Chat/ChatMessage";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { RealtimeChat } from "@/components/Chat/RealtimeChat";
 import { ChatMessage } from "@/hooks/use-realtime-chat";
+import { markAsRead } from "@/services/messageService";
+import { createClient } from "@/database/supabase/client";
 
-// --- UI Data Structure (Derived) ---
-// This is the flat structure the UI needs for easy rendering
 type UIConversation = {
   id: string;
   productId: string;
@@ -58,7 +54,7 @@ type UIConversation = {
   customerInitials: string;
   lastMessageContent: string;
   lastMessageAt: Date;
-  status: string; // "open" | "closed" | "pending"
+  status: string;
   unreadCount: number;
   sortedMessages: {
     id: string;
@@ -81,13 +77,67 @@ export function ConversationDashboard({ initialConversations}: ConversationDashb
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [visitedConversationIds, setVisitedConversationIds] = useState<Set<string>>(new Set());
   const [latestMessages, setLatestMessages] = useState<Record<string, ChatMessage>>({});
-  
-
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [searchQuery, setSearchQuery] = useState("");
 
   const { user, role } = useSupabaseAuth();
+  const supabase = createClient();
 
-  // --- 1. Transform DB Data to UI Data ---
+  // FIX #1: Subscribe to ALL conversations for live updates
+  useEffect(() => {
+    if (!initialConversations || initialConversations.length === 0) return;
+
+    const channels: ReturnType<typeof supabase.channel>[] = [];
+
+    initialConversations.forEach((conv) => {
+      const channelName = `chat:${conv.id}`;
+      const channel = supabase.channel(channelName);
+
+      channel
+        .on("broadcast", { event: "message" }, (payload) => {
+          const incomingMessage = payload.payload as ChatMessage;
+          
+          if (incomingMessage.conversationId === conv.id) {
+            setLatestMessages((prev) => ({
+              ...prev,
+              [conv.id]: incomingMessage,
+            }));
+
+            // FIX #2: Only increment unread if message is from customer AND not currently viewing this chat
+            if (
+              incomingMessage.senderType === "customer" && 
+              incomingMessage.senderId !== user?.id &&
+              selectedConversationId !== conv.id // KEY FIX: Don't increment if we're viewing it
+            ) {
+              setUnreadCounts((prev) => ({
+                ...prev,
+                [conv.id]: (prev[conv.id] ?? 0) + 1,
+              }));
+            }
+          }
+        })
+        .subscribe();
+
+      channels.push(channel);
+    });
+
+    return () => {
+      channels.forEach((ch) => supabase.removeChannel(ch));
+    };
+  }, [initialConversations, supabase, user?.id, selectedConversationId]);
+
+  // FIX #3: Initialize unread counts from initial data on mount ONLY
+  useEffect(() => {
+    const initialUnreads: Record<string, number> = {};
+    initialConversations.forEach((conv) => {
+      const count = conv.messages.filter(
+        (m) => !m.isRead && m.senderType === "customer" && m.senderId !== user?.id
+      ).length;
+      initialUnreads[conv.id] = count;
+    });
+    setUnreadCounts(initialUnreads);
+  }, []); // Empty deps - only run once on mount
+
   const allConversations = useMemo<UIConversation[]>(() => {
     return initialConversations.map((conv) => {
       // 1. Find the latest message (assuming array is sorted DESC from query, or we sort here)
@@ -118,9 +168,6 @@ export function ConversationDashboard({ initialConversations}: ConversationDashb
       
       // Try to get data from the first message sent by a customer if conv.customer isn't loaded
       const customerMsg = sortedMessages.find(m => m.senderType === 'customer');
-      
-      // Note: If you update your query to include `with: { customer: true }`, 
-      // you can access `conv.customer.firstName` directly here.
       //@ts-ignore
       if (customerMsg?.sender) {
         //@ts-ignore
@@ -128,16 +175,6 @@ export function ConversationDashboard({ initialConversations}: ConversationDashb
          customerName = firstName && lastName ? `${firstName} ${lastName}` : (username || "Customer");
       }
 
-      if (customerName) {
-        customerInitials = customerName
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-          .toUpperCase()
-          .slice(0, 2);
-      }
-
-      // Generate initials from the name found above
       if (customerName && customerName !== "Unknown Customer") {
         customerInitials = customerName
           .split(" ")
@@ -147,22 +184,17 @@ export function ConversationDashboard({ initialConversations}: ConversationDashb
           .slice(0, 2);
       }
 
-      // 3. Calculate Unread
-      const unreadCount = conv.messages.filter(
-        (m) => !m.isRead && m.senderType === "customer"
-      ).length;
+      // Use state-managed unread count
+      const unreadCount = unreadCounts[conv.id] ?? 0;
 
-      // 4. Product Image
-      // Your schema has `productImages`, assuming `url` property exists on that table
       const imgUrl = conv.product.productImages?.[0] 
         ? (conv.product.productImages[0] as any).url || (conv.product.productImages[0] as any).imageUrl 
         : null; 
 
-
-        let productName = conv.product.watch.brand.name + " " + conv.product.watch.model
-        if(productName.length > 35) {
-            productName = productName.substring(0, 25) + "..."
-        }
+      let productName = conv.product.watch.brand.name + " " + conv.product.watch.model;
+      if(productName.length > 35) {
+        productName = productName.substring(0, 25) + "...";
+      }
 
       return {
         id: conv.id,
@@ -180,7 +212,7 @@ export function ConversationDashboard({ initialConversations}: ConversationDashb
         sortedMessages
       };
     });
-  }, [initialConversations, latestMessages]);
+  }, [initialConversations, latestMessages, unreadCounts]);
 
   // --- 2. Filtering & Sorting ---
   const filteredConversations = useMemo(() => {
@@ -230,27 +262,35 @@ export function ConversationDashboard({ initialConversations}: ConversationDashb
   // Find currently selected conversation details
   const selectedChat = allConversations.find(c => c.id === selectedConversationId);
 
-  const handleSelectConversation = useCallback((conversationId: string) => {
+  const handleSelectConversation = useCallback(async (conversationId: string) => {
     setSelectedConversationId(conversationId);
     setVisitedConversationIds((prev) => {
       const next = new Set(prev);
       next.add(conversationId);
       return next;
     });
-  }, []);
 
-  const handleLatestMessage = useCallback((conversationId: string, message: ChatMessage) => {
-  setLatestMessages((prev) => ({
-    ...prev,
-    [conversationId]: message,
-  }));
-}, []);
+    // Clear unread count immediately
+    setUnreadCounts((prev) => ({
+      ...prev,
+      [conversationId]: 0,
+    }));
 
+    // Mark as read in backend
+    try {
+      await markAsRead(conversationId, user?.id as string);
+    } catch (error) {
+      console.error("Failed to mark as read:", error);
+    }
+  }, [user?.id]);
+
+  // REMOVED: The handleLatestMessage callback that was causing double-increments
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-[380px_1fr] h-[calc(100vh-6rem)] gap-4">
       {/* --- LEFT PANEL: LIST & FILTERS --- */}
       <Card className="flex flex-col h-full border-r-0 md:border-r shadow-none rounded-none md:rounded-lg overflow-hidden min-w-0">
-        <CardHeader className="px-4 border-b space-y-3 shrink-0"> {/* Added shrink-0 to ensure header doesn't get squashed */}
+        <CardHeader className="px-4 border-b space-y-3 shrink-0">
           <div className="flex flex-col gap-4">
             <h2 className="text-2xl font-semibold">Inbox</h2>
             <div className="flex gap-2">
@@ -392,62 +432,62 @@ export function ConversationDashboard({ initialConversations}: ConversationDashb
 
       {/* --- RIGHT PANEL: CHAT AREA --- */}
       <Card className="flex flex-col h-full min-h-0 overflow-hidden shadow-none border-0 md:border">
-  {initialConversations.map((conv) => {
-    const chat = allConversations.find((c) => c.id === conv.id);
-    const isSelected = selectedConversationId === conv.id;
+        {initialConversations.map((conv) => {
+          const chat = allConversations.find((c) => c.id === conv.id);
+          const isSelected = selectedConversationId === conv.id;
 
-    if (!visitedConversationIds.has(conv.id)) return null;
+          if (!visitedConversationIds.has(conv.id)) return null;
 
-    return (
-      <div
-        key={conv.id}
-        className={cn(
-          "flex flex-col h-full min-h-0",
-          isSelected ? "flex" : "hidden"
-        )}
-      >
-        {chat && (
-          <>
-            <CardHeader className="py-4 border-b flex flex-row items-center justify-between shrink-0">
-              <div className="flex items-center gap-3">
-                <Avatar>
-                  <AvatarFallback>{chat.customerInitials}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <CardTitle className="text-base">{chat.customerName}</CardTitle>
-                  <CardDescription className="text-xs">
-                    Regarding: <span className="font-medium text-foreground">{chat.productName}</span>
-                  </CardDescription>
-                </div>
-              </div>
-              <Badge variant={chat.status === "closed" ? "secondary" : "outline"} className="capitalize">
-                {chat.status}
-              </Badge>
-            </CardHeader>
+          return (
+            <div
+              key={conv.id}
+              className={cn(
+                "flex flex-col h-full min-h-0",
+                isSelected ? "flex" : "hidden"
+              )}
+            >
+              {chat && (
+                <>
+                  <CardHeader className="py-4 border-b flex flex-row items-center justify-between shrink-0">
+                    <div className="flex items-center gap-3">
+                      <Avatar>
+                        <AvatarFallback>{chat.customerInitials}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <CardTitle className="text-base">{chat.customerName}</CardTitle>
+                        <CardDescription className="text-xs">
+                          Regarding: <span className="font-medium text-foreground">{chat.productName}</span>
+                        </CardDescription>
+                      </div>
+                    </div>
+                    <Badge variant={chat.status === "closed" ? "secondary" : "outline"} className="capitalize">
+                      {chat.status}
+                    </Badge>
+                  </CardHeader>
 
-            <div className="flex-1 min-h-0 overflow-hidden">
-              <RealtimeChat
-                conversation={conv}
-                messages={conv.messages}
-                userId={user?.id as string}
-                username={user?.user_metadata.display_name}
-                onLatestMessage={handleLatestMessage}
-              />
+                  <div className="flex-1 min-h-0 overflow-hidden">
+                    <RealtimeChat
+                      conversation={conv}
+                      //@ts-ignore
+                      messages={conv.messages}
+                      userId={user?.id as string}
+                      username={user?.user_metadata.display_name}
+                    />
+                  </div>
+                </>
+              )}
             </div>
-          </>
-        )}
-      </div>
-    );
-  })}
+          );
+        })}
 
-  {!selectedConversationId && (
-    <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-      <MessageSquare className="h-16 w-16 mb-4 opacity-10" />
-      <p className="text-lg font-medium">No chat selected</p>
-      <p className="text-sm">Select a conversation to view details</p>
-    </div>
-  )}
-</Card>
+        {!selectedConversationId && (
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+            <MessageSquare className="h-16 w-16 mb-4 opacity-10" />
+            <p className="text-lg font-medium">No chat selected</p>
+            <p className="text-sm">Select a conversation to view details</p>
+          </div>
+        )}
+      </Card>
     </div>
   );
 }

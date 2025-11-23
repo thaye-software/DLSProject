@@ -7,7 +7,7 @@ import { type ChatMessage, useRealtimeChat } from "@/hooks/use-realtime-chat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowDown, HandCoins, Send } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { markAsRead } from "@/services/messageService";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { OfferPricePopover } from "./OfferPricePopover";
@@ -17,7 +17,6 @@ interface RealtimeChatProps {
   userId: string;
   username: string;
   onMessage?: (messages: ChatMessage[]) => void;
-  onLatestMessage?: (conversationId: string, message: ChatMessage) => void; // NEW
   messages?: ChatMessage[];
 }
 
@@ -26,7 +25,6 @@ export const RealtimeChat = ({
   userId,
   username,
   onMessage,
-  onLatestMessage, // used to sync parent component ie. admin ConversationDashboard
   messages: initialMessages = [],
 }: RealtimeChatProps) => {
   const {
@@ -47,6 +45,8 @@ export const RealtimeChat = ({
   const [newMessage, setNewMessage] = useState("");
   const [focused, setFocused] = useState(false);
   const { role } = useSupabaseAuth();
+  const lastNotifiedIdRef = useRef<string | null>(null);
+
 
   // Merge realtime messages with initial messages
   const allMessages = useMemo(() => {
@@ -111,13 +111,6 @@ export const RealtimeChat = ({
     markMessagesAsRead();
   }, [conversation, userId]);
 
-  // used to sync dashboard sidebar ie notify the parent
-  useEffect(() => {
-    if (onLatestMessage && allMessages.length > 0) {
-      const latestMessage = allMessages[allMessages.length - 1];
-      onLatestMessage(conversation.id, latestMessage);
-    }
-  }, [allMessages, conversation.id, onLatestMessage]);
 
   const handleSendMessage = useCallback(
     (e: React.FormEvent) => {
