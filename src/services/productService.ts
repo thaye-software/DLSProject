@@ -93,24 +93,6 @@ export async function getFilteredProducts(filters: Partial<WatchFilters>): Promi
     const appliedSearchFilters = getAppliedSerachFilters(filters);
     const filter = appliedSearchFilters.length > 0 ? and(...appliedSearchFilters) : undefined;
 
-    // this does not seem to work, filtering by brandname, condition, etc is broken
-
-    // const results = await db.query.products.findMany({
-    //   where: and(...(filter || []), gte(products.stock, 1)),
-    //   with: {
-    //     watch: {
-    //       with: {
-    //         brand: true,
-    //       },
-    //     },
-    //     productImages: true,
-    //   },
-    // });
-    // return results;
-
-
-    // old version of the code below
-
     const rows = await db
       .select({
         watch: watches,
@@ -125,10 +107,10 @@ export async function getFilteredProducts(filters: Partial<WatchFilters>): Promi
         productImages,
         and(
           eq(productImages.productId, products.id),
-          eq(productImages.isThumbnail, true)
         )
       )
       .where(filter);
+    console.log("Filtered products rows:", rows);
 
 
 
@@ -150,7 +132,7 @@ export async function getFilteredProducts(filters: Partial<WatchFilters>): Promi
       productImages: row.image
         ? [
             {
-              id: "thumbnial",
+              id: "thumbnail",
               productId: row.product.id,
               imageUrl: row.image,
               isThumbnail: true,
