@@ -1,8 +1,9 @@
 "use client";
-import * as React from "react"
+import {ComponentProps} from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { GalleryVerticalEnd, Minus, Plus } from "lucide-react"
+import { Badge } from "@/components/ui/badge";
 
 import {
   Collapsible,
@@ -23,6 +24,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import Image from "next/image";
+import { useUnreadMessagesContext } from "@/context/UnreadMessagesContext";
 
 const data = {
   navMain: [
@@ -47,8 +49,11 @@ const data = {
   ],
 }
 
-export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AdminSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
   const pathname = usePathname() || "";
+  const { unreadCounts } = useUnreadMessagesContext();
+  const totalUnread = Object.values(unreadCounts).reduce((sum, count) => sum + count, 0);
+  //                         ^^since unreadCounts is a record we we can extract the values by call .values on Objects.
 
   return (
     <Sidebar {...props}>
@@ -91,7 +96,17 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname.startsWith("/admin/conversations")}> 
-                <Link href="/admin/conversations">Conversations</Link>
+                <Link href="/admin/conversations">
+                  Conversations
+                  {totalUnread > 0 && (
+                    <Badge
+                      variant="destructive"
+                      className="ml-2 h-5 px-1.5 text-[10px] shrink-0"
+                    >
+                      {String(totalUnread)}
+                    </Badge>
+                  )}
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             {/* Master Data */}
