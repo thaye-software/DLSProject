@@ -91,7 +91,7 @@ export async function getAllProducts(): Promise<ProductModel[]> {
 export async function getFilteredProducts(filters: Partial<WatchFilters>): Promise<Product[]> {
   try {
     const appliedSearchFilters = getAppliedSerachFilters(filters);
-    const filter = appliedSearchFilters.length ? appliedSearchFilters : undefined;
+    const filter = appliedSearchFilters.length > 0 ? and(...appliedSearchFilters) : undefined;
 
     // this does not seem to work, filtering by brandname, condition, etc is broken
 
@@ -127,9 +127,8 @@ export async function getFilteredProducts(filters: Partial<WatchFilters>): Promi
           eq(productImages.productId, products.id),
           eq(productImages.isThumbnail, true)
         )
-    )
-      // show products where stock >= 1
-      .where(and(filter));
+      )
+      .where(filter);
 
 
 
@@ -289,6 +288,10 @@ export async function updateProductStock(productId: string, stock: number, tx?: 
 function getAppliedSerachFilters(filters: Partial<WatchFilters>) {
 
   const appliedSearchFilters = [];
+
+  appliedSearchFilters.push(gte(products.stock, 1))
+
+
 
   if (filters.brandNames && filters.brandNames?.length > 0) {
     const brandArray = Array.isArray(filters.brandNames) ? filters.brandNames : [filters.brandNames]; // force single string into array
