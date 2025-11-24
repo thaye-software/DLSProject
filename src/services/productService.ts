@@ -41,12 +41,15 @@ export async function getProductBySlug(
 
     return product;
   } catch (error) {
-    console.error("(server) Unexpected error getting product...",error);
+    console.error("(server) Unexpected error getting product...", error);
     throw error;
   }
 }
 
-export async function getProductById(id: string, tx?: DbTransaction): Promise<ProductModel | undefined> {
+export async function getProductById(
+  id: string,
+  tx?: DbTransaction
+): Promise<ProductModel | undefined> {
   try {
     const dbContext = tx || db;
     const foundProduct = await dbContext.query.products.findFirst({
@@ -55,13 +58,12 @@ export async function getProductById(id: string, tx?: DbTransaction): Promise<Pr
         productImages: true,
         watch: {
           with: {
-            brand: true
-          }
-        }
-      }
+            brand: true,
+          },
+        },
+      },
     });
     return foundProduct;
-
   } catch (error) {
     console.error(`(server) faild to get product by id: ${id}`, error);
     throw error;
@@ -88,28 +90,15 @@ export async function getAllProducts(): Promise<ProductModel[]> {
   }
 }
 
-export async function getFilteredProducts(filters: Partial<WatchFilters>): Promise<Product[]> {
+export async function getFilteredProducts(
+  filters: Partial<WatchFilters>
+): Promise<Product[]> {
   try {
     const appliedSearchFilters = getAppliedSerachFilters(filters);
-    const filter = appliedSearchFilters.length > 0 ? and(...appliedSearchFilters) : undefined;
-
-    // this does not seem to work, filtering by brandname, condition, etc is broken
-
-    // const results = await db.query.products.findMany({
-    //   where: and(...(filter || []), gte(products.stock, 1)),
-    //   with: {
-    //     watch: {
-    //       with: {
-    //         brand: true,
-    //       },
-    //     },
-    //     productImages: true,
-    //   },
-    // });
-    // return results;
-
-
-    // old version of the code below
+    const filter =
+      appliedSearchFilters.length > 0
+        ? and(...appliedSearchFilters)
+        : undefined;
 
     const rows = await db
       .select({
@@ -121,52 +110,68 @@ export async function getFilteredProducts(filters: Partial<WatchFilters>): Promi
       .from(watches)
       .innerJoin(products, eq(products.id, watches.productId))
       .innerJoin(brands, eq(brands.id, watches.brandId))
-      .leftJoin(
-        productImages,
-        and(
-          eq(productImages.productId, products.id),
-          eq(productImages.isThumbnail, true)
-        )
-      )
+      .leftJoin(productImages, and(eq(productImages.productId, products.id)))
       .where(filter);
+    console.log("Filtered products rows:", rows);
 
+    // rows may contain multiple rows per product when there are many images
+    // (left join on productImages produces one row per image). Group by
+    // product id to ensure each product only appears once in the result set
+    // and aggregate unique images for each product.
+    const productsMap = new Map<string, Product>();
 
+    for (const row of rows) {
+      const pid = row.product.id;
 
-    const filteredProducts: Product[] = rows.map((row) => ({
-      id: row.product.id,
-      name: row.product.name,
-      priceDkk: row.product.priceDkk,
-      stock: row.product.stock,
-      productType: row.product.productType,
-      description: row.product.description,
+      const imageObj = row.image
+        ? {
+            id: "thumbnail",
+            productId: row.product.id,
+            imageUrl: row.image,
+            isThumbnail: true,
+          }
+        : null;
 
-      watch: {
-        ...row.watch,
-        brand: {
-          ...row.brand
-        }
-      },
+      if (!productsMap.has(pid)) {
+        productsMap.set(pid, {
+          id: row.product.id,
+          name: row.product.name,
+          priceDkk: row.product.priceDkk,
+          stock: row.product.stock,
+          productType: row.product.productType,
+          description: row.product.description,
 
-      productImages: row.image
-        ? [
-            {
-              id: "thumbnial",
-              productId: row.product.id,
-              imageUrl: row.image,
-              isThumbnail: true,
+          watch: {
+            ...row.watch,
+            brand: {
+              ...row.brand,
             },
-          ]
-        : [],
-    }));
+          },
+
+          productImages: imageObj ? [imageObj] : [],
+        });
+      } else if (imageObj) {
+        // avoid adding duplicate identical image URLs
+        const p = productsMap.get(pid)!;
+        if (
+          !p.productImages.some((img) => img.imageUrl === imageObj.imageUrl)
+        ) {
+          p.productImages.push(imageObj);
+        }
+      }
+    }
+
+    const filteredProducts: Product[] = Array.from(productsMap.values());
 
     return filteredProducts;
-
   } catch (error) {
-    console.error(`(server) failed to filter products with filters: ${filters}`, error);
+    console.error(
+      `(server) failed to filter products with filters: ${filters}`,
+      error
+    );
     throw error;
   }
 }
-
 
 // TODO: optimise this function
 export async function getAllProductsByBrandName(
@@ -229,7 +234,6 @@ export async function searchProducts(query: string): Promise<Product[]> {
   }
 }
 
-
 export async function getFilterPriceRange() {
   try {
     const [lowest] = await db
@@ -243,19 +247,16 @@ export async function getFilterPriceRange() {
       .from(products)
       .orderBy(desc(products.priceDkk))
       .limit(1);
-    
+
     return {
       lowest: lowest?.priceDkk ?? 0,
       highest: highest?.priceDkk ?? 42069,
     };
-
   } catch (error) {
     console.error("(server) failed to get price extremes", error);
     throw error;
   }
 }
-
-
 
 export async function createProduct(
   data: Omit<NewProductModel, "id" | "createdAt">
@@ -269,52 +270,54 @@ export async function createProduct(
   }
 }
 
-
-
-export async function updateProductStock(productId: string, stock: number, tx?: DbTransaction): Promise<void> {
+export async function updateProductStock(
+  productId: string,
+  stock: number,
+  tx?: DbTransaction
+): Promise<void> {
   try {
     const dbContext = tx || db;
-    await dbContext.update(products).set({stock}).where(eq(products.id, productId)).returning();
-
+    await dbContext
+      .update(products)
+      .set({ stock })
+      .where(eq(products.id, productId))
+      .returning();
   } catch (error) {
     console.error("(server) failed to update the stock on product...", error);
     throw error;
   }
 }
 
-
-
 //------------------------------------------ helper functions ------------------------------------------
 function getAppliedSerachFilters(filters: Partial<WatchFilters>) {
-
   const appliedSearchFilters = [];
 
-  appliedSearchFilters.push(gte(products.stock, 1))
-
-
+  appliedSearchFilters.push(gte(products.stock, 1));
 
   if (filters.brandNames && filters.brandNames?.length > 0) {
-    const brandArray = Array.isArray(filters.brandNames) ? filters.brandNames : [filters.brandNames]; // force single string into array
+    const brandArray = Array.isArray(filters.brandNames)
+      ? filters.brandNames
+      : [filters.brandNames]; // force single string into array
     appliedSearchFilters.push(inArray(brands.name, brandArray));
   }
 
-
-
   if (filters.conditionValues && filters.conditionValues.length > 0) {
-    const conditionArray = Array.isArray(filters.conditionValues) ? filters.conditionValues.map(Number) : [Number(filters.conditionValues)] // convert all to numbers
+    const conditionArray = Array.isArray(filters.conditionValues)
+      ? filters.conditionValues.map(Number)
+      : [Number(filters.conditionValues)]; // convert all to numbers
     appliedSearchFilters.push(inArray(watches.condition, conditionArray));
   }
 
-
-
   if (filters.maxPrice) {
-    appliedSearchFilters.push(lte(products.priceDkk, Number(filters.maxPrice) * 100));
+    appliedSearchFilters.push(
+      lte(products.priceDkk, Number(filters.maxPrice) * 100)
+    );
   }
   if (filters.minPrice) {
-    appliedSearchFilters.push(gte(products.priceDkk, Number(filters.minPrice) * 100)); // convert back to cents/øre
+    appliedSearchFilters.push(
+      gte(products.priceDkk, Number(filters.minPrice) * 100)
+    ); // convert back to cents/øre
   }
-  
-
 
   if (filters.yearStart) {
     appliedSearchFilters.push(gte(watches.year, Number(filters.yearStart)));
@@ -322,8 +325,6 @@ function getAppliedSerachFilters(filters: Partial<WatchFilters>) {
   if (filters.yearEnd) {
     appliedSearchFilters.push(lte(watches.year, Number(filters.yearEnd)));
   }
-
-
 
   if (filters.minSize) {
     appliedSearchFilters.push(gte(watches.size, Number(filters.minSize)));
