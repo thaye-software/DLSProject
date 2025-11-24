@@ -32,8 +32,12 @@ export const ChatPanel: React.FC<{
               <Item
                 key={conv.id}
                 className="flex p-0 text-left w-full rounded-2xl text-sm cursor-pointer hover:bg-accent flex-nowrap items-start"
+                onClick={() => setSelectedConversation(conv)}
               >
-                <Link href={`/watches/view/${conv.product.watch.slug}`}>
+                <Link 
+                  href={`/watches/view/${conv.product.watch.slug}`}
+                  onClick={(e) => e.stopPropagation()}
+                  >
                   <Image
                     src={
                       conv.product.productImages[0].imageUrl ||
@@ -42,14 +46,13 @@ export const ChatPanel: React.FC<{
                     alt={conv.product.name}
                     width={80}
                     height={80}
-                    className="rounded-2xl h-full aspect-square object-cover flex-shrink-0"
+                    className="rounded-2xl h-full aspect-square object-cover shrink-0"
                     unoptimized
                   />
                 </Link>
 
                 <div
                   className="gap-2 flex flex-col ml-3 min-w-0"
-                  onClick={() => setSelectedConversation(conv)}
                 >
                   {/* product name */}
                   <div className="font-bold text-lg truncate">
