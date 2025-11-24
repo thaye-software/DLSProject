@@ -29,6 +29,13 @@
       "when": 1763649336906,
       "tag": "20251120143536_change-favorites-to-relate-to-products-not-watches",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1763982687213,
+      "tag": "20251124111127_add-vat-rate-to-countries",
+      "breakpoints": true
     }
   ]
 }

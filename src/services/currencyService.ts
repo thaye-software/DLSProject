@@ -4,6 +4,7 @@ import { db } from "@/database/drizzle";
 import { currencies, currencyHistory } from "@/database/schema";
 import { eq, desc } from "drizzle-orm";
 import { CurrencyHistoryModel, CurrencyModel, NewCurrencyModel } from "@/database/types";
+import { getCountryVATByCode } from "./countryService";
 
 
 export async function getCurrencyByCode(currencyCode: string): Promise<CurrencyModel> {
@@ -113,9 +114,9 @@ export async function convertEuroToDkk(priceEurInCents: number): Promise<number>
 export async function getLocalCurrencyString(priceDkkInCents: number, targetCountryCode: string): Promise<string> {
   const country = targetCountryCode.toUpperCase();
 
-  // If Danish, return DKK
+  // If Danish, return DKK including 25% VAT
   if (country === "DKK" || country === "DK") {
-    const price = priceDkkInCents / 100;
+    const price = (priceDkkInCents * 1.25) / 100;
     return new Intl.NumberFormat("da-DK", {
       style: "currency",
       currency: "DKK",
@@ -127,13 +128,14 @@ export async function getLocalCurrencyString(priceDkkInCents: number, targetCoun
     const targetCurrencyCode = "EUR"; // Requirement: non-DK users see EUR
     const { exchangeRate } = await getCurrencyByCode(targetCurrencyCode);
     const rate = parseFloat(exchangeRate);
-    
-    const convertedPrice = (priceDkkInCents * rate) / 100;
+    // add VAT based on country
+    const vatRate = await getCountryVATByCode(country);
+    const priceEurWithVat = (priceDkkInCents * rate) * (1 + vatRate / 100);
     
     return new Intl.NumberFormat("en-IE", {
       style: "currency",
       currency: targetCurrencyCode,
-    }).format(convertedPrice);
+    }).format(priceEurWithVat / 100);
 
   } catch (error) {
     console.error("(Server) Error getting exchange rate", error);

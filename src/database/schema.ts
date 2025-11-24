@@ -23,6 +23,7 @@ export const countries = pgTable(
     currencyId: uuid("currency_id")
       .notNull()
       .references(() => currencies.id, { onDelete: "cascade" }),
+    vatRate: integer("vat_rate").notNull().default(0),
   },
   (table) => [
     index("idx_countries_name").on(table.name),

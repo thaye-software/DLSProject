@@ -64,3 +64,21 @@ export async function deleteCustomerCountry(userUuid: string): Promise<void> {
         throw error;
     }
 }
+
+export async function getCountryVATByCode(countryCode: string): Promise<number> {
+    try {
+        const foundCountry = await db.query.countries.findFirst({
+            where: eq(countries.abbreviation, countryCode.toUpperCase())
+        });
+
+        if(!foundCountry) {
+            throw new Error(`Country with code ${countryCode} not found`);
+        }
+
+        return foundCountry.vatRate;
+
+    } catch(error) {
+        console.error(`(server) failded to get country VAT from databse with code: ${countryCode}`, error);
+        throw error;
+    }
+}
