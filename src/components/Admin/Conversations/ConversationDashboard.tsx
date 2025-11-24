@@ -19,6 +19,9 @@ import type { ConversationModel } from "@/database/types";
 
 import { ChatMessage } from "@/hooks/use-realtime-chat";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import useSyncUnreadCounts from "@/hooks/conversation-dashboard/useSyncUnreadCounts";
+import useUIConversations from "@/hooks/conversation-dashboard/useUIConversations";
+import useSetActiveChatReadZero from "@/hooks/conversation-dashboard/useSetActiveChatReadZero";
 
 import { markAsRead } from "@/services/messageService";
 
@@ -46,16 +49,9 @@ export type UIConversation = {
   sortedMessages: ChatMessage[]
 };
 
-interface ConversationDashboardProps {
-  initialConversations: ConversationModel[];
-}
 
 
-
-
-
-
-export function ConversationDashboard({ initialConversations }: ConversationDashboardProps) {
+export function ConversationDashboard({ initialConversations }:{initialConversations: ConversationModel[]}) {
   const [viewMode, setViewMode] = useState<"product" | "all">("product");
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   
@@ -63,7 +59,7 @@ export function ConversationDashboard({ initialConversations }: ConversationDash
   const [visitedConversationIds, setVisitedConversationIds] = useState<Set<string>>(new Set());
 
   
-  const { unreadCounts, setUnreadCounts, realtimeMessages, addRealtimeMessage } = useUnreadMessagesContext();
+  const { setUnreadCounts, addRealtimeMessage } = useUnreadMessagesContext();
   const [searchQuery, setSearchQuery] = useState("");
   const { user } = useSupabaseAuth();
 
@@ -76,125 +72,20 @@ export function ConversationDashboard({ initialConversations }: ConversationDash
   }, [selectedConversationId]);
 
 
-
-  // --- 1. HANDLE ACTIVE CHAT UNREADS ---
+  //------------------------------ 1. HANDLE ACTIVE CHAT UNREADS ------------------------------
   // Since the global hook increments counters blindly, we must reset the counter
   // if the incoming message belongs to the currently selected conversation.
-  useEffect(() => {
-    if (selectedConversationId && unreadCounts[selectedConversationId] > 0) {
-        // Reset unread count immediately if we are looking at this chat
-        setUnreadCounts(prev => ({ ...prev, [selectedConversationId]: 0 }));
-        
-        // mark as read, sync wit hdb
-        if(user?.id) markAsRead(selectedConversationId, user.id);
-    }
-  }, [unreadCounts, selectedConversationId, setUnreadCounts, user?.id]);
+  useSetActiveChatReadZero(selectedConversationId, user);
 
-
-
- // --- 2. INITIAL UNREAD COUNT SETUP ---
-  // (Keep this to sync initial DB state with Context on mount)
-  useEffect(() => {
-    if (!user || !initialConversations) return;
-    
-    // Only set if context is empty (prevents overwriting live updates from Sidebar)
-    // or you can implement smarter merge logic.
-    setUnreadCounts((prev) => {
-        const initialUnreads: Record<string, number> = { ...prev };
-        initialConversations.forEach((conv) => {
-            const dbCount = conv.messages.filter(
-                (message) => !message.isRead && message.senderType === "customer" && message.senderId !== user.id
-            ).length;
-            // Only update if not already tracked (or simply overwrite if you trust DB fresh fetch)
-            initialUnreads[conv.id] = dbCount;
-        });
-        return initialUnreads;
-    });
-  }, [initialConversations, user, setUnreadCounts]);
+  //------------------------------ 2. INITIAL UNREAD COUNT SETUP ------------------------------
+  useSyncUnreadCounts(user, initialConversations, setUnreadCounts);
   
-
-
-  // --- 3. DATA PREPARATION ---
-  //@ts-ignore
-  const allConversations = useMemo<UIConversation[]>(() => {
-    return initialConversations.map((conv) => {
-      
-      // 1. Get Context Messages
-      const realtimeMsgs = realtimeMessages[conv.id] || [];
-
-      // 2. MERGE STRATEGY (Deduplication):
-      // Create a Set of existing DB message IDs for O(1) lookups
-      const dbMessageIds = new Set(conv.messages.map(m => m.id));
-
-      // Only add realtime messages that are NOT already in the DB list
-      const uniqueRealtimeMsgs = realtimeMsgs.filter(m => !dbMessageIds.has(m.id as string));
-
-      // Combine DB + Unique Realtime
-      const combinedMessages = [...conv.messages, ...uniqueRealtimeMsgs];
-
-      // 3. Sort Combined List (Newest First)
-      const sortedMessages = combinedMessages.sort(
-          (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-      );
-      
-      // 4. Determine "True" Latest Message
-      // SIMPLIFICATION: We already sorted them, so index 0 is always the newest.
-      const lastMsgObj = sortedMessages[0]; 
-
-      // 5. Customer Info Logic
-      // We can now look through the combined list comfortably
-      let customerName = "Unknown Customer";
-      let customerInitials = "??";
-
-      const customerMsg = sortedMessages.find(m => m.senderType === "customer");
-
-      //@ts-ignore
-      if (customerMsg?.sender) {
-        //@ts-ignore
-        const { firstName, lastName, username } = customerMsg.sender;
-        customerName = firstName && lastName ? `${firstName} ${lastName}` : username || "Customer";
-      }
-
-      if (customerName !== "Unknown Customer") {
-        customerInitials = customerName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
-      }
-
-      const imgUrl = conv.product.productImages?.[0]
-        ? (conv.product.productImages[0] as any).url || (conv.product.productImages[0] as any).imageUrl
-        : null;
-
-      let productName = conv.product.watch.brand.name + " " + conv.product.watch.model;
-      if (productName.length > 35) {
-        productName = productName.substring(0, 25) + "...";
-      }
-
-      return {
-        id: conv.id,
-        productId: conv.productId,
-        productSlug: conv.product.watch.slug,
-        productName,
-        productImage: imgUrl,
-        customerId: conv.customerId,
-        customerName,
-        customerInitials,
-        // Safe check in case there are 0 messages total
-        lastMessageContent: lastMsgObj?.content || "No messages yet",
-        lastMessageAt: lastMsgObj?.createdAt
-          ? new Date(lastMsgObj.createdAt)
-          : new Date(conv.createdAt || Date.now()),
-        lastMessageSenderId: lastMsgObj?.senderId || null,
-        status: conv.status || "open",
-        unreadCount: unreadCounts[conv.id] ?? 0,
-        
-        // ⚠️ CRITICAL FIX HERE: Return the combined list, not just the DB list
-        sortedMessages: sortedMessages, 
-      };
-    });
-  }, [initialConversations, realtimeMessages, unreadCounts]);
+  //------------------------------ 3. DATA PREPARATION ------------------------------
+  const allConversations = useUIConversations(initialConversations);
 
 
 
-  // --- FILTERING & SORTING ---
+  //------------------------------ FILTERING & SORTING ------------------------------
   const filteredConversations = useMemo(() => {
     let data = [...allConversations];
 
@@ -215,7 +106,9 @@ export function ConversationDashboard({ initialConversations }: ConversationDash
     return data;
   }, [allConversations, searchQuery, sortOrder]);
 
-  // --- GROUPING ---
+
+
+  //------------------------------ GROUPING ------------------------------
   const groupedByProduct = useMemo(() => {
     const groups: Record<string, UIConversation[]> = {};
     filteredConversations.forEach((conv) => {
@@ -235,7 +128,7 @@ export function ConversationDashboard({ initialConversations }: ConversationDash
 
 
 
-  // --- HANDLERS ---
+  //------------------------------ HANDLERS ------------------------------
   const handleSelectConversation = useCallback(async (conversationId: string) => {
     setSelectedConversationId(conversationId);
     setVisitedConversationIds((prev) => {
@@ -252,6 +145,7 @@ export function ConversationDashboard({ initialConversations }: ConversationDash
       console.error("Failed to mark as read:", error);
     }
   }, [user?.id, setUnreadCounts]);
+
 
   const handleOutgoingMessage = useCallback((message: ChatMessage) => {
       // Update Global Context (this keeps Sidebar updated with "You sent a message")
