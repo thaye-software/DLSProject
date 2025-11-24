@@ -5,6 +5,7 @@ import { RealtimeChat } from "./RealtimeChat";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { Item } from "../ui/item";
 import Image from "next/image";
+import Link from "next/link";
 
 export const ChatPanel: React.FC<{
   user: any;
@@ -30,21 +31,25 @@ export const ChatPanel: React.FC<{
             {conversations.map((conv) => (
               <Item
                 key={conv.id}
-                onClick={() => setSelectedConversation(conv)}
                 className="flex p-0 text-left w-full rounded-2xl text-sm cursor-pointer hover:bg-accent"
               >
-                <Image
-                  src={
-                    conv.product.productImages[0].imageUrl ||
-                    "/images/placeholder.png"
-                  }
-                  alt={conv.product.name}
-                  width={80}
-                  height={80}
-                  className="rounded-2xl h-full aspect-square object-cover"
-                  unoptimized
-                />
-                <div className="gap-2 flex flex-col">
+                <Link href={`/watches/view/${conv.product.watch.slug}`}>
+                  <Image
+                    src={
+                      conv.product.productImages[0].imageUrl ||
+                      "/images/placeholder.png"
+                    }
+                    alt={conv.product.name}
+                    width={80}
+                    height={80}
+                    className="rounded-2xl h-full aspect-square object-cover"
+                    unoptimized
+                  />
+                </Link>
+                <div 
+                  className="gap-2 flex flex-col"
+                  onClick={() => setSelectedConversation(conv)}
+                >
                   <div>
                     <span className="font-bold text-lg">
                       {conv.product.name}
