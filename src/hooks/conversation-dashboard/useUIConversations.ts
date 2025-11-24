@@ -63,6 +63,7 @@ export default function useUIConversations(initialConversations: ConversationMod
           id: conv.id,
           productId: conv.productId,
           productSlug: conv.product.watch.slug,
+          productRef: conv.product.watch.reference,
           productName,
           productImage: imgUrl,
           customerId: conv.customerId,

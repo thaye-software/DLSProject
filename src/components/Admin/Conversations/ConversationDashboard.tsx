@@ -36,6 +36,7 @@ export type UIConversation = {
   id: string;
   productId: string;
   productSlug: string;
+  productRef: string;
   productName: string;
   productImage: string | null;
   customerId: string;
@@ -119,6 +120,7 @@ export function ConversationDashboard({ initialConversations }:{initialConversat
     return Object.entries(groups).map(([productId, items]) => ({
       productId,
       productSlug: items[0].productSlug,
+      productRef: items[0].productRef,
       productName: items[0].productName,
       productImage: items[0].productImage,
       conversations: items,
@@ -218,7 +220,7 @@ export function ConversationDashboard({ initialConversations }:{initialConversat
                         <AccordionTrigger className="hover:no-underline py-3 pr-2">
                            <div className="flex items-start gap-3 text-left w-full overflow-hidden">
                              <Link href={`/watches/view/${group.productSlug}`}>
-                               <div className="h-10 w-10 rounded bg-muted flex items-center justify-center shrink-0 overflow-hidden relative">
+                               <div className="h-14 w-14 rounded bg-muted flex items-center justify-center shrink-0 overflow-hidden relative">
                                  {group.productImage ? (
                                    <Image className="h-full w-full object-cover" src={group.productImage} alt={group.productName} fill unoptimized />
                                  ) : <Box className="h-5 w-5 opacity-50" />}
@@ -229,6 +231,7 @@ export function ConversationDashboard({ initialConversations }:{initialConversat
                                  <h4 className="font-medium truncate text-sm pr-2" title={group.productName}>{group.productName}</h4>
                                  {group.totalUnread > 0 && <Badge variant="destructive" className="ml-2 h-5 px-1.5 text-[10px] shrink-0">{group.totalUnread}</Badge>}
                                </div>
+                               <p className="text-xs text-muted-foreground mb-2">ref: {group.productRef}</p>
                                <p className="text-xs text-muted-foreground">{group.conversations.length} {group.conversations.length === 1 ? "chat" : "chats"}</p>
                              </div>
                            </div>
