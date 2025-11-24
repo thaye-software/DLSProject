@@ -242,11 +242,11 @@ export const RealtimeChat = ({
         <div className="absolute left-1/2 -translate-x-1/2 bottom-20 z-40">
           <Button 
             size="sm" 
-            className="rounded-full shadow-md mb-10"
+            className="rounded-full shadow-md mb-10 border-2 border-background"
             onClick={handleScrollToBottomClick}
           >
             <ArrowDown className="mr-2 h-4 w-4" />
-            New messages
+            Latest messages
           </Button>
         </div>
       )}

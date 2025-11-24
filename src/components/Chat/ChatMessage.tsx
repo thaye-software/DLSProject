@@ -33,7 +33,7 @@ export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessa
         )}
         <div
           className={cn(
-            'py-2 px-3 rounded-xl text-sm w-full',
+            'py-2 px-3 rounded-xl text-sm w-fit max-w-full',
             'wrap-break-word whitespace-pre-wrap overflow-hidden',
             isOwnMessage ? 'bg-primary text-primary-foreground' : 'bg-accent text-foreground'
           )}
