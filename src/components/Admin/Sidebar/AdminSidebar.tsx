@@ -1,9 +1,8 @@
 "use client";
-import {ComponentProps, useEffect, useState} from "react"
+import {ComponentProps} from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { GalleryVerticalEnd, Minus, Plus } from "lucide-react"
-import { Badge } from "@/components/ui/badge";
+import { Minus, Plus } from "lucide-react"
 
 import {
   Collapsible,
@@ -24,10 +23,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import Image from "next/image";
-import { useUnreadMessagesContext } from "@/context/UnreadMessagesContext";
-import { getAllConversations } from "@/services/conversationService";
-import { useRealtimeConversations } from "@/hooks/useRealtimeConversations";
-import { ConversationModel } from "@/database/types";
+import ConversationsLinkContent from "./ConversationsLinkContent";
 
 
 
@@ -56,36 +52,6 @@ const data = {
 
 export function AdminSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
   const pathname = usePathname() || "";
-  const { unreadCounts, setUnreadCounts } = useUnreadMessagesContext();
-
-  const [initialConversations, setInitialConversations] = useState<ConversationModel[]>([]);
-
-  // TODO 
-  // - fix notifications in admin site 
-  // - fix odd white space in some messages
-  // - refactor and make ConversationDashboard more modular
-
-  useEffect(() => {
-    async function syncUnreadMessages() {
-
-      const allConversations = await getAllConversations();
-      setInitialConversations(allConversations);
-
-      const unreadMessages: Record<string, number> = {};
-      allConversations.forEach( conv => {
-        unreadMessages[conv.id] = conv.messages.filter( message => message.isRead === false && message.senderType === "customer").length;
-      });
-
-      setUnreadCounts(unreadMessages)
-    }
-    syncUnreadMessages();
-
-  }, [setUnreadCounts])
-
-  useRealtimeConversations(initialConversations);
-
-  const totalUnread = Object.values(unreadCounts).reduce((sum, count) => sum + count, 0);
-  //                         ^^since unreadCounts is a record we we can extract the values by call .values on Objects.
 
 
 
@@ -130,17 +96,9 @@ export function AdminSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname.startsWith("/admin/conversations")}> 
-                <Link href="/admin/conversations">
-                  Conversations
-                  {totalUnread > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="ml-2 h-5 px-1.5 text-[10px] shrink-0"
-                    >
-                      {String(totalUnread)}
-                    </Badge>
-                  )}
-                </Link>
+                  <Link href="/admin/conversations">
+                    <ConversationsLinkContent/>
+                  </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             {/* Master Data */}
