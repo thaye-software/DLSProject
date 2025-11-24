@@ -176,7 +176,7 @@ export default function ShippingAndBillingForm({
       const orderId = await submitOrderDetails(data, product, customerCountry);
 
       // TODO should replace orderId with ref nr.
-      router.push(`/orders/checkouttwo/payment?orderId=${orderId}`);
+      router.push(`/orders/checkout/payment?orderId=${orderId}`);
     } catch (error) {
       //@ts-ignore
       toast.error(error.message);

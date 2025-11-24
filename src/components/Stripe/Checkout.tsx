@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { FormEvent, useState } from "react"
 import {
   PaymentElement,
   useStripe,
@@ -22,8 +22,8 @@ function PaymentForm({ orderId }: { orderId: string }) {
   const [message, setMessage] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault()
 
     if (!stripe || !elements) {
       return
@@ -35,7 +35,7 @@ function PaymentForm({ orderId }: { orderId: string }) {
     const { error } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: `${baseUrl}/orders/checkouttwo/success?orderId=${orderId}`,
+        return_url: `${baseUrl}/orders/checkout/success?orderId=${orderId}`,
       },
     })
 

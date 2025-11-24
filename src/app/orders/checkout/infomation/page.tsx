@@ -28,7 +28,7 @@ export default async function OrdersInfoPage({
   if (!user) {
     redirect(
       `/login?redirect=${encodeURIComponent(
-        `/orders/checkouttwo/infomation?product=${productSlug}`
+        `/orders/checkout/infomation?product=${productSlug}`
       )}`
     );
   }
