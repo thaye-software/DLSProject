@@ -112,7 +112,16 @@ export const RealtimeChat = ({
     handleReadStatus();
   }, [realtimeMessages, conversation?.id, userId, initialMessages]); 
 
-  // ✅ Auto-resize textarea as user types
+
+  // preselect the textare/input when chat/conversations has been selected
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+      textareaRef.current.select();
+    }
+  }, []);
+
+  // Auto-resize textarea as user types
   useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -125,6 +134,8 @@ export const RealtimeChat = ({
     const newHeight = Math.min(textarea.scrollHeight, maxHeight);
     textarea.style.height = `${newHeight}px`;
   }, [newMessage]);
+
+
 
   const handleSendMessage = useCallback(
     (e: React.FormEvent) => {
