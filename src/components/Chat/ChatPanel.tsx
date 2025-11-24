@@ -5,6 +5,7 @@ import { RealtimeChat } from "./RealtimeChat";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { Item } from "../ui/item";
 import Image from "next/image";
+import Link from "next/link";
 
 export const ChatPanel: React.FC<{
   user: any;
@@ -30,65 +31,68 @@ export const ChatPanel: React.FC<{
             {conversations.map((conv) => (
               <Item
                 key={conv.id}
+                className="flex p-0 text-left w-full rounded-2xl text-sm cursor-pointer hover:bg-accent flex-nowrap items-start"
                 onClick={() => setSelectedConversation(conv)}
-                className="flex p-0 text-left w-full rounded-2xl text-sm cursor-pointer hover:bg-accent"
               >
-                <Image
-                  src={
-                    conv.product.productImages[0].imageUrl ||
-                    "/images/placeholder.png"
-                  }
-                  alt={conv.product.name}
-                  width={80}
-                  height={80}
-                  className="rounded-2xl h-full aspect-square object-cover"
-                  unoptimized
-                />
-                <div className="gap-2 flex flex-col">
-                  <div>
-                    <span className="font-bold text-lg">
-                      {conv.product.name}
-                    </span>
+                <Link 
+                  href={`/watches/view/${conv.product.watch.slug}`}
+                  onClick={(e) => e.stopPropagation()}
+                  >
+                  <Image
+                    src={
+                      conv.product.productImages[0].imageUrl ||
+                      "/images/placeholder.png"
+                    }
+                    alt={conv.product.name}
+                    width={80}
+                    height={80}
+                    className="rounded-2xl h-full aspect-square object-cover shrink-0"
+                    unoptimized
+                  />
+                </Link>
+
+                <div
+                  className="gap-2 flex flex-col ml-3 min-w-0"
+                >
+                  {/* product name */}
+                  <div className="font-bold text-lg truncate">
+                    {conv.product.name}
                   </div>
 
-                  <div className="flex items-center gap-2 w-full">
-                    {conv.messages && conv.messages.length > 0 ? (
-                      <>
-                        <div className="flex items-center">
-                          {conv.messages[0].sender?.id === user?.id ? (
-                            <span className="font-bold mr-1">You:</span>
-                          ) : (
-                            <span className="font-bold mr-1">{conv.messages[0].senderType.toLowerCase() === "customer" ? (conv.messages[0].sender.username) : ""}:</span>
-                          )}
-                          <span
-                            className={`${
-                              !conv.messages[0].isRead &&
-                              conv.messages[0].sender?.id !== user?.id
-                                ? "font-bold"
-                                : ""
-                            } inline-block align-middle truncate max-w-[22ch]`}
-                          >
-                            {conv.messages[0]?.content}
-                          </span>
-                        </div>
+                  {/* message row */}
+                  <div className="flex items-center w-full gap-2 min-w-0">
+                    {/* message preview */}
+                    <div className="flex items-center min-w-0">
+                      {/* sender */}
+                      {conv.messages[0].sender?.id === user?.id ? (
+                        <span className="font-bold mr-1">You:</span>
+                      ) : (
+                        <span className="font-bold mr-1">
+                          {conv.messages[0].senderType.toLowerCase() === "seller" ? conv.messages[0].sender.username : "User"}
+                        </span>
+                      )}
 
-                        <div className="flex absolute right-4">
-                          <span className="text-xs text-muted-foreground">
-                            {conv.messages[0]?.createdAt
-                              ? new Date(
-                                  conv.messages[0].createdAt
-                                ).toLocaleDateString("en-GB", {
-                                  weekday: "short",
-                                  day: "2-digit",
-                                  month: "short",
-                                })
-                              : ""}
-                          </span>
-                        </div>
-                      </>
-                    ) : (
-                      <div />
-                    )}
+                      {/* content */}
+                      <span
+                        className={`${
+                          !conv.messages[0].isRead &&
+                          conv.messages[0].sender?.id !== user?.id
+                            ? "font-bold"
+                            : ""
+                        } truncate block max-w-[22ch]`}
+                      >
+                        {conv.messages[0]?.content ? conv.messages[0]?.content : "No messages"}
+                      </span>
+                    </div>
+
+                    {/* date */}
+                    <span className="ml-auto text-xs text-muted-foreground whitespace-nowrap">
+                      {new Date(conv.messages[0].createdAt).toLocaleDateString("en-GB", {
+                        weekday: "short",
+                        day: "2-digit",
+                        month: "short",
+                      })}
+                    </span>
                   </div>
                 </div>
               </Item>

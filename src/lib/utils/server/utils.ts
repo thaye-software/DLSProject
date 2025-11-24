@@ -15,6 +15,23 @@ export async function getSignedInUser() {
   return { data: { user }, error };
 }
 
+export async function getLimitedWatchesUser() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if(error) {
+    console.error("(server) failed to get limited watches user", error)
+    return null;
+  }
+
+  const limitedWatchesUser = await getUserById(user?.id as string);
+
+  return limitedWatchesUser;
+}
+
 export async function getAuthUser() {
   const supabase = await createClient();
   let loading = true;
@@ -48,18 +65,6 @@ export async function getUserLocation() {
     city: "Copenhagen",
     currency: "DKK",
   };
-
-  function isPrivateIp(addr: string) {
-    if (!addr) return true;
-    if (addr === "::1" || addr === "127.0.0.1" || addr === "unknown")
-      return true;
-    // simple private range checks
-    if (addr.startsWith("10.")) return true;
-    if (addr.startsWith("172.")) return true;
-    if (addr.startsWith("192.168.")) return true;
-    if (addr.startsWith("169.254.")) return true;
-    return false;
-  }
 
   if (isPrivateIp(ip)) {
     console.log(
@@ -106,3 +111,15 @@ export async function getUserLocation() {
     return defaultLocation;
   }
 }
+
+function isPrivateIp(addr: string) {
+    if (!addr) return true;
+    if (addr === "::1" || addr === "127.0.0.1" || addr === "unknown")
+      return true;
+    // simple private range checks
+    if (addr.startsWith("10.")) return true;
+    if (addr.startsWith("172.")) return true;
+    if (addr.startsWith("192.168.")) return true;
+    if (addr.startsWith("169.254.")) return true;
+    return false;
+  }
