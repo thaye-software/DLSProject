@@ -16,11 +16,7 @@ import { ConversationModel } from "@/database/types";
 export default function ConversationsLinkContent() {
   
   const { unreadCounts, setUnreadCounts } = useUnreadMessagesContext();
-
   const [initialConversations, setInitialConversations] = useState<ConversationModel[]>([]);
-
-  // TODO 
-  // - refactor and make ConversationDashboard more modular
 
   useEffect(() => {
     async function syncUnreadMessages() {
