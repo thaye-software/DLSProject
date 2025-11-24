@@ -58,7 +58,7 @@ export const ChatPanel: React.FC<{
                           {conv.messages[0].sender?.id === user?.id ? (
                             <span className="font-bold mr-1">You:</span>
                           ) : (
-                            <span className="font-bold mr-1">{conv.messages[0].senderType.toLowerCase() === "customer" ? (conv.messages[0].sender.username) : ""}:</span>
+                            <span className="font-bold mr-1">{conv.messages[0].senderType.toLowerCase() === "seller" ? (conv.messages[0].sender.username) : "User"}:</span>
                           )}
                           <span
                             className={`${
