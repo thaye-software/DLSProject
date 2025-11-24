@@ -24,7 +24,7 @@ export default function ChatListItem({
     <button
       onClick={onClick}
       className={cn(
-        "flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all hover:bg-accent w-full max-w-full",
+        "flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all hover:bg-accent w-full max-w-full mb-2",
         isSelected && "bg-accent border-primary/20 shadow-sm",
         compact && "border-0 p-2 bg-transparent hover:bg-muted"
       )}
@@ -72,7 +72,7 @@ export default function ChatListItem({
 
         <div className="line-clamp-2 text-xs text-muted-foreground mt-1 w-full wrap-break-word">
           <span className="font-semibold text-foreground/80">{senderPrefix}</span>
-          {chat.lastMessageContent.substring(0, 100)}
+          {chat.lastMessageContent.length > 20 ? chat.lastMessageContent.substring(0, 20) + "..." : chat.lastMessageContent}
         </div>
       </div>
     </button>
