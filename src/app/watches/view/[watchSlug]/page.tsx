@@ -8,9 +8,7 @@ import {
   Package,
   FileText,
   Calendar,
-  Gauge,
   Clock,
-  ShoppingBasket,
   Ruler,
   Star,
 } from "lucide-react";
@@ -18,9 +16,8 @@ import { getLocalCurrencyString } from "@/services/currencyService";
 import ProductSafetyInfo from "@/components/Watches/ProductSafetyInfoCard";
 import BuyButton from "@/components/Watches/BuyButton";
 import ContactButton from "@/components/Contact/ContactButton";
-import { Button } from "@/components/ui/button";
 import constants from "@/lib/constants";
-import { getUserLocation } from "@/lib/utils/server/utils";
+import { getLimitedWatchesUser, getUserLocation } from "@/lib/utils/server/utils";
 
 function getOptionName(
   options: { id: number; name: string }[],
@@ -39,6 +36,8 @@ export default async function ViewWatchPage({
   if (!product) {
     return notFound();
   }
+
+  const limitedWatchesUser = await getLimitedWatchesUser();
 
   const userGeoLocationData = await getUserLocation();
   const formattedPrice = await getLocalCurrencyString(product?.priceDkk, userGeoLocationData.currency);
@@ -250,8 +249,9 @@ export default async function ViewWatchPage({
                 product={product}
                 className="hover:cursor-pointer flex-1 transition-all transform"
               />
-
-              <ContactButton productId={product.id} />
+              {limitedWatchesUser && limitedWatchesUser.role === "admin" ? (<div></div>) : (
+                <ContactButton productId={product.id} />
+              )}
             </div>
 
             {/* Trust Badges */}
@@ -272,9 +272,6 @@ export default async function ViewWatchPage({
       {/* Product Safety Information */}
       <div>
         {productSafetyInfo ? (
-          // TODO fix this in the schema and do migration...
-          // this error can be ignored since the "productSaftInfo check catches it."
-          // either way this should never be optional anyways
           <ProductSafetyInfo
             brandName={brandName}
             safetyInfo={productSafetyInfo}
