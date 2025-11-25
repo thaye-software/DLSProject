@@ -130,7 +130,7 @@ export default async function PaymentPage({
       ? new Intl.NumberFormat("da-DK", {
           style: "currency",
           currency: "DKK",
-        }).format(shippingDkkCents / 100)
+        }).format(constants.SHIPPING_PRICE_DKK)
       : new Intl.NumberFormat("en-IE", {
           style: "currency",
           currency: "EUR",
@@ -224,7 +224,6 @@ export default async function PaymentPage({
                   <span className="text-foreground">Total</span>
                   <span className="text-foreground">{displayTotalAmount}</span>
                 </div>
-                <p>Todo show tax or no?</p>
               </div>
             </Card>
           </div>

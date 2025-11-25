@@ -5,11 +5,12 @@ import { SearchParams } from "next/dist/server/request/search-params";
 import ToastWrapper from "@/components/Toast/ToastWrapper";
 import ProgressSteps from "@/components/Orders/Info/ProgressSteps";
 
-import { getLocalCurrencyString } from "@/services/currencyService";
-import { getOrderItemByOrderId } from "@/services/orderItemService";
+import { convertCurrencyReturnCents, getLocalCurrencyString } from "@/services/currencyService";
 import { sendOrderConfirmationEmail } from "../../actions";
 import { getOrderById } from "@/services/orderService";
 import getCountryByName from "@/services/countryService";
+import { calculateVAT } from "@/lib/priceUtils";
+import constants from "@/lib/constants";
 
 export default async function SuccessPage({
   searchParams,
@@ -67,27 +68,64 @@ export default async function SuccessPage({
 
   const customerEmail = foundOrder.user.email;
 
-  const itemAmount = foundOrder?.orderItems[0].product.priceDkk;
-  const shippingAmount = foundOrder?.shippingPriceDkk;
-  const totalAmount = foundOrder?.totalPriceDkk;
-  const targetCurrencyCode = foundOrder.currency.code;
   const targetCountry = foundOrder.billingAddress?.country;
   const targetCountryModel = targetCountry
     ? await getCountryByName(targetCountry)
     : null;
   const targetCountryCode = targetCountryModel?.abbreviation;
+
+  const itemAmount = foundOrder?.orderItems[0].product.priceDkk;
+  const shippingAmount = foundOrder?.shippingPriceDkk;
+  const totalAmount = foundOrder?.totalPriceDkk;
+  const vatRate = targetCountryModel ? targetCountryModel.vatRate : 0;
+  
+  const VAT = calculateVAT(Number(itemAmount), vatRate);
+
+  const subtotalDkk = itemAmount + VAT;
+  const subTotalEur = await convertCurrencyReturnCents(
+    subtotalDkk,
+    targetCountryCode as string
+  );
+  let total = 0;
+  if ((targetCountryCode as string).toUpperCase() === "DK") {
+    total = subtotalDkk + (constants.SHIPPING_PRICE_DKK * 100);
+  } else {
+    total = subTotalEur + (constants.SHIPPING_PRICE_EUR * 100);
+  }
+
+  const displayVAT = await getLocalCurrencyString(
+    Number(VAT),
+    targetCountryCode as string
+  );
+
   const displayItemAmount = await getLocalCurrencyString(
-    Number(itemAmount),
+    Number(subtotalDkk),
     targetCountryCode as string
   );
-  const displayShippingAmount = await getLocalCurrencyString(
-    Number(shippingAmount),
-    targetCountryCode as string
-  );
-  const displayTotalAmount = await getLocalCurrencyString(
-    Number(totalAmount),
-    targetCountryCode as string
-  );
+  const displayShippingAmount =
+    (targetCountryCode as string).toUpperCase() === "DK"
+      ? new Intl.NumberFormat("da-DK", {
+          style: "currency",
+          currency: "DKK",
+        }).format(constants.SHIPPING_PRICE_DKK)
+      : new Intl.NumberFormat("en-IE", {
+          style: "currency",
+          currency: "EUR",
+        }).format(constants.SHIPPING_PRICE_EUR);
+  let displayTotalAmount;
+  if (
+    (targetCountryCode as string).toUpperCase() === "DK"
+  ) {
+    displayTotalAmount = new Intl.NumberFormat("da-DK", {
+      style: "currency",
+      currency: "DKK",
+    }).format(total / 100);
+  } else {
+    displayTotalAmount = new Intl.NumberFormat("en-IE", {
+      style: "currency",
+      currency: "EUR",
+    }).format(total / 100);
+  }
 
   const customer = foundOrder.billingAddress;
   const fullName = [
@@ -167,12 +205,12 @@ export default async function SuccessPage({
               <span className="text-foreground">{displayItemAmount}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Shipping</span>
-              <span className="text-foreground">{displayShippingAmount}</span>
+              <span className="text-muted-foreground">VAT included ({vatRate}%)</span>
+              <span className="text-foreground">{displayVAT}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Tax</span>
-              <span className="text-foreground">Included</span>
+              <span className="text-muted-foreground">Shipping</span>
+              <span className="text-foreground">{displayShippingAmount}</span>
             </div>
           </div>
 
