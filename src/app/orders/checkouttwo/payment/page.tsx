@@ -8,6 +8,7 @@ import { getOrderItemByOrderId } from "@/services/orderItemService";
 import {
   getLocalCurrencyString,
   convertCurrency,
+  convertCurrencyReturnCents,
 } from "@/services/currencyService";
 import { convertEuroToDkk } from "@/app/orders/actions";
 import constants from "@/lib/constants";
@@ -18,6 +19,7 @@ import ToastWrapper from "@/components/Toast/ToastWrapper";
 import { Suspense } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import BackButton from "@/components/BackButton";
+import { calculateVAT } from "@/lib/priceUtils";
 
 //view all transaction at this link: https://dashboard.stripe.com/acct_1SKHlN6xjyBvX39o/test/payments
 export default async function PaymentPage({
@@ -39,7 +41,6 @@ export default async function PaymentPage({
       </div>
     );
   }
-
   const foundOrderItem = await getOrderItemByOrderId(orderId);
   if (!foundOrderItem) {
     return (
@@ -54,90 +55,93 @@ export default async function PaymentPage({
       </div>
     );
   }
-  console.log("found order item in payment page:", foundOrderItem);
+  
+
   const productImageSrc = foundOrderItem?.product.productImages[0].imageUrl;
   const productName =
     foundOrderItem?.product.watch.brand.name +
     " " +
     foundOrderItem?.product.watch.model;
 
-  const shippingAmount = foundOrderItem?.order.shippingPriceDkk;
-  const totalAmount = foundOrderItem?.order.totalPriceDkk;
+  const itemAmount = foundOrderItem?.product.priceDkk;
   // Prefer the billing country stored on the order (keeps display consistent with checkout),
-  // fallback to delivery address, then fallback to using the order currency code (DKK -> DK, else default EU)
   const billingCountryName = foundOrderItem?.order.billingAddress?.country;
   const deliveryCountryName = foundOrderItem?.order.deliveryAddress?.country;
 
-  let displayCountryCode = undefined;
-  let billingCountryModel = null;
-  let deliveryCountryModel = null;
+  let countryCode = undefined;
+  let billingCountry = null;
+  let deliveryCountry = null;
+
   if (billingCountryName) {
-    billingCountryModel = await getCountryByName(billingCountryName);
-    displayCountryCode = billingCountryModel?.abbreviation;
+    billingCountry = await getCountryByName(billingCountryName);
+    countryCode = billingCountry?.abbreviation;
   }
-  if (!displayCountryCode && deliveryCountryName) {
-    deliveryCountryModel = await getCountryByName(deliveryCountryName);
-    displayCountryCode = deliveryCountryModel?.abbreviation;
-  }
-
-  if (!displayCountryCode) {
-    // last resort fallback: if order currency is DKK use DK else use IE for EUR formatting
-    const currencyCode = foundOrderItem?.order.currency.code;
-    displayCountryCode = currencyCode === "DKK" ? "DK" : "IE";
+  if (!countryCode && deliveryCountryName) {
+    deliveryCountry = await getCountryByName(deliveryCountryName);
+    countryCode = deliveryCountry?.abbreviation;
   }
 
-  const displayAmount = await getLocalCurrencyString(
+  // calculate VAT for item
+  const VAT = calculateVAT(
     Number(foundOrderItem?.product.priceDkk),
-    displayCountryCode as string
+    //@ts-ignore
+    billingCountry.vatRate
   );
-  // Compute the total as: product gross + shipping (flat EUR converted to DKK cents)
-  // Convert shipping (flat 50 EUR) to DKK cents first
-  const shippingDkkFromConst = await convertEuroToDkk(
-    constants.SHIPPING_PRICE_EUR * 100
+  const subtotal = itemAmount + VAT;
+  // Get the subtotal amount in local currency format
+  const subtotalFormatted = await getLocalCurrencyString(
+    itemAmount + VAT,
+    countryCode as string
   );
-  const productNet = Number(foundOrderItem?.product.priceDkk);
-  const vatPercent =
-    billingCountryModel?.vatRate ?? deliveryCountryModel?.vatRate ?? 25;
-  const vatAmount = Math.round((productNet * vatPercent) / 100);
-  const totalDkk = productNet + vatAmount + shippingDkkFromConst;
+  
+
+  const shippingDkkCents = constants.SHIPPING_PRICE_DKK * 100;
+  const shippingEurCents = constants.SHIPPING_PRICE_EUR * 100;
+
+  console.log("subtotal before shipping:", subtotal);
+  let subtotalEur = await convertCurrencyReturnCents(subtotal, countryCode as string);
+  console.log("subtotalEur:", subtotalEur);
+  let total = null;
+  if (countryCode === "DK") {
+    total = subtotal + shippingDkkCents;
+  } else {
+    total = (subtotalEur + shippingEurCents) / 100;
+    console.log(total)
+  }
 
   let displayTotalAmount;
   if (
-    (displayCountryCode as string).toUpperCase() === "DK"
+    (countryCode as string).toUpperCase() === "DK"
   ) {
     displayTotalAmount = new Intl.NumberFormat("da-DK", {
       style: "currency",
       currency: "DKK",
-    }).format(totalDkk / 100);
+    }).format(total);
   } else {
-    const totalConverted = await convertCurrency(
-      totalDkk,
-      displayCountryCode as string
-    );
     displayTotalAmount = new Intl.NumberFormat("en-IE", {
       style: "currency",
       currency: "EUR",
-    }).format(totalConverted);
+    }).format(total);
   }
   // Use the _flat_ shipping price (50 EUR) as the ground truth for display — this keeps the payment page consistent and explicit about the flat-rate.
 
   const displayShippingAmount =
-    (displayCountryCode as string).toUpperCase() === "DK"
+    (countryCode as string).toUpperCase() === "DK"
       ? new Intl.NumberFormat("da-DK", {
           style: "currency",
           currency: "DKK",
-        }).format(shippingDkkFromConst / 100)
+        }).format(shippingDkkCents / 100)
       : new Intl.NumberFormat("en-IE", {
           style: "currency",
           currency: "EUR",
         }).format(constants.SHIPPING_PRICE_EUR);
 
   // Charge the buyer the gross total (product net + VAT + shipping)
-  const stripeAmountToBePaid = Number(totalDkk);
+  const stripeAmountToBePaid = countryCode === "DK" ? Number(total) : Number(total * 100);
   if (!stripe) throw new Error("Stripe not available");
   const paymentIntent = await stripe.paymentIntents.create({
     amount: stripeAmountToBePaid,
-    currency: "dkk",
+    currency: countryCode === "DK" ? "dkk" : "eur",
     automatic_payment_methods: {
       enabled: true,
     },
@@ -192,7 +196,7 @@ export default async function PaymentPage({
                       {productName}
                     </h3>
                     <p className="text-md font-bold text-foreground mt-2">
-                      {displayAmount}
+                      {subtotalFormatted}
                     </p>
                   </div>
                 </div>
@@ -202,7 +206,7 @@ export default async function PaymentPage({
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Subtotal</span>
-                    <span className="text-foreground">{displayAmount}</span>
+                    <span className="text-foreground">{subtotalFormatted}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Shipping</span>

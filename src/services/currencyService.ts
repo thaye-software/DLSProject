@@ -66,6 +66,29 @@ export async function updateExchangeRate(
   });
 }
 
+export async function convertCurrencyReturnCents(priceDkk: number, targetCountryCode: string): Promise<number> {
+  const country = targetCountryCode.toUpperCase();
+
+  // If Danish, return DKK
+  if (country === "DKK" || country === "DK") {
+    const convertedPrice = priceDkk;
+    return convertedPrice;
+  }
+
+  try {
+    // For all non-DK users, use EUR
+    const targetCurrencyCode = "EUR"; // Requirement: non-DK users see EUR
+    const { exchangeRate } = await getCurrencyByCode(targetCurrencyCode);
+    const rate = parseFloat(exchangeRate);
+    
+    const convertedPrice = priceDkk * rate;
+    return Math.round(convertedPrice);
+
+  } catch (error) {
+    console.error("(Server) Error getting exchange rate", error);
+    throw error;
+  }
+}
 
 
 export async function convertCurrency(priceDkkInCents: number, targetCountryCode: string): Promise<number> {
@@ -92,31 +115,12 @@ export async function convertCurrency(priceDkkInCents: number, targetCountryCode
   }
 }
 
-export async function convertEuroToDkk(priceEurInCents: number): Promise<number> {
-  try {
-    const targetCurrencyCode = "EUR";
-    const { exchangeRate } = await getCurrencyByCode(targetCurrencyCode);
-    const rate = parseFloat(exchangeRate);
-    
-    const convertedPriceDkk = (priceEurInCents / rate);
-    return convertedPriceDkk;
-    // return new Intl.NumberFormat("da-DK", {
-    //   style: "currency",
-    //   currency: "DKK",
-    // }).format(convertedPriceDkk / 100);
-
-  } catch (error) {
-    console.error("(Server) Error getting exchange rate", error);
-    throw error;
-  }
-}
-
 export async function getLocalCurrencyString(priceDkkInCents: number, targetCountryCode: string): Promise<string> {
   const country = targetCountryCode.toUpperCase();
 
-  // If Danish, return DKK including 25% VAT
+  // If Danish, return DKK
   if (country === "DKK" || country === "DK") {
-    const price = (priceDkkInCents * 1.25) / 100;
+    const price = (priceDkkInCents) / 100;
     return new Intl.NumberFormat("da-DK", {
       style: "currency",
       currency: "DKK",
@@ -127,15 +131,13 @@ export async function getLocalCurrencyString(priceDkkInCents: number, targetCoun
     // For all non-DK users, use EUR
     const targetCurrencyCode = "EUR"; // Requirement: non-DK users see EUR
     const { exchangeRate } = await getCurrencyByCode(targetCurrencyCode);
-    const rate = parseFloat(exchangeRate);
-    // add VAT based on country
-    const vatRate = await getCountryVATByCode(country);
-    const priceEurWithVat = (priceDkkInCents * rate) * (1 + vatRate / 100);
     
+    const rate = parseFloat(exchangeRate);
+    const convertedPrice = (priceDkkInCents * rate) / 100;
     return new Intl.NumberFormat("en-IE", {
       style: "currency",
       currency: targetCurrencyCode,
-    }).format(priceEurWithVat / 100);
+    }).format(convertedPrice);
 
   } catch (error) {
     console.error("(Server) Error getting exchange rate", error);

@@ -17,7 +17,6 @@ import { submitOrderDetails } from "@/app/orders/actions";
 
 import { getProductBySlug } from "@/services/productService";
 import { Spinner } from "@/components/ui/spinner";
-import { convertEuroToDkk } from "@/app/orders/actions";
 
 import { toast } from "sonner";
 
@@ -30,6 +29,11 @@ import {
   getLocalCurrencyString,
   convertCurrency,
 } from "@/services/currencyService";
+import {
+  calculateVatCents,
+  calculateSubtotalCents,
+  calculateTotalCents,
+} from "@/lib/priceUtils";
 import { getAllCountries } from "@/services/countryService";
 import { CountryModel } from "@/database/types";
 
@@ -61,6 +65,57 @@ export default function ShippingAndBillingForm({
     null
   );
 
+  // Central helper reused by useEffect and onChange handlers.
+  async function computeAndSetAmounts(
+    netCents: number,
+    vatPercentLocal: number,
+    displayCountryCode: string
+  ) {
+    // compute in cents
+    const vatCents = calculateVatCents(netCents, vatPercentLocal);
+    const subtotalCents = calculateSubtotalCents(netCents, vatPercentLocal);
+
+    // basic pieces
+    setVAT(vatCents);
+    setFormattedTax(await getLocalCurrencyString(vatCents, displayCountryCode));
+    setFormattedPrice(
+      await getLocalCurrencyString(subtotalCents, displayCountryCode)
+    );
+
+    // totals + shipping
+    if (displayCountryCode.toUpperCase() === "DK") {
+      const shippingCents = constants.SHIPPING_PRICE_DKK * 100;
+      const totalCents = subtotalCents + shippingCents;
+      setFormattedShipping(
+        await getLocalCurrencyString(shippingCents, displayCountryCode)
+      );
+      setFormattedTotal(
+        await getLocalCurrencyString(totalCents, displayCountryCode)
+      );
+    } else {
+      // Non-DK: convert subtotal to EUR units and add fixed EUR shipping
+      const subtotalInEurUnits = await convertCurrency(
+        subtotalCents,
+        displayCountryCode
+      );
+      const shippingEurUnits = constants.SHIPPING_PRICE_EUR;
+      const totalInEurUnits = subtotalInEurUnits + shippingEurUnits;
+
+      setFormattedShipping(
+        new Intl.NumberFormat("en-IE", {
+          style: "currency",
+          currency: "EUR",
+        }).format(shippingEurUnits)
+      );
+      setFormattedTotal(
+        new Intl.NumberFormat("en-IE", {
+          style: "currency",
+          currency: "EUR",
+        }).format(totalInEurUnits)
+      );
+    }
+  }
+
   const [sameAsShipping, setSameAsShipping] = useState<boolean>(true);
   const [saveBillingInfo, setSaveBillingInfo] = useState<boolean>(true);
   const [isBillingInfoSaved, setIsBillingInfoSaved] = useState<boolean>(
@@ -86,14 +141,10 @@ export default function ShippingAndBillingForm({
     async function getCountries() {
       const allCountries: CountryModel[] = await getAllCountries();
       setCountries(allCountries);
-
-      // Try to pre-select the customer's saved country so VAT shows correctly
-      if (customerUpdated?.country) {
-        const c = allCountries.find(
-          (x) => x.name === customerUpdated.country?.name
-        );
-        if (c) setSelectedCountry(c);
-      }
+      const foundCountry = allCountries.find(
+        (country) => country.abbreviation === customerGeoLocation
+      );
+      if (foundCountry) setSelectedCountry(foundCountry);
     }
     getCountries();
 
@@ -104,6 +155,8 @@ export default function ShippingAndBillingForm({
     updateCustomerInfo();
 
     async function getProduct() {
+      // persist vat value in cents
+
       try {
         const product = await getProductBySlug(productSlug);
         if (!product) throw new Error("(Client) Error fetching product");
@@ -112,26 +165,13 @@ export default function ShippingAndBillingForm({
             `(Client) ${product.watch.brand.name} ${product.watch.model} is out of stock`
           );
 
-        // We set product first and compute VAT separately (see effect below)
-
-        // product.priceDkk is stored as NET (no VAT). Price formatting and
-        // VAT/gross calculations are handled in the computeVat effect so we
-        // always add the correct VAT for the selected country.
-
-        // we need to convert shipping cost from EUR to DKK for total calculation
-        const shippingDkk = await convertEuroToDkk(
-          constants.SHIPPING_PRICE_EUR * 100
-        );
-        // Set formatted shipping display based on location
-        // Show shipping as a flat 50 EUR to the buyer.
-        // If the viewer is Danish, convert 50 EUR -> DKK and format; otherwise show 50 EUR without adding VAT again.
-        // Format shipping display without applying VAT again — shipping is a flat EUR amount
+        // Use fixed EUR shipping for non-DK visitors; for DK format the DKK amount
         const shippingDisplay =
-          customerGeoLocation.toUpperCase() === "DK"
-            ? new Intl.NumberFormat("da-DK", {
-                style: "currency",
-                currency: "DKK",
-              }).format(shippingDkk / 100)
+          (customerGeoLocation || "DK").toUpperCase() === "DK"
+            ? await getLocalCurrencyString(
+                constants.SHIPPING_PRICE_DKK * 100,
+                customerGeoLocation
+              )
             : new Intl.NumberFormat("en-IE", {
                 style: "currency",
                 currency: "EUR",
@@ -139,8 +179,6 @@ export default function ShippingAndBillingForm({
         setFormattedShipping(shippingDisplay);
 
         setProduct(product);
-        // Do not compute totals here — computeVat effect will compute prices
-        // (gross/subtotal and total) once `product` and `selectedCountry` are known.
       } catch (error: any) {
         console.error(error);
         setErrorState({
@@ -154,108 +192,22 @@ export default function ShippingAndBillingForm({
     }
     getProduct();
   }, []);
-  console.log(countries);
-
-  // When server/customer or countries change, make sure selectedCountry is kept in sync
-  useEffect(() => {
-    if (
-      !selectedCountry &&
-      countries.length > 0 &&
-      customerUpdated?.country?.name
-    ) {
-      const countryName = customerUpdated?.country?.name;
-      const found = countryName
-        ? countries.find((c) => c.name === countryName) || null
-        : null;
-      if (found) setSelectedCountry(found);
-    }
-  }, [countries, customerUpdated, selectedCountry]);
 
   // Recalculate VAT & formattedTax whenever product, selectedCountry or locale changes
   // also recalulate subtotal and total based on VAT changes
   useEffect(() => {
     async function computeVat() {
       if (!product) return;
-      // NEW: product.priceDkk is net (no VAT). Compute VAT and gross based
-      // on the selected country VAT rate (fallback 25%). Then update
-      // formatted values for VAT, displayed subtotal (gross) and total.
+
+      // small helper to calculate amounts & update formatted state consistently
       const net = product.priceDkk; // net price in DKK cents
-      const vatPercent = selectedCountry?.vatRate ?? 25; // ignore legacy product.watch.vat
-      // display/formatting should use the shipping/country VAT and currency (abbreviation),
-      // fall back to the visitor locale if we don't have a selected country.
-      const displayCountryCode =
-        selectedCountry?.abbreviation ?? customerGeoLocation;
-      const vatAmount = Math.round((net * vatPercent) / 100);
-      const gross = net + vatAmount; // subtotal shown to buyer
+      const vatPercent = selectedCountry?.vatRate ?? 25;
 
-      setVAT(vatAmount);
-      // Format VAT amount without adding VAT again: convert the DKK cents to local currency units then format.
-      try {
-        const taxConverted = await convertCurrency(
-          vatAmount,
-          displayCountryCode
-        );
-        const taxFormatted =
-          displayCountryCode.toUpperCase() === "DK" ||
-          displayCountryCode.toUpperCase() === "DKK"
-            ? new Intl.NumberFormat("da-DK", {
-                style: "currency",
-                currency: "DKK",
-              }).format(taxConverted)
-            : new Intl.NumberFormat("en-IE", {
-                style: "currency",
-                currency: "EUR",
-              }).format(taxConverted);
-        setFormattedTax(taxFormatted);
-      } catch (err) {
-        // fallback to legacy formatter if conversion fails
-        setFormattedTax(
-          await getLocalCurrencyString(vatAmount, displayCountryCode)
-        );
-      }
-      // Use getLocalCurrencyString on the NET price -> this helper will apply the correct VAT
-      // and convert to the display country's currency internally.
-      setFormattedPrice(await getLocalCurrencyString(net, displayCountryCode));
-
-      // shipping + total
-      const shippingDkk = await convertEuroToDkk(
-        constants.SHIPPING_PRICE_EUR * 100
+      await computeAndSetAmounts(
+        net,
+        vatPercent,
+        selectedCountry?.abbreviation ?? customerGeoLocation ?? "DK"
       );
-      // recalc shipping display without adding VAT
-      const shippingDisplay =
-        displayCountryCode.toUpperCase() === "DK"
-          ? new Intl.NumberFormat("da-DK", {
-              style: "currency",
-              currency: "DKK",
-            }).format(shippingDkk / 100)
-          : new Intl.NumberFormat("en-IE", {
-              style: "currency",
-              currency: "EUR",
-            }).format(constants.SHIPPING_PRICE_EUR);
-      setFormattedShipping(shippingDisplay);
-      // total = gross (net + VAT on product) + shipping (flat EUR converted to DKK cents)
-      const totalDkk = gross + shippingDkk;
-      if (
-        displayCountryCode.toUpperCase() === "DK"
-      ) {
-        setFormattedTotal(
-          new Intl.NumberFormat("da-DK", {
-            style: "currency",
-            currency: "DKK",
-          }).format(totalDkk / 100)
-        );
-      } else {
-        const totalConverted = await convertCurrency(
-          totalDkk,
-          displayCountryCode
-        );
-        setFormattedTotal(
-          new Intl.NumberFormat("en-IE", {
-            style: "currency",
-            currency: "EUR",
-          }).format(totalConverted)
-        );
-      }
     }
 
     computeVat();
@@ -269,9 +221,7 @@ export default function ShippingAndBillingForm({
     data.saveBillingInfo = String(saveBillingInfo);
     data.shippingSameAsBilling = String(sameAsShipping);
     data.customerId = customerUpdated.id;
-    data.shippingPriceDkk = String(
-      await convertEuroToDkk(constants.SHIPPING_PRICE_EUR * 100)
-    );
+    data.shippingPriceDkk = String(constants.SHIPPING_PRICE_DKK);
 
     const customerCountry = customerUpdated.country || null;
 
@@ -472,77 +422,20 @@ export default function ShippingAndBillingForm({
                                 country: found,
                               }));
 
-                            // update VAT and formatted tax when country changes
+                            // update VAT, subtotal and formatted totals when country changes
                             if (product) {
-                              // product.priceDkk is net — compute vat and gross
-                              const net = product.priceDkk;
+                              const net = product.priceDkk; // cents
                               const vatPercent = found?.vatRate ?? 25;
-                              const vatAmount = Math.round(
-                                (net * vatPercent) / 100
-                              );
-                              const gross = net + vatAmount;
-
                               const displayCountryCode =
-                                found?.abbreviation ?? customerGeoLocation;
+                                found?.abbreviation ??
+                                customerGeoLocation ??
+                                "DK";
 
-                              setVAT(vatAmount);
-                              try {
-                                const taxConverted = await convertCurrency(
-                                  vatAmount,
-                                  displayCountryCode
-                                );
-                                const taxFormatted =
-                                  displayCountryCode.toUpperCase() === "DK" ||
-                                  displayCountryCode.toUpperCase() === "DKK"
-                                    ? new Intl.NumberFormat("da-DK", {
-                                        style: "currency",
-                                        currency: "DKK",
-                                      }).format(taxConverted)
-                                    : new Intl.NumberFormat("en-IE", {
-                                        style: "currency",
-                                        currency: "EUR",
-                                      }).format(taxConverted);
-                                setFormattedTax(taxFormatted);
-                              } catch (err) {
-                                setFormattedTax(
-                                  await getLocalCurrencyString(
-                                    vatAmount,
-                                    displayCountryCode
-                                  )
-                                );
-                              }
-                              setFormattedPrice(
-                                await getLocalCurrencyString(
-                                  net,
-                                  displayCountryCode
-                                )
+                              await computeAndSetAmounts(
+                                net,
+                                vatPercent,
+                                displayCountryCode
                               );
-                              const shippingDkk = await convertEuroToDkk(
-                                constants.SHIPPING_PRICE_EUR * 100
-                              );
-                              const totalDkk = gross + shippingDkk;
-                              if (
-                                displayCountryCode.toUpperCase() === "DK" ||
-                                displayCountryCode.toUpperCase() === "DKK"
-                              ) {
-                                setFormattedTotal(
-                                  new Intl.NumberFormat("da-DK", {
-                                    style: "currency",
-                                    currency: "DKK",
-                                  }).format(totalDkk / 100)
-                                );
-                              } else {
-                                const totalConverted = await convertCurrency(
-                                  totalDkk,
-                                  displayCountryCode
-                                );
-                                setFormattedTotal(
-                                  new Intl.NumberFormat("en-IE", {
-                                    style: "currency",
-                                    currency: "EUR",
-                                  }).format(totalConverted)
-                                );
-                              }
                             }
                           }}
                           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -703,71 +596,16 @@ export default function ShippingAndBillingForm({
                               if (product) {
                                 const net = product.priceDkk;
                                 const vatPercent = found?.vatRate ?? 25;
-                                const vatAmount = Math.round(
-                                  (net * vatPercent) / 100
-                                );
-                                const gross = net + vatAmount;
-
                                 const displayCountryCode =
-                                  found?.abbreviation ?? customerGeoLocation;
+                                  found?.abbreviation ??
+                                  customerGeoLocation ??
+                                  "DK";
 
-                                setVAT(vatAmount);
-                                try {
-                                  const taxConverted = await convertCurrency(
-                                    vatAmount,
-                                    displayCountryCode
-                                  );
-                                  const taxFormatted =
-                                    displayCountryCode.toUpperCase() === "DK"
-                                      ? new Intl.NumberFormat("da-DK", {
-                                          style: "currency",
-                                          currency: "DKK",
-                                        }).format(taxConverted)
-                                      : new Intl.NumberFormat("en-IE", {
-                                          style: "currency",
-                                          currency: "EUR",
-                                        }).format(taxConverted);
-                                  setFormattedTax(taxFormatted);
-                                } catch (err) {
-                                  setFormattedTax(
-                                    await getLocalCurrencyString(
-                                      vatAmount,
-                                      displayCountryCode
-                                    )
-                                  );
-                                }
-                                setFormattedPrice(
-                                  await getLocalCurrencyString(
-                                    net,
-                                    displayCountryCode
-                                  )
+                                await computeAndSetAmounts(
+                                  net,
+                                  vatPercent,
+                                  displayCountryCode
                                 );
-                                const shippingDkk = await convertEuroToDkk(
-                                  constants.SHIPPING_PRICE_EUR * 100
-                                );
-                                const totalDkk = gross + shippingDkk;
-                                if (
-                                  displayCountryCode.toUpperCase() === "DK" ||
-                                  displayCountryCode.toUpperCase() === "DKK"
-                                ) {
-                                  setFormattedTotal(
-                                    new Intl.NumberFormat("da-DK", {
-                                      style: "currency",
-                                      currency: "DKK",
-                                    }).format(totalDkk / 100)
-                                  );
-                                } else {
-                                  const totalConverted = await convertCurrency(
-                                    totalDkk,
-                                    displayCountryCode
-                                  );
-                                  setFormattedTotal(
-                                    new Intl.NumberFormat("en-IE", {
-                                      style: "currency",
-                                      currency: "EUR",
-                                    }).format(totalConverted)
-                                  );
-                                }
                               }
                             }}
                             required={!sameAsShipping}
@@ -865,7 +703,7 @@ export default function ShippingAndBillingForm({
                       <div className="flex justify-between text-lg font-semibold">
                         <span className="text-foreground">Total</span>
                         <span className="text-foreground">
-                          {formattedTotal || formattedPrice}
+                          {formattedTotal}
                         </span>
                       </div>
 
