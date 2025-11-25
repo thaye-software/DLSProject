@@ -33,6 +33,13 @@
     {
       "idx": 4,
       "version": "7",
+      "when": 1763982687213,
+      "tag": "20251124111127_add-vat-rate-to-countries",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
       "when": 1764077265037,
       "tag": "20251125132745_added-2-new-status-to-order",
       "breakpoints": true

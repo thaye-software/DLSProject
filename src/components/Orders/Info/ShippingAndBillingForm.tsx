@@ -3,10 +3,6 @@
 import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
 
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,13 +13,10 @@ import { CustomerInfo, getUserById } from "@/services/userService";
 import ToastWrapper from "@/components/Toast/ToastWrapper";
 
 import { Product } from "@/app/watches/type";
-import {
-  submitOrderDetails,
-} from "@/app/orders/actions";
+import { submitOrderDetails } from "@/app/orders/actions";
 
 import { getProductBySlug } from "@/services/productService";
 import { Spinner } from "@/components/ui/spinner";
-import { convertEuroToDkk } from "@/app/orders/actions";
 
 import { toast } from "sonner";
 
@@ -32,7 +25,15 @@ import { useRouter } from "next/navigation";
 import BackButton from "@/components/BackButton";
 
 import constants from "@/lib/constants";
-import { getLocalCurrencyString } from "@/services/currencyService";
+import {
+  getLocalCurrencyString,
+  convertCurrency,
+} from "@/services/currencyService";
+import {
+  calculateVatCents,
+  calculateSubtotalCents,
+  calculateTotalCents,
+} from "@/lib/priceUtils";
 import { getAllCountries } from "@/services/countryService";
 import { CountryModel } from "@/database/types";
 
@@ -54,11 +55,66 @@ export default function ShippingAndBillingForm({
   const [customerUpdated, setCustomerUpdated] = useState(customer);
 
   const [product, setProduct] = useState<Product | null>(null);
+  const [VAT, setVAT] = useState<number>(0);
   const [formattedPrice, setFormattedPrice] = useState<string>("");
   const [formattedTax, setFormattedTax] = useState<string>("");
   const [formattedShipping, setFormattedShipping] = useState<string>("");
   const [formattedTotal, setFormattedTotal] = useState<string>("");
-  const [countries, setCountries] = useState<string[]>([]);
+  const [countries, setCountries] = useState<CountryModel[]>([]);
+  const [selectedCountry, setSelectedCountry] = useState<CountryModel | null>(
+    null
+  );
+
+  // Central helper reused by useEffect and onChange handlers.
+  async function computeAndSetAmounts(
+    netCents: number,
+    vatPercentLocal: number,
+    displayCountryCode: string
+  ) {
+    // compute in cents
+    const vatCents = calculateVatCents(netCents, vatPercentLocal);
+    const subtotalCents = calculateSubtotalCents(netCents, vatPercentLocal);
+
+    // basic pieces
+    setVAT(vatCents);
+    setFormattedTax(await getLocalCurrencyString(vatCents, displayCountryCode));
+    setFormattedPrice(
+      await getLocalCurrencyString(subtotalCents, displayCountryCode)
+    );
+
+    // totals + shipping
+    if (displayCountryCode.toUpperCase() === "DK") {
+      const shippingCents = constants.SHIPPING_PRICE_DKK * 100;
+      const totalCents = subtotalCents + shippingCents;
+      setFormattedShipping(
+        await getLocalCurrencyString(shippingCents, displayCountryCode)
+      );
+      setFormattedTotal(
+        await getLocalCurrencyString(totalCents, displayCountryCode)
+      );
+    } else {
+      // Non-DK: convert subtotal to EUR units and add fixed EUR shipping
+      const subtotalInEurUnits = await convertCurrency(
+        subtotalCents,
+        displayCountryCode
+      );
+      const shippingEurUnits = constants.SHIPPING_PRICE_EUR;
+      const totalInEurUnits = subtotalInEurUnits + shippingEurUnits;
+
+      setFormattedShipping(
+        new Intl.NumberFormat("en-IE", {
+          style: "currency",
+          currency: "EUR",
+        }).format(shippingEurUnits)
+      );
+      setFormattedTotal(
+        new Intl.NumberFormat("en-IE", {
+          style: "currency",
+          currency: "EUR",
+        }).format(totalInEurUnits)
+      );
+    }
+  }
 
   const [sameAsShipping, setSameAsShipping] = useState<boolean>(true);
   const [saveBillingInfo, setSaveBillingInfo] = useState<boolean>(true);
@@ -84,20 +140,23 @@ export default function ShippingAndBillingForm({
 
     async function getCountries() {
       const allCountries: CountryModel[] = await getAllCountries();
-      const countryNames = allCountries.map((country) => country.name);
-      setCountries(countryNames);
+      setCountries(allCountries);
+      const foundCountry = allCountries.find(
+        (country) => country.abbreviation === customerGeoLocation
+      );
+      if (foundCountry) setSelectedCountry(foundCountry);
     }
     getCountries();
 
     async function updateCustomerInfo() {
-      const mostUpdatedCustomer = await getUserById(
-        customerUpdated.id
-      );
+      const mostUpdatedCustomer = await getUserById(customerUpdated.id);
       setCustomerUpdated(mostUpdatedCustomer as CustomerInfo);
     }
     updateCustomerInfo();
 
     async function getProduct() {
+      // persist vat value in cents
+
       try {
         const product = await getProductBySlug(productSlug);
         if (!product) throw new Error("(Client) Error fetching product");
@@ -106,44 +165,20 @@ export default function ShippingAndBillingForm({
             `(Client) ${product.watch.brand.name} ${product.watch.model} is out of stock`
           );
 
-        const formattedPrice = await getLocalCurrencyString(
-          product.priceDkk,
-          customerGeoLocation
-        );
-        setFormattedPrice(formattedPrice);
-
-        const taxValue = Math.round(
-          (product.priceDkk * (product.watch.vat as number)) / 100
-        );
-        const formattedTaxValue = await getLocalCurrencyString(
-          taxValue,
-          customerGeoLocation
-        );
-        setFormattedTax(formattedTaxValue);
-
-        // we need to convert shipping cost from EUR to DKK for total calculation
-        const shippingDkk = await convertEuroToDkk(constants.SHIPPING_PRICE_EUR * 100);
-        // Set formatted shipping display based on location
-        const formattedShipping = await getLocalCurrencyString(
-          shippingDkk,
-          customerGeoLocation
-        );
-        setFormattedShipping(formattedShipping);
+        // Use fixed EUR shipping for non-DK visitors; for DK format the DKK amount
+        const shippingDisplay =
+          (customerGeoLocation || "DK").toUpperCase() === "DK"
+            ? await getLocalCurrencyString(
+                constants.SHIPPING_PRICE_DKK * 100,
+                customerGeoLocation
+              )
+            : new Intl.NumberFormat("en-IE", {
+                style: "currency",
+                currency: "EUR",
+              }).format(constants.SHIPPING_PRICE_EUR);
+        setFormattedShipping(shippingDisplay);
 
         setProduct(product);
-        // Calculate total price
-        try {
-          const shippingDkk = await convertEuroToDkk(constants.SHIPPING_PRICE_EUR * 100)
-          const total = product.priceDkk + shippingDkk;
-          const formattedTotalPrice = await getLocalCurrencyString(
-            total,
-            customerGeoLocation
-          );
-          setFormattedTotal(formattedTotalPrice);
-
-        } catch (err) {
-          console.warn("Could not compute total price at fetch time", err);
-        }
       } catch (error: any) {
         console.error(error);
         setErrorState({
@@ -158,6 +193,26 @@ export default function ShippingAndBillingForm({
     getProduct();
   }, []);
 
+  // Recalculate VAT & formattedTax whenever product, selectedCountry or locale changes
+  // also recalulate subtotal and total based on VAT changes
+  useEffect(() => {
+    async function computeVat() {
+      if (!product) return;
+
+      // small helper to calculate amounts & update formatted state consistently
+      const net = product.priceDkk; // net price in DKK cents
+      const vatPercent = selectedCountry?.vatRate ?? 25;
+
+      await computeAndSetAmounts(
+        net,
+        vatPercent,
+        selectedCountry?.abbreviation ?? customerGeoLocation ?? "DK"
+      );
+    }
+
+    computeVat();
+  }, [product, selectedCountry, customerGeoLocation]);
+
   async function handleSubmit(event: any) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -166,7 +221,7 @@ export default function ShippingAndBillingForm({
     data.saveBillingInfo = String(saveBillingInfo);
     data.shippingSameAsBilling = String(sameAsShipping);
     data.customerId = customerUpdated.id;
-    data.shippingPriceDkk = String(await convertEuroToDkk(constants.SHIPPING_PRICE_EUR * 100));
+    data.shippingPriceDkk = String(constants.SHIPPING_PRICE_DKK);
 
     const customerCountry = customerUpdated.country || null;
 
@@ -349,24 +404,49 @@ export default function ShippingAndBillingForm({
                           id="country"
                           name="country"
                           required
-                          defaultValue={
-                            isBillingInfoSaved &&
-                            customerUpdated.country?.name != null
+                          value={
+                            selectedCountry?.name ??
+                            (isBillingInfoSaved && customerUpdated.country?.name
                               ? customerUpdated.country.name
-                              : undefined
+                              : "")
                           }
+                          onChange={async (e) => {
+                            const name = e.target.value;
+                            const found =
+                              countries.find((c) => c.name === name) || null;
+                            setSelectedCountry(found);
+                            // update the customerUpdated so the form reflects the user's selection when submitted
+                            if (found)
+                              setCustomerUpdated((prev) => ({
+                                ...prev,
+                                country: found,
+                              }));
+
+                            // update VAT, subtotal and formatted totals when country changes
+                            if (product) {
+                              const net = product.priceDkk; // cents
+                              const vatPercent = found?.vatRate ?? 25;
+                              const displayCountryCode =
+                                found?.abbreviation ??
+                                customerGeoLocation ??
+                                "DK";
+
+                              await computeAndSetAmounts(
+                                net,
+                                vatPercent,
+                                displayCountryCode
+                              );
+                            }
+                          }}
                           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           <option value="" disabled>
                             Select a country
                           </option>
 
-                          {countries.map((countryName) => (
-                            <option
-                              key={countryName}
-                              defaultValue={countryName}
-                            >
-                              {countryName}
+                          {countries.map((country) => (
+                            <option key={country.name} value={country.name}>
+                              {country.name}
                             </option>
                           ))}
                         </select>
@@ -506,18 +586,37 @@ export default function ShippingAndBillingForm({
                             id="shippingCountry"
                             name="shippingCountry"
                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            onChange={async (e) => {
+                              const name = e.target.value;
+                              const found =
+                                countries.find((c) => c.name === name) || null;
+                              setSelectedCountry(found);
+
+                              // recalc VAT for newly selected shipping country
+                              if (product) {
+                                const net = product.priceDkk;
+                                const vatPercent = found?.vatRate ?? 25;
+                                const displayCountryCode =
+                                  found?.abbreviation ??
+                                  customerGeoLocation ??
+                                  "DK";
+
+                                await computeAndSetAmounts(
+                                  net,
+                                  vatPercent,
+                                  displayCountryCode
+                                );
+                              }
+                            }}
                             required={!sameAsShipping}
                           >
                             <option value="" disabled>
                               Select a country
                             </option>
 
-                            {countries.map((countryName) => (
-                              <option
-                                key={countryName}
-                                defaultValue={countryName}
-                              >
-                                {countryName}
+                            {countries.map((country) => (
+                              <option key={country.name} value={country.name}>
+                                {country.name}
                               </option>
                             ))}
                           </select>
@@ -546,7 +645,7 @@ export default function ShippingAndBillingForm({
                   </Button>
                 ) : (
                   <Button className="w-full mt-6" size="lg">
-                    Procede to payment
+                    Proceed to payment
                   </Button>
                 )}
               </form>
@@ -565,8 +664,8 @@ export default function ShippingAndBillingForm({
                           src={product.productImages[0].imageUrl || ""}
                           alt={product.name}
                           fill
-                            className="w-full h-full object-cover"
-                            unoptimized
+                          className="w-full h-full object-cover"
+                          unoptimized
                         />
                       </div>
                       <div className="flex-1">
@@ -590,9 +689,11 @@ export default function ShippingAndBillingForm({
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Shipping</span>
-                        <span className="text-foreground">
-                          {formattedShipping}
-                        </span>
+                        <div className="flex flex-col items-end">
+                          <span className="text-foreground">
+                            {formattedShipping}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -602,19 +703,16 @@ export default function ShippingAndBillingForm({
                       <div className="flex justify-between text-lg font-semibold">
                         <span className="text-foreground">Total</span>
                         <span className="text-foreground">
-                          {formattedTotal || formattedPrice}
+                          {formattedTotal}
                         </span>
                       </div>
 
                       <div className="flex flex-col text-xs text-muted-foreground">
                         <p>
-                          Including {formattedTax} in taxes ({product.watch.vat}
-                          %)
+                          Including {formattedTax} VAT (
+                          {selectedCountry?.vatRate}%)
                         </p>
-                        <p>
-                          //TODO move vat over to country and should be based on
-                          shipping address.
-                        </p>
+                        <p></p>
                       </div>
                     </div>
                   </div>

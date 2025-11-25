@@ -4,6 +4,11 @@ import { revalidatePath } from "next/cache";
 
 export async function createWatch(formData: FormData): Promise<any> {
   const newWatch = Object.fromEntries(formData);
+
+  // convert price to net, vat is always 25% on input
+  const priceGross = parseFloat(newWatch.price as string);
+  const priceNet = priceGross / 1.25;
+
   try {
     const res = await watchService.createWatchWithProductAndImages({
       watchData: {
@@ -29,7 +34,7 @@ export async function createWatch(formData: FormData): Promise<any> {
         productType: "watch",
         description: newWatch.description as string,
         // convert price to number of øre
-        priceDkk: Math.round(parseFloat(newWatch.price as string) * 100),
+        priceDkk: Math.round(priceNet * 100),
         stock: parseInt(newWatch.stock as string),
       },
       imageUrls: (newWatch.imageUrls as string)?.split(",") || [],

@@ -32,6 +32,7 @@ const FUNCTION_OPTIONS = [
 ]
 
 const SHIPPING_PRICE_EUR = 50; // Flat rate shipping price in EUR
+const SHIPPING_PRICE_DKK = 300; // Flat rate shipping price in DKK
 
 const constants = {
   MOVEMENT_OPTIONS,
@@ -39,6 +40,7 @@ const constants = {
   BRACELET_OPTIONS,
   FUNCTION_OPTIONS,
   SHIPPING_PRICE_EUR,
+  SHIPPING_PRICE_DKK,
 };
 
 export default constants;
