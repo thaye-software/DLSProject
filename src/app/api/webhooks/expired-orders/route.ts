@@ -27,7 +27,7 @@ export async function PATCH(req: NextRequest) {
         .returning();
 
       const foundOrders = await tx.query.orders.findMany({
-        where: inArray(orders.id, releasedOrders.map(order => order.id)),
+        where: inArray(orders.id, updatedOrders.map(order => order.id)),
           with: {
             orderItems: true
           }
