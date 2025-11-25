@@ -59,8 +59,8 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({ message: "No expired orders" }, { status: 200 });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("(server) failed to release reserved orders", error);
-    return NextResponse.json({ message: "(server) Unexpted error when relasing reserved orders" }, { status: 500 })
+    return NextResponse.json({ message: `(server) Unexpted error when relasing reserved orders: ${error.message}` }, { status: 500 })
   }
 }
