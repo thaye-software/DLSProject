@@ -79,7 +79,6 @@ export function ProductFilterSheet({
     defaultSate.brandNames = [];
     defaultSate.conditionValues = [];
     setCurrentFilters(defaultSate);
-    setOpen(false);
   }
 
   // ensure synchonisation with applied filters, and when filters are removed using the applied filters tag
