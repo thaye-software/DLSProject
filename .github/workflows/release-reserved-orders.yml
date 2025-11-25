@@ -1,4 +1,4 @@
-name: Hit Expiration Webhook
+name: (CronJob) Release Expired Order Reservations
 
 on:
   workflow_dispatch:
@@ -6,11 +6,11 @@ on:
     - cron: "*/30 * * * *"   # runs every 30 minutes
 
 jobs:
-  call_webhook:
+  scheduled-cleanup:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Call expiration endpoint
+      - name: Call endpoint releasing reserved orders
         run: |
           curl -X PATCH \
             -H "x-limitedwatches-secret: ${{ secrets.LIMITED_WATCHES_WEBHOOK_SECRET }}" \
