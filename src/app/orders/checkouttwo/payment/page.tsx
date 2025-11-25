@@ -116,7 +116,7 @@ export default async function PaymentPage({
     displayTotalAmount = new Intl.NumberFormat("da-DK", {
       style: "currency",
       currency: "DKK",
-    }).format(total);
+    }).format(total / 100);
   } else {
     displayTotalAmount = new Intl.NumberFormat("en-IE", {
       style: "currency",
