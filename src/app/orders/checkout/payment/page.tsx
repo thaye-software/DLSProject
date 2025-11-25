@@ -47,7 +47,7 @@ export default async function PaymentPage({ searchParams }: { searchParams: { or
 
   // ensure customer cant go back to payment/checkout page/site 
   if(foundOrderItem.order.status !== "RESERVED") {
-    redirect("/");
+    redirect("/watches");
   }
 
 
