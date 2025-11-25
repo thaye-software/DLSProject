@@ -237,7 +237,7 @@ export const orders = pgTable(
     index("idx_orders_currency_id").on(table.currencyId), // NEW INDEX
     check(
       "orders_status_check",
-      sql`${table.status} IN ('PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED')`
+      sql`${table.status} IN ('RESERVED', 'EXPIRED', 'PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED')`
     ),
   ]
 );
