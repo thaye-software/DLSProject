@@ -204,7 +204,7 @@ export default async function SuccessPage({
             View Orders (TODO)
           </Link>
           <Link
-            href="/watches/all"
+            href="/watches"
             className="flex-1 text-center px-4 py-2 border rounded-md hover:bg-muted transition-colors"
           >
             Continue Shopping

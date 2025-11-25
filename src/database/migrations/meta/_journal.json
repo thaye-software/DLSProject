@@ -29,6 +29,13 @@
       "when": 1763649336906,
       "tag": "20251120143536_change-favorites-to-relate-to-products-not-watches",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1764077265037,
+      "tag": "20251125132745_added-2-new-status-to-order",
+      "breakpoints": true
     }
   ]
 }

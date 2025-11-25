@@ -1,44 +1,43 @@
+import { eq, desc, and } from "drizzle-orm";
+
 import { db } from "@/database/drizzle";
-import { orders } from "@/database/schema";
+import { orderItems, orders, users } from "@/database/schema";
 import { NewOrderModel, NewOrderAddressModel } from "@/database/types";
 
-import { createOrderAddress, updateOrderAddress } from "./orderAddressService";
-import { getProductById, updateProductStock } from "./productService";
 import { createOrderItem } from "./orderItemService";
-import { eq, desc } from "drizzle-orm";
+import { checkAndUpdateProductStock, getProductById } from "./productService";
+import { createOrderAddress, updateOrderAddress } from "./orderAddressService";
+
+import { OrderDetails } from "@/app/orders/actions";
+
+
+
+
+
 
 export async function createOrder(
-  orderDetails: Omit<NewOrderModel, "id">,
+  orderDetails: OrderDetails, // a bit confusing 
   newBillingAddress: Omit<NewOrderAddressModel, "id">,
   newShippingAddress?: Omit<NewOrderAddressModel, "id">
 ) {
   try {
     const result = await db.transaction(async (tx) => {
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
-      const userNewestOrder = await getNewestOrder(tx);
+      // If customer already has a pending order return early (it will only be pending for 30min)
+      const foundOrderId = await doesCustomerHasExistingOrder(orderDetails, newBillingAddress, newShippingAddress, tx)
+      console.log("¨åfgæ¨åfægdh",foundOrderId)
+      if(foundOrderId) return foundOrderId;
+      
+      console.log("should ghit")
 
-      // If the newest order was created less than 5 minutes ago, return early
-      if (
-        userNewestOrder &&
-        userNewestOrder.createdAt > fiveMinutesAgo &&
-        userNewestOrder.status === "PROCESSING"
-      ) {
-        if (newShippingAddress) {
-          await updateOrderAddress(
-            userNewestOrder.deliveryAddress?.id as string,
-            newShippingAddress,
-            tx
-          );
-        }
-        await updateOrderAddress(
-          userNewestOrder.billingAddress?.id as string,
-          newBillingAddress,
-          tx
-        );
+      const foundProduct = await getProductById(orderDetails.productId, tx);
+      if(!foundProduct) throw new Error(`(server) no product found with id: ${orderDetails.productId}`)
 
-        return userNewestOrder.id;
-      }
+
+      // hardcoded 1 since requirment that customer can only buy one watch at a time.
+      const stockAvailable = await checkAndUpdateProductStock(foundProduct.id, tx);
+      if(!stockAvailable) throw new Error(`(server) Product just sold out`)
+
 
       let shippingAddressId;
       if (newShippingAddress) {
@@ -52,36 +51,20 @@ export async function createOrder(
         newBillingAddress,
         tx
       );
-      const billingAddressesId = createdBillingAddress.id;
+      const billingAddressId = createdBillingAddress.id;
 
       // deæoveryAddress is the same as shipping address
       orderDetails.deliveryAddressId = shippingAddressId;
-      orderDetails.billingAddressId = billingAddressesId;
+      orderDetails.billingAddressId = billingAddressId;
       const createdOrder = await tx
         .insert(orders)
         .values(orderDetails)
         .returning();
       const orderId = createdOrder[0].id;
 
-      //@ts-ignore
-      const product = await getProductById(orderDetails.productId, tx);
-      //@ts-ignore
-      if (!product)
-        throw new Error(
-          //@ts-ignore
-          `(Server) could not find product with id: ${orderDetails.productId}`
-        );
-      if (product.stock === 0)
-        throw new Error(
-          `(Server) ${product.name} with id: ${product.id} is out of stock`
-        );
-
-      // hardcoded 1 since requirment that customer can only buy one watch at a time.
-      await updateProductStock(product.id, product.stock - 1, tx);
-
       const orderItem = {
         orderId,
-        productId: product.id,
+        productId: foundProduct.id,
         quantity: 1,
       };
 
@@ -132,29 +115,67 @@ export async function getOrderById(orderId: string) {
 
 //--------------------------------------- helper functions ---------------------------------------
 type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-async function getNewestOrder(tx?: DbTransaction) {
+async function getCustomerOrder(customerId: string, productId: string, tx?: DbTransaction) {
   const dbContext = tx || db;
-  const newestOrder = await dbContext
+
+  const [foundOrder] = await dbContext
     .select()
     .from(orders)
-    .orderBy(desc(orders.createdAt))
+    // Join orderItems to filter the parent (orders) row
+    .innerJoin(orderItems, eq(orders.id, orderItems.orderId))
+    .where(
+      and(
+        eq(orders.userId, customerId),
+        eq(orders.status, "RESERVED"),
+        eq(orderItems.productId, productId) // Now this correctly filters the entire row
+      )
+    )
     .limit(1);
 
-  if (!newestOrder[0]) {
+
+  if (!foundOrder) {
     return null;
   }
 
-  const newestOrderWithOrderAddresses = await dbContext.query.orders.findFirst({
-    where: eq(orders.id, newestOrder[0].id),
-    columns: {
-      id: true,
-      createdAt: true,
-      status: true,
-    },
+  const orderWithRelations = await dbContext.query.orders.findFirst({
+    where: eq(orders.id, foundOrder.orders.id),
     with: {
       billingAddress: true,
       deliveryAddress: true,
     },
   });
-  return newestOrderWithOrderAddresses;
+
+  return orderWithRelations;
+}
+
+
+
+async function doesCustomerHasExistingOrder(
+  orderDetails: OrderDetails, 
+  newBillingAddress: Omit<NewOrderAddressModel, "id">,
+  newShippingAddress: Omit<NewOrderAddressModel, "id"> | undefined,
+  tx: DbTransaction
+) {
+
+  const customerOrder = await getCustomerOrder(orderDetails.userId, orderDetails.productId, tx);      
+  if ( customerOrder ) {
+
+    if (newShippingAddress) {
+      await updateOrderAddress(
+        customerOrder.deliveryAddress?.id as string,
+        newShippingAddress,
+        tx
+      );
+    }
+
+    await updateOrderAddress(
+      customerOrder.billingAddress?.id as string,
+      newBillingAddress,
+      tx
+    );
+
+    return customerOrder.id;
+  }
+
+  return null;
 }

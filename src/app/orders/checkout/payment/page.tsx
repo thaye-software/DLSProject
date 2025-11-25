@@ -12,6 +12,7 @@ import ToastWrapper from '@/components/Toast/ToastWrapper'
 import { Suspense } from 'react'
 import { Spinner } from '@/components/ui/spinner'
 import BackButton from '@/components/BackButton'
+import { redirect } from 'next/navigation'
 
 //view all transaction at this link: https://dashboard.stripe.com/acct_1SKHlN6xjyBvX39o/test/payments
 export default async function PaymentPage({ searchParams }: { searchParams: { orderId?: string; } }) {
@@ -42,6 +43,14 @@ export default async function PaymentPage({ searchParams }: { searchParams: { or
 			</div>
 		)
   }
+
+
+  // ensure customer cant go back to payment/checkout page/site 
+  if(foundOrderItem.order.status !== "RESERVED") {
+    redirect("/watches");
+  }
+
+
   console.log("found order item in payment page:", foundOrderItem);
 	const productImageSrc = foundOrderItem?.product.productImages[0].imageUrl;
 	const productName = foundOrderItem?.product.watch.brand.name + " " + foundOrderItem?.product.watch.model;
@@ -61,6 +70,9 @@ export default async function PaymentPage({ searchParams }: { searchParams: { or
     currency: 'dkk',
     automatic_payment_methods: {
       enabled: true,
+    },
+    metadata: {
+      internal_order_id: orderId
     }
   })
 

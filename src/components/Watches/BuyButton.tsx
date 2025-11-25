@@ -9,7 +9,7 @@ export default function BuyButton({product, className}: {product: Product, class
   return(
     <div>
       { product.stock > 0 ? (
-        <Link href={`/orders/checkouttwo/infomation?product=${product.watch.slug}`}>
+        <Link href={`/orders/checkout/infomation?product=${product.watch.slug}`}>
           <Button className="h-12 cursor-pointer font-bold py-4 px-20 transition-all">
             Buy
           </Button>
