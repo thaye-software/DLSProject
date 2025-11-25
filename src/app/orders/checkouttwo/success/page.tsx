@@ -9,6 +9,7 @@ import { getLocalCurrencyString } from "@/services/currencyService";
 import { getOrderItemByOrderId } from "@/services/orderItemService";
 import { sendOrderConfirmationEmail } from "../../actions";
 import { getOrderById } from "@/services/orderService";
+import getCountryByName from "@/services/countryService";
 
 export default async function SuccessPage({
   searchParams,
@@ -70,17 +71,22 @@ export default async function SuccessPage({
   const shippingAmount = foundOrder?.shippingPriceDkk;
   const totalAmount = foundOrder?.totalPriceDkk;
   const targetCurrencyCode = foundOrder.currency.code;
+  const targetCountry = foundOrder.billingAddress?.country;
+  const targetCountryModel = targetCountry
+    ? await getCountryByName(targetCountry)
+    : null;
+  const targetCountryCode = targetCountryModel?.abbreviation;
   const displayItemAmount = await getLocalCurrencyString(
     Number(itemAmount),
-    targetCurrencyCode as string
+    targetCountryCode as string
   );
   const displayShippingAmount = await getLocalCurrencyString(
     Number(shippingAmount),
-    targetCurrencyCode as string
+    targetCountryCode as string
   );
   const displayTotalAmount = await getLocalCurrencyString(
     Number(totalAmount),
-    targetCurrencyCode as string
+    targetCountryCode as string
   );
 
   const customer = foundOrder.billingAddress;

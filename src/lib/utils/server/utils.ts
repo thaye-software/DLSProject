@@ -44,7 +44,7 @@ export async function getUserLocation() {
 
   const defaultLocation = {
     country: "Denmark",
-    countryCode: "GER",
+    countryCode: "DK",
     city: "Copenhagen",
     currency: "DKK",
   };

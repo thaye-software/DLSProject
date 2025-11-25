@@ -123,11 +123,20 @@ export default function ShippingAndBillingForm({
           constants.SHIPPING_PRICE_EUR * 100
         );
         // Set formatted shipping display based on location
-        const formattedShipping = await getLocalCurrencyString(
-          shippingDkk,
-          customerGeoLocation
-        );
-        setFormattedShipping(formattedShipping);
+        // Show shipping as a flat 50 EUR to the buyer.
+        // If the viewer is Danish, convert 50 EUR -> DKK and format; otherwise show 50 EUR without adding VAT again.
+        // Format shipping display without applying VAT again — shipping is a flat EUR amount
+        const shippingDisplay =
+          customerGeoLocation.toUpperCase() === "DK"
+            ? new Intl.NumberFormat("da-DK", {
+                style: "currency",
+                currency: "DKK",
+              }).format(shippingDkk / 100)
+            : new Intl.NumberFormat("en-IE", {
+                style: "currency",
+                currency: "EUR",
+              }).format(constants.SHIPPING_PRICE_EUR);
+        setFormattedShipping(shippingDisplay);
 
         setProduct(product);
         // Do not compute totals here — computeVat effect will compute prices
@@ -176,13 +185,16 @@ export default function ShippingAndBillingForm({
       // fall back to the visitor locale if we don't have a selected country.
       const displayCountryCode =
         selectedCountry?.abbreviation ?? customerGeoLocation;
-        const vatAmount = Math.round((net * vatPercent) / 100);
+      const vatAmount = Math.round((net * vatPercent) / 100);
       const gross = net + vatAmount; // subtotal shown to buyer
 
       setVAT(vatAmount);
       // Format VAT amount without adding VAT again: convert the DKK cents to local currency units then format.
       try {
-        const taxConverted = await convertCurrency(vatAmount, displayCountryCode);
+        const taxConverted = await convertCurrency(
+          vatAmount,
+          displayCountryCode
+        );
         const taxFormatted =
           displayCountryCode.toUpperCase() === "DK" ||
           displayCountryCode.toUpperCase() === "DKK"
@@ -197,7 +209,9 @@ export default function ShippingAndBillingForm({
         setFormattedTax(taxFormatted);
       } catch (err) {
         // fallback to legacy formatter if conversion fails
-        setFormattedTax(await getLocalCurrencyString(vatAmount, displayCountryCode));
+        setFormattedTax(
+          await getLocalCurrencyString(vatAmount, displayCountryCode)
+        );
       }
       // Use getLocalCurrencyString on the NET price -> this helper will apply the correct VAT
       // and convert to the display country's currency internally.
@@ -207,8 +221,41 @@ export default function ShippingAndBillingForm({
       const shippingDkk = await convertEuroToDkk(
         constants.SHIPPING_PRICE_EUR * 100
       );
-      setFormattedShipping(await getLocalCurrencyString(shippingDkk, displayCountryCode));
-      setFormattedTotal(await getLocalCurrencyString(net + shippingDkk, displayCountryCode));
+      // recalc shipping display without adding VAT
+      const shippingDisplay =
+        displayCountryCode.toUpperCase() === "DK"
+          ? new Intl.NumberFormat("da-DK", {
+              style: "currency",
+              currency: "DKK",
+            }).format(shippingDkk / 100)
+          : new Intl.NumberFormat("en-IE", {
+              style: "currency",
+              currency: "EUR",
+            }).format(constants.SHIPPING_PRICE_EUR);
+      setFormattedShipping(shippingDisplay);
+      // total = gross (net + VAT on product) + shipping (flat EUR converted to DKK cents)
+      const totalDkk = gross + shippingDkk;
+      if (
+        displayCountryCode.toUpperCase() === "DK"
+      ) {
+        setFormattedTotal(
+          new Intl.NumberFormat("da-DK", {
+            style: "currency",
+            currency: "DKK",
+          }).format(totalDkk / 100)
+        );
+      } else {
+        const totalConverted = await convertCurrency(
+          totalDkk,
+          displayCountryCode
+        );
+        setFormattedTotal(
+          new Intl.NumberFormat("en-IE", {
+            style: "currency",
+            currency: "EUR",
+          }).format(totalConverted)
+        );
+      }
     }
 
     computeVat();
@@ -435,11 +482,15 @@ export default function ShippingAndBillingForm({
                               );
                               const gross = net + vatAmount;
 
-                              const displayCountryCode = found?.abbreviation ?? customerGeoLocation;
+                              const displayCountryCode =
+                                found?.abbreviation ?? customerGeoLocation;
 
                               setVAT(vatAmount);
                               try {
-                                const taxConverted = await convertCurrency(vatAmount, displayCountryCode);
+                                const taxConverted = await convertCurrency(
+                                  vatAmount,
+                                  displayCountryCode
+                                );
                                 const taxFormatted =
                                   displayCountryCode.toUpperCase() === "DK" ||
                                   displayCountryCode.toUpperCase() === "DKK"
@@ -453,13 +504,45 @@ export default function ShippingAndBillingForm({
                                       }).format(taxConverted);
                                 setFormattedTax(taxFormatted);
                               } catch (err) {
-                                setFormattedTax(await getLocalCurrencyString(vatAmount, displayCountryCode));
+                                setFormattedTax(
+                                  await getLocalCurrencyString(
+                                    vatAmount,
+                                    displayCountryCode
+                                  )
+                                );
                               }
-                              setFormattedPrice(await getLocalCurrencyString(net, displayCountryCode));
+                              setFormattedPrice(
+                                await getLocalCurrencyString(
+                                  net,
+                                  displayCountryCode
+                                )
+                              );
                               const shippingDkk = await convertEuroToDkk(
                                 constants.SHIPPING_PRICE_EUR * 100
                               );
-                              setFormattedTotal(await getLocalCurrencyString(net + shippingDkk, displayCountryCode));
+                              const totalDkk = gross + shippingDkk;
+                              if (
+                                displayCountryCode.toUpperCase() === "DK" ||
+                                displayCountryCode.toUpperCase() === "DKK"
+                              ) {
+                                setFormattedTotal(
+                                  new Intl.NumberFormat("da-DK", {
+                                    style: "currency",
+                                    currency: "DKK",
+                                  }).format(totalDkk / 100)
+                                );
+                              } else {
+                                const totalConverted = await convertCurrency(
+                                  totalDkk,
+                                  displayCountryCode
+                                );
+                                setFormattedTotal(
+                                  new Intl.NumberFormat("en-IE", {
+                                    style: "currency",
+                                    currency: "EUR",
+                                  }).format(totalConverted)
+                                );
+                              }
                             }
                           }}
                           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -625,11 +708,15 @@ export default function ShippingAndBillingForm({
                                 );
                                 const gross = net + vatAmount;
 
-                                const displayCountryCode = found?.abbreviation ?? customerGeoLocation;
+                                const displayCountryCode =
+                                  found?.abbreviation ?? customerGeoLocation;
 
                                 setVAT(vatAmount);
                                 try {
-                                  const taxConverted = await convertCurrency(vatAmount, displayCountryCode);
+                                  const taxConverted = await convertCurrency(
+                                    vatAmount,
+                                    displayCountryCode
+                                  );
                                   const taxFormatted =
                                     displayCountryCode.toUpperCase() === "DK"
                                       ? new Intl.NumberFormat("da-DK", {
@@ -642,13 +729,45 @@ export default function ShippingAndBillingForm({
                                         }).format(taxConverted);
                                   setFormattedTax(taxFormatted);
                                 } catch (err) {
-                                  setFormattedTax(await getLocalCurrencyString(vatAmount, displayCountryCode));
+                                  setFormattedTax(
+                                    await getLocalCurrencyString(
+                                      vatAmount,
+                                      displayCountryCode
+                                    )
+                                  );
                                 }
-                                setFormattedPrice(await getLocalCurrencyString(net, displayCountryCode));
+                                setFormattedPrice(
+                                  await getLocalCurrencyString(
+                                    net,
+                                    displayCountryCode
+                                  )
+                                );
                                 const shippingDkk = await convertEuroToDkk(
                                   constants.SHIPPING_PRICE_EUR * 100
                                 );
-                                setFormattedTotal(await getLocalCurrencyString(net + shippingDkk, displayCountryCode));
+                                const totalDkk = gross + shippingDkk;
+                                if (
+                                  displayCountryCode.toUpperCase() === "DK" ||
+                                  displayCountryCode.toUpperCase() === "DKK"
+                                ) {
+                                  setFormattedTotal(
+                                    new Intl.NumberFormat("da-DK", {
+                                      style: "currency",
+                                      currency: "DKK",
+                                    }).format(totalDkk / 100)
+                                  );
+                                } else {
+                                  const totalConverted = await convertCurrency(
+                                    totalDkk,
+                                    displayCountryCode
+                                  );
+                                  setFormattedTotal(
+                                    new Intl.NumberFormat("en-IE", {
+                                      style: "currency",
+                                      currency: "EUR",
+                                    }).format(totalConverted)
+                                  );
+                                }
                               }
                             }}
                             required={!sameAsShipping}
@@ -732,9 +851,11 @@ export default function ShippingAndBillingForm({
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Shipping</span>
-                        <span className="text-foreground">
-                          {formattedShipping}
-                        </span>
+                        <div className="flex flex-col items-end">
+                          <span className="text-foreground">
+                            {formattedShipping}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
