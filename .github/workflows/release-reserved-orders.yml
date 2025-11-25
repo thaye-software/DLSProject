@@ -1,9 +1,9 @@
 name: Hit Expiration Webhook
 
 on:
-  workflow_dispatch:    # allows manual trigger
+  workflow_dispatch:
   schedule:
-    - cron: "*/2 * * * *"   # runs every 5 minutes (example)
+    - cron: "*/30 * * * *"   # runs every 30 minutes
 
 jobs:
   call_webhook:
