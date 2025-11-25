@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { FormEvent, useState } from "react"
 import {
   PaymentElement,
   useStripe,
@@ -13,36 +13,38 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { baseUrl } from "@/lib/tailwindUtils"
+import { toast } from "sonner"
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
 function PaymentForm({ orderId }: { orderId: string }) {
   const stripe = useStripe()
   const elements = useElements()
-  const [message, setMessage] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault()
 
     if (!stripe || !elements) {
       return
     }
 
     setIsLoading(true)
-    setMessage(null)
 
     const { error } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: `${baseUrl}/orders/checkouttwo/success?orderId=${orderId}`,
+        return_url: `${baseUrl}/orders/checkout/success?orderId=${orderId}`,
       },
     })
 
     console.log("THIS STILL RUNS AFTER CONFIRM PAYMENT");
 
     if (error) {
-      setMessage(error.message || "An unexpected error occurred.")
+      setIsLoading(false)
+      console.error("failed to confirm order", error)
+      toast.error("failed to confirm order..")
+      return;
     }
 
     setIsLoading(false)

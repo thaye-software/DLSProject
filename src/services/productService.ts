@@ -5,7 +5,7 @@ import { products, brands, watches, productImages } from "@/database/schema.ts";
 import { NewProductModel, ProductModel } from "@/database/types";
 
 import { Product } from "../app/watches/type";
-import { and, gte, lte, inArray, eq, desc, asc } from "drizzle-orm";
+import { and, gte, lte, inArray, eq, desc, asc, sql, gt } from "drizzle-orm";
 import { WatchFilters } from "@/components/Watches/Filters/ProductFilterSheet";
 
 type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -270,20 +270,31 @@ export async function createProduct(
   }
 }
 
-export async function updateProductStock(
+export async function checkAndUpdateProductStock(
   productId: string,
-  stock: number,
   tx?: DbTransaction
-): Promise<void> {
+): Promise<boolean> {
   try {
     const dbContext = tx || db;
-    await dbContext
+
+    const result = await dbContext
       .update(products)
-      .set({ stock })
-      .where(eq(products.id, productId))
-      .returning();
+      .set({ 
+        stock: sql`${products.stock} - 1` 
+      })
+      .where(
+        and(
+          eq(products.id, productId),
+          gt(products.stock, 0)
+        )
+      )
+      .returning({ updatedStock: products.stock });
+
+    // If result is empty, means stock not availabe
+    return result.length > 0; 
+
   } catch (error) {
-    console.error("(server) failed to update the stock on product...", error);
+    console.error("(server) failed to decremant stock", error);
     throw error;
   }
 }

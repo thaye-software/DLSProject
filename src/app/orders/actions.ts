@@ -78,22 +78,31 @@ export interface CustomerNameAndPhone {
   phone: string | null;
 }
 
+export interface OrderDetails {
+  userId: string;
+  currencyId: string;
+  status: string;
+  shippingPriceDkk: string;
+  totalPriceDkk: string;
+  totalPriceCurrency: string;
+  deliveryAddressId?: string;
+  billingAddressId?: string;
+  productId: string;
+}
+
 export async function submitOrderDetails(
   formData: customerBillingDetails,
   product: Product,
   country: CountryModel
 ) {
+
   const userGeoLocationData = await getUserLocation();
   let currencyCode = userGeoLocationData.currency.toUpperCase();
   currencyCode = currencyCode == "DKK" ? "DKK" : "EUR";
   const localeCurrency = await getCurrencyByCode(currencyCode);
 
   const billingAddressCountry = await getCountryByName(formData.country);
-  // return;
-  // let customerCountry;
-  // if(!country) {
-  //     // customerCountry = await getCountryByCustomerId(formData.customerId);
-  // }
+
 
   const billingAddress: Address = {
     userId: formData.customerId,
@@ -127,10 +136,10 @@ export async function submitOrderDetails(
     phone: formData.phone || null,
   };
 
-  const orderDetails = {
+  const orderDetails: OrderDetails = {
     userId: formData.customerId,
     currencyId: billingAddressCountry?.currencyId || localeCurrency.id,
-    status: "PROCESSING",
+    status: "RESERVED",
     shippingPriceDkk: formData.shippingPriceDkk,
     totalPriceDkk: String(product.priceDkk + parseInt(formData.shippingPriceDkk)),
 
@@ -192,16 +201,7 @@ export async function convertEuroToDkk(priceEur: number) {
   }
 }
 
-// export async function getAllCountriesNameAction(): Promise<string[]> {
-//   try {
-//     const allCountries = await getAllCountries();
 
-//     const countryNames = allCountries.map((country) => country.name);
-//     return countryNames;
-//   } catch (error) {
-//     throw error;
-//   }
-// }
 
 export async function sendOrderConfirmationEmail(
   customerEmail: string,
@@ -229,7 +229,7 @@ export async function sendOrderConfirmationEmail(
                 
                 <!-- Header -->
                 <tr>
-                  <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+                  <td style="background: linear-gradient(135deg, #2a2a2a 0%, #0d0d0d 100%); padding: 40px 30px; text-align: center;">
                     <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">Limited Watches</h1>
                   </td>
                 </tr>
@@ -237,11 +237,6 @@ export async function sendOrderConfirmationEmail(
                 <!-- Success Message -->
                 <tr>
                   <td style="padding: 40px 30px 20px; text-align: center;">
-                    <div style="display: inline-block; width: 64px; height: 64px; background-color: #10b981; border-radius: 50%; margin-bottom: 20px;">
-                      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M20 6L9 17L4 12" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                    </div>
                     <h2 style="margin: 0 0 10px; color: #1f2937; font-size: 24px; font-weight: 600;">Order Confirmed!</h2>
                     <p style="margin: 0; color: #6b7280; font-size: 16px;">Thank you for your purchase, ${
                       orderDetails.customerName
@@ -344,9 +339,9 @@ export async function sendOrderConfirmationEmail(
                 <!-- Next Steps -->
                 <tr>
                   <td style="padding: 0 30px 30px;">
-                    <div style="background-color: #f0f9ff; border-left: 4px solid #667eea; border-radius: 4px; padding: 20px;">
-                      <h4 style="margin: 0 0 10px; color: #1f2937; font-size: 16px; font-weight: 600;">What's Next?</h4>
-                      <ul style="margin: 0; padding-left: 20px; color: #6b7280; font-size: 14px; line-height: 1.6;">
+                    <div style="background-color: #11131a; border-left: 4px solid #2a2f3a; border-radius: 4px; padding: 20px;">
+                      <h4 style="margin: 0 0 10px; color: #e5e7eb; font-size: 16px; font-weight: 600;">What's Next?</h4>
+                      <ul style="margin: 0; padding-left: 20px; color: #9ca3af; font-size: 14px; line-height: 1.6;">
                         <li>We're preparing your order for shipment</li>
                         <li>You'll receive a tracking number once shipped</li>
                         <li>Track your order anytime from your account</li>
@@ -358,15 +353,23 @@ export async function sendOrderConfirmationEmail(
                 <!-- CTA Button -->
                 <tr>
                   <td style="padding: 0 30px 40px; text-align: center;">
-                    <a href="https://limitedwatches.com/orders" style="display: inline-block; padding: 14px 32px; background-color: #667eea; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 6px; transition: background-color 0.3s;">View Order Details</a>
+                    <a href="https://limitedwatches.com/orders" style="display: inline-block; padding: 14px 32px; background-color: #1f2937; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 6px; transition: opacity 0.3s;">View Order Details</a>
                   </td>
                 </tr>
 
                 <!-- Footer -->
                 <tr>
-                  <td style="padding: 30px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; text-align: center;">
-                    <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px;">Questions? Contact us at <a href="mailto:support@limitedwatches.com" style="color: #667eea; text-decoration: none;">support@limitedwatches.com</a></p>
-                    <p style="margin: 0; color: #9ca3af; font-size: 12px;">© ${new Date().getFullYear()} Limited Watches. All rights reserved.</p>
+                  <td style="padding: 30px; background-color: #0e0f12; border-top: 1px solid #1f1f2e; text-align: center;">
+                    <p style="margin: 0 0 10px; color: #9ca3af; font-size: 14px;">
+                      Questions? Contact us at
+                      <a href="mailto:support@limitedwatches.com" style="color: #4f5b6b; text-decoration: none;">
+                        support@limitedwatches.com
+                      </a>
+                    </p>
+                    
+                    <p style="margin: 0; color: #6b7280; font-size: 12px;">
+                      © ${new Date().getFullYear()} Limited Watches. All rights reserved.
+                    </p>
                   </td>
                 </tr>
 

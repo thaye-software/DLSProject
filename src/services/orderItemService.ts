@@ -18,6 +18,7 @@ export async function getOrderItemByOrderId(orderId: string) {
             totalPriceDkk: true,
             shippingPriceDkk: true,
             createdAt: true,
+                    status: true,
           },
           with: {
             user: {

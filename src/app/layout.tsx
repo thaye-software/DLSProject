@@ -10,12 +10,14 @@ import { Navbar } from "@/components/Navbar/Navbar";
 import { Footer } from "@/components/Footer";
 import { ModeToggle } from "@/components/Navbar/ModeToggle";
 import { usePathname, redirect } from "next/navigation";
-import {} from "react";
+import { useEffect, useState } from "react";
 import { ChatProvider, useChatContext } from "@/context/ChatContext";
 import { FloatingChatButton } from "@/components/Chat/FloatingChatButton";
 import { AnimatePresence } from "framer-motion";
 import ChatBox from "@/components/Chat/ChatBox";
 import { Toaster } from "sonner";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { getUserById } from "@/services/userService";
 
 const theSeasons = theSeasonsFont({
   src: [
@@ -80,6 +82,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [userRole, setUserRole] = useState<string>(""); 
+  
+  const { user } = useSupabaseAuth();
   const pathname = usePathname();
   const hideRootShell =
     pathname === "/login" ||
@@ -87,6 +92,16 @@ export default function RootLayout({
     pathname?.startsWith("/login/");
 
   // chat state is provided by ChatProvider via context
+
+  useEffect(() => {
+    async function getUserRole() {
+      const limitedWatchesUser = await getUserById(user?.id as string);
+      const userRole = limitedWatchesUser?.role;
+
+      setUserRole(userRole as string);
+    }
+    getUserRole();
+  })
 
   return (
     <html
@@ -141,7 +156,7 @@ export default function RootLayout({
             {!hideRootShell && <Footer />}
 
             {/* Floating chat button + panel (visible on all non-admin/login pages) */}
-            {!hideRootShell && <LayoutChatControls />}
+            {userRole !== "admin" && !hideRootShell && <LayoutChatControls />}
           </ThemeProvider>
         </ChatProvider>
         <Toaster />

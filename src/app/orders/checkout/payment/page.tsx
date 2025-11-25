@@ -20,6 +20,7 @@ import { Suspense } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import BackButton from "@/components/BackButton";
 import { calculateVAT } from "@/lib/priceUtils";
+import { redirect } from 'next/navigation'
 
 //view all transaction at this link: https://dashboard.stripe.com/acct_1SKHlN6xjyBvX39o/test/payments
 export default async function PaymentPage({
@@ -55,6 +56,14 @@ export default async function PaymentPage({
       </div>
     );
   }
+
+
+  // ensure customer cant go back to payment/checkout page/site 
+  if(foundOrderItem.order.status !== "RESERVED") {
+    redirect("/watches");
+  }
+
+
   
 
   const productImageSrc = foundOrderItem?.product.productImages[0].imageUrl;
@@ -145,7 +154,10 @@ export default async function PaymentPage({
     automatic_payment_methods: {
       enabled: true,
     },
-  });
+    metadata: {
+      internal_order_id: orderId
+    }
+  })
 
   return (
     <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">

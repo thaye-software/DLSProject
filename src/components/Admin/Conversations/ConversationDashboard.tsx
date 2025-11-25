@@ -1,32 +1,42 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { Search, MessageSquare, Box } from "lucide-react";
-import { cn } from "@/lib/tailwindUtils";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import type { ConversationModel } from "@/database/types";
 import Image from "next/image";
 import Link from "next/link";
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
-import { RealtimeChat } from "@/components/Chat/RealtimeChat";
-import { ChatMessage } from "@/hooks/use-realtime-chat";
-import { markAsRead } from "@/services/messageService";
-import { createClient } from "@/database/supabase/client";
-import { useUnreadMessagesContext } from "@/context/UnreadMessagesContext";
-import ChatListItem from "./ChatListItem";
+import { Search, MessageSquare, Box } from "lucide-react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 
-// --- TYPES ---
+import { cn } from "@/lib/tailwindUtils";
+
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Card, CardHeader } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+
+import type { ConversationModel } from "@/database/types";
+
+import { ChatMessage } from "@/hooks/use-realtime-chat";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import useSyncUnreadCounts from "@/hooks/conversation-dashboard/useSyncUnreadCounts";
+import useUIConversations from "@/hooks/conversation-dashboard/useUIConversations";
+import useSetActiveChatReadZero from "@/hooks/conversation-dashboard/useSetActiveChatReadZero";
+
+import { markAsRead } from "@/services/messageService";
+
+import ChatListItem from "./ChatListItem";
+import { RealtimeChat } from "@/components/Chat/RealtimeChat";
+
+import { useUnreadMessagesContext } from "@/context/UnreadMessagesContext";
+
+
+
 export type UIConversation = {
   id: string;
   productId: string;
   productSlug: string;
+  productRef: string;
   productName: string;
   productImage: string | null;
   customerId: string;
@@ -37,36 +47,24 @@ export type UIConversation = {
   lastMessageSenderId: string | null;
   status: string;
   unreadCount: number;
-  sortedMessages: {
-    id: string;
-    createdAt: Date | null;
-    conversationId: string;
-    senderId: string;
-    senderType: string;
-    content: string;
-    isRead: boolean | null;
-  }[];
+  sortedMessages: ChatMessage[]
 };
 
-interface ConversationDashboardProps {
-  initialConversations: ConversationModel[];
-}
 
-export function ConversationDashboard({ initialConversations }: ConversationDashboardProps) {
+
+export function ConversationDashboard({ initialConversations }:{initialConversations: ConversationModel[]}) {
   const [viewMode, setViewMode] = useState<"product" | "all">("product");
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [visitedConversationIds, setVisitedConversationIds] = useState<Set<string>>(new Set());
+
   
-  // Store an ARRAY of messages per conversation, not just the single latest one
-  const [realtimeMessagesMap, setRealtimeMessagesMap] = useState<Record<string, ChatMessage[]>>({});
-  
-  const { unreadCounts, setUnreadCounts } = useUnreadMessagesContext();
+  const { setUnreadCounts, addRealtimeMessage } = useUnreadMessagesContext();
   const [searchQuery, setSearchQuery] = useState("");
   const { user } = useSupabaseAuth();
-  const supabase = createClient();
 
+  
   // Ref to track selected ID for the socket listener to avoid closure staleness
   const selectedIdRef = useRef<string | null>(null);
 
@@ -74,170 +72,21 @@ export function ConversationDashboard({ initialConversations }: ConversationDash
     selectedIdRef.current = selectedConversationId;
   }, [selectedConversationId]);
 
-  // --- 1. GLOBAL SUBSCRIPTION ---
-  useEffect(() => {
-    // Guard clauses
-    if (!initialConversations || initialConversations.length === 0 || !user) return;
 
-    const channels: ReturnType<typeof supabase.channel>[] = [];
+  //------------------------------ 1. HANDLE ACTIVE CHAT UNREADS ------------------------------
+  // Since the global hook increments counters blindly, we must reset the counter
+  // if the incoming message belongs to the currently selected conversation.
+  useSetActiveChatReadZero(selectedConversationId, user);
 
-    initialConversations.forEach((conv) => {
-      // CRITICAL FIX: This MUST match the channel name used in useRealtimeChat
-      // Previous incorrect code: const channelName = `dashboard:${conv.id}`;
-      const channelName = `chat:${conv.id}`; 
-      
-      const channel = supabase.channel(channelName);
-
-      channel
-        .on("broadcast", { event: "message" }, (payload) => {
-          const incomingMessage = payload.payload as ChatMessage;
-
-          // Safety check to ensure message belongs to this conversation
-          if (incomingMessage.conversationId === conv.id) {
-            
-            // 1. Update the messages list (Sidebar snippet & Stale data fix)
-            setRealtimeMessagesMap((prev) => {
-              const currentList = prev[conv.id] || [];
-              // Deduplicate logic: Don't add if ID already exists
-              if (currentList.some(m => m.id === incomingMessage.id)) return prev;
-              
-              return {
-                ...prev,
-                [conv.id]: [...currentList, incomingMessage]
-              };
-            });
-
-            // 2. Handle Notifications
-            // Logic: Message is from Customer AND (Chat is NOT selected OR Window is not focused)
-            const isFromCustomer = incomingMessage.senderType === 'customer';
-            const isNotFromMe = incomingMessage.senderId !== user.id;
-            
-            // Check the Ref (Current State) to see if we are viewing this chat
-            const isChatOpen = selectedIdRef.current === conv.id;
-
-            if (isFromCustomer && isNotFromMe && !isChatOpen) {
-              setUnreadCounts((prev) => ({
-                ...prev,
-                [conv.id]: (prev[conv.id] ?? 0) + 1,
-              }));
-            }
-          }
-        })
-        .subscribe((status) => {
-          console.log(`Subscribed to ${channelName}: ${status}`);
-        });
-
-      channels.push(channel);
-    });
-
-    // Cleanup: Unsubscribe when the component unmounts
-    return () => {
-      channels.forEach((ch) => supabase.removeChannel(ch));
-    };
-    
-    // DEPENDENCIES: Only re-run if the user changes or the list of conversations changes.
-    // We purposefully exclude 'setUnreadCounts' to avoid re-subscribing on every count update.
-  }, [initialConversations, supabase, user]);
-
-  // --- 2. INITIAL UNREAD COUNT SETUP  ---
-  useEffect(() => {
-    if (!user || !initialConversations) return;
-    
-    const initialUnreads: Record<string, number> = {};
-    initialConversations.forEach((conv) => {
-      // Calculate from DB data
-      const dbCount = conv.messages.filter(
-        (message) => !message.isRead && message.senderType === "customer" && message.senderId !== user.id
-      ).length;
-      
-      initialUnreads[conv.id] = dbCount;
-    });
-    
-    setUnreadCounts(initialUnreads);
-  }, [initialConversations, user]); 
+  //------------------------------ 2. INITIAL UNREAD COUNT SETUP ------------------------------
+  useSyncUnreadCounts(user, initialConversations, setUnreadCounts);
   
-  // --- 3. DATA PREPARATION ---
-  const allConversations = useMemo<UIConversation[]>(() => {
-    return initialConversations.map((conv) => {
-      // 1. Sort Database Messages
-      const sortedDbMessages = [...conv.messages].sort(
-        (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-      );
+  //------------------------------ 3. DATA PREPARATION ------------------------------
+  const allConversations = useUIConversations(initialConversations);
 
-      // 2. Get Realtime Messages for this chat
-      const newMessages = realtimeMessagesMap[conv.id] || [];
-      const sortedNewMessages = [...newMessages].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
 
-      // 3. Determine "True" Latest Message
-      const latestDb = sortedDbMessages[0];
-      const latestRealtime = sortedNewMessages[0];
-      
-      let lastMsgObj: any = latestDb;
-      
-      if (latestRealtime) {
-        if (!latestDb) {
-            lastMsgObj = latestRealtime;
-        } else {
-            const liveTime = new Date(latestRealtime.createdAt).getTime();
-            const dbTime = latestDb.createdAt ? new Date(latestDb.createdAt).getTime() : 0;
-            if (liveTime >= dbTime) {
-                lastMsgObj = latestRealtime;
-            }
-        }
-      }
 
-      // 4. Customer Info Logic
-      let customerName = "Unknown Customer";
-      let customerInitials = "??";
-
-      // Try to find customer details from DB messages first, then Realtime
-      const customerMsg = sortedDbMessages.find((m) => m.senderType === "customer") 
-                       || newMessages.find(m => m.senderType === "customer");
-
-      //@ts-ignore
-      if (customerMsg?.sender) {
-        //@ts-ignore
-        const { firstName, lastName, username } = customerMsg.sender;
-        customerName = firstName && lastName ? `${firstName} ${lastName}` : username || "Customer";
-      }
-
-      if (customerName !== "Unknown Customer") {
-        customerInitials = customerName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
-      }
-
-      const imgUrl = conv.product.productImages?.[0]
-        ? (conv.product.productImages[0] as any).url || (conv.product.productImages[0] as any).imageUrl
-        : null;
-
-      let productName = conv.product.watch.brand.name + " " + conv.product.watch.model;
-      if (productName.length > 35) {
-        productName = productName.substring(0, 25) + "...";
-      }
-
-      return {
-        id: conv.id,
-        productId: conv.productId,
-        productSlug: conv.product.watch.slug,
-        productName,
-        productImage: imgUrl,
-        customerId: conv.customerId,
-        customerName,
-        customerInitials,
-        lastMessageContent: lastMsgObj?.content || "No messages yet",
-        lastMessageAt: lastMsgObj?.createdAt
-          ? new Date(lastMsgObj.createdAt)
-          : new Date(conv.createdAt || Date.now()),
-        lastMessageSenderId: lastMsgObj?.senderId || lastMsgObj?.sender?.id || null,
-        status: conv.status || "open",
-        unreadCount: unreadCounts[conv.id] ?? 0,
-        sortedMessages: sortedDbMessages, // Only pass DB messages here, realtime passed separately to Chat
-      };
-    });
-  }, [initialConversations, realtimeMessagesMap, unreadCounts]);
-
-  // --- FILTERING & SORTING ---
+  //------------------------------ FILTERING & SORTING ------------------------------
   const filteredConversations = useMemo(() => {
     let data = [...allConversations];
 
@@ -258,7 +107,9 @@ export function ConversationDashboard({ initialConversations }: ConversationDash
     return data;
   }, [allConversations, searchQuery, sortOrder]);
 
-  // --- GROUPING ---
+
+
+  //------------------------------ GROUPING ------------------------------
   const groupedByProduct = useMemo(() => {
     const groups: Record<string, UIConversation[]> = {};
     filteredConversations.forEach((conv) => {
@@ -269,6 +120,7 @@ export function ConversationDashboard({ initialConversations }: ConversationDash
     return Object.entries(groups).map(([productId, items]) => ({
       productId,
       productSlug: items[0].productSlug,
+      productRef: items[0].productRef,
       productName: items[0].productName,
       productImage: items[0].productImage,
       conversations: items,
@@ -276,7 +128,9 @@ export function ConversationDashboard({ initialConversations }: ConversationDash
     }));
   }, [filteredConversations]);
 
-  // --- HANDLERS ---
+
+
+  //------------------------------ HANDLERS ------------------------------
   const handleSelectConversation = useCallback(async (conversationId: string) => {
     setSelectedConversationId(conversationId);
     setVisitedConversationIds((prev) => {
@@ -294,13 +148,13 @@ export function ConversationDashboard({ initialConversations }: ConversationDash
     }
   }, [user?.id, setUnreadCounts]);
 
-  // This handles messages sent by YOU (the admin) via the RealtimeChat component
+
   const handleOutgoingMessage = useCallback((message: ChatMessage) => {
-      setRealtimeMessagesMap((prev) => ({
-          ...prev,
-          [message.conversationId!]: [...(prev[message.conversationId!] || []), message]
-      }));
-  }, []);
+      // Update Global Context (this keeps Sidebar updated with "You sent a message")
+      addRealtimeMessage(message.conversationId!, message);
+  }, [addRealtimeMessage]);
+
+
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-[380px_1fr] h-[calc(100vh-6rem)] gap-4">
@@ -366,7 +220,7 @@ export function ConversationDashboard({ initialConversations }: ConversationDash
                         <AccordionTrigger className="hover:no-underline py-3 pr-2">
                            <div className="flex items-start gap-3 text-left w-full overflow-hidden">
                              <Link href={`/watches/view/${group.productSlug}`}>
-                               <div className="h-10 w-10 rounded bg-muted flex items-center justify-center shrink-0 overflow-hidden relative">
+                               <div className="h-14 w-14 rounded bg-muted flex items-center justify-center shrink-0 overflow-hidden relative">
                                  {group.productImage ? (
                                    <Image className="h-full w-full object-cover" src={group.productImage} alt={group.productName} fill unoptimized />
                                  ) : <Box className="h-5 w-5 opacity-50" />}
@@ -377,6 +231,7 @@ export function ConversationDashboard({ initialConversations }: ConversationDash
                                  <h4 className="font-medium truncate text-sm pr-2" title={group.productName}>{group.productName}</h4>
                                  {group.totalUnread > 0 && <Badge variant="destructive" className="ml-2 h-5 px-1.5 text-[10px] shrink-0">{group.totalUnread}</Badge>}
                                </div>
+                               <p className="text-xs text-muted-foreground mb-2">ref: {group.productRef}</p>
                                <p className="text-xs text-muted-foreground">{group.conversations.length} {group.conversations.length === 1 ? "chat" : "chats"}</p>
                              </div>
                            </div>
@@ -411,35 +266,17 @@ export function ConversationDashboard({ initialConversations }: ConversationDash
           
           if (!visitedConversationIds.has(conv.id)) return null;
 
-          // fixed STALE MESSAGES...: 
-          // Merge initial DB messages with the accumulated realtime messages for this session
-          const realtimeMsgs = realtimeMessagesMap[conv.id] || [];
-          const combinedMessages = [...conv.messages, ...realtimeMsgs];
-
           return (
             <div key={conv.id} className={cn("flex flex-col h-full min-h-0", isSelected ? "flex" : "hidden")}>
+              {/* ... Chat UI ... */}
               {chat && (
                 <>
-                  <CardHeader className="py-4 border-b flex flex-row items-center justify-between shrink-0">
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarFallback>{chat.customerInitials}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <CardTitle className="text-base">{chat.customerName}</CardTitle>
-                        <CardDescription className="text-xs">
-                          Regarding: <span className="font-medium text-foreground">{chat.productName}</span>
-                        </CardDescription>
-                      </div>
-                    </div>
-                    <Badge variant={chat.status === "closed" ? "secondary" : "outline"} className="capitalize">{chat.status}</Badge>
-                  </CardHeader>
-
+                  <CardHeader>...</CardHeader>
                   <div className="flex-1 min-h-0 overflow-hidden">
                     <RealtimeChat
                       conversation={conv}
                       //@ts-ignore
-                      messages={combinedMessages}
+                      messages={chat.sortedMessages}
                       userId={user?.id as string}
                       username={user?.user_metadata.display_name}
                       onMessageReceived={handleOutgoingMessage} 
