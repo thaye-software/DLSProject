@@ -78,22 +78,31 @@ export interface CustomerNameAndPhone {
   phone: string | null;
 }
 
+export interface OrderDetails {
+  userId: string;
+  currencyId: string;
+  status: string;
+  shippingPriceDkk: string;
+  totalPriceDkk: string;
+  totalPriceCurrency: string;
+  deliveryAddressId?: string;
+  billingAddressId?: string;
+  productId: string;
+}
+
 export async function submitOrderDetails(
   formData: customerBillingDetails,
   product: Product,
   country: CountryModel
 ) {
+
   const userGeoLocationData = await getUserLocation();
   let currencyCode = userGeoLocationData.currency.toUpperCase();
   currencyCode = currencyCode == "DKK" ? "DKK" : "EUR";
   const localeCurrency = await getCurrencyByCode(currencyCode);
 
   const billingAddressCountry = await getCountryByName(formData.country);
-  // return;
-  // let customerCountry;
-  // if(!country) {
-  //     // customerCountry = await getCountryByCustomerId(formData.customerId);
-  // }
+
 
   const billingAddress: Address = {
     userId: formData.customerId,
@@ -127,10 +136,10 @@ export async function submitOrderDetails(
     phone: formData.phone || null,
   };
 
-  const orderDetails = {
+  const orderDetails: OrderDetails = {
     userId: formData.customerId,
     currencyId: billingAddressCountry?.currencyId || localeCurrency.id,
-    status: "PROCESSING",
+    status: "RESERVED",
     shippingPriceDkk: formData.shippingPriceDkk,
     totalPriceDkk: String(product.priceDkk + parseInt(formData.shippingPriceDkk)),
 
@@ -228,11 +237,6 @@ export async function sendOrderConfirmationEmail(
                 <!-- Success Message -->
                 <tr>
                   <td style="padding: 40px 30px 20px; text-align: center;">
-                    <div style="display: inline-block; width: 64px; height: 64px; background-color: #10b981; border-radius: 50%; margin-bottom: 20px;">
-                      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M20 6L9 17L4 12" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                    </div>
                     <h2 style="margin: 0 0 10px; color: #1f2937; font-size: 24px; font-weight: 600;">Order Confirmed!</h2>
                     <p style="margin: 0; color: #6b7280; font-size: 16px;">Thank you for your purchase, ${
                       orderDetails.customerName

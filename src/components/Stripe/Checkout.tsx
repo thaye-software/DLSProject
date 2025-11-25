@@ -13,13 +13,13 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { baseUrl } from "@/lib/tailwindUtils"
+import { toast } from "sonner"
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
 function PaymentForm({ orderId }: { orderId: string }) {
   const stripe = useStripe()
   const elements = useElements()
-  const [message, setMessage] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (event: FormEvent) => {
@@ -30,7 +30,6 @@ function PaymentForm({ orderId }: { orderId: string }) {
     }
 
     setIsLoading(true)
-    setMessage(null)
 
     const { error } = await stripe.confirmPayment({
       elements,
@@ -42,7 +41,10 @@ function PaymentForm({ orderId }: { orderId: string }) {
     console.log("THIS STILL RUNS AFTER CONFIRM PAYMENT");
 
     if (error) {
-      setMessage(error.message || "An unexpected error occurred.")
+      setIsLoading(false)
+      console.error("failed to confirm order", error)
+      toast.error("failed to confirm order..")
+      return;
     }
 
     setIsLoading(false)

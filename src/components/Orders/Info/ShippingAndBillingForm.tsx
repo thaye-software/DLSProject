@@ -77,7 +77,7 @@ export default function ShippingAndBillingForm({
       setErrorState({
         success: false,
         message: "Unexpected error, no products selected, try again...",
-        redirectUrl: "/watches/all",
+        redirectUrl: "/watches",
       });
       setIsLoading(false);
     }
@@ -149,7 +149,7 @@ export default function ShippingAndBillingForm({
         setErrorState({
           success: false,
           message: error.message,
-          redirectUrl: "/watches/all",
+          redirectUrl: "/watches",
         });
       } finally {
         setIsLoading(false);
