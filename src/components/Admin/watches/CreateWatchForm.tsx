@@ -1,7 +1,8 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { createWatch } from "@/app/admin/watches/new/actions";
+import { updateWatch } from "@/app/admin/watches/[id]/edit/actions";
 import { createNewWatchSchema } from "@/app/admin/watches/new/validation";
 import { z } from "zod";
 import constants from "@/lib/constants";
@@ -30,11 +31,12 @@ export default function CreateWatchForm({
   initialProduct?: import("@/database/types").ProductModel | null;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [brands, setBrands] = useState<BrandModel[]>([]);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-  
+
   useEffect(() => {
     async function fetchBrands() {
       const brandsData = await initialBrands;
@@ -67,9 +69,11 @@ export default function CreateWatchForm({
   }));
 
   const initialPriceWithVAT = initialProduct
-    ? (initialProduct.priceDkk + calculateVAT(initialProduct.priceDkk * 100, 0.25)) / 100
+    ? (initialProduct.priceDkk +
+        calculateVAT(initialProduct.priceDkk * 100, 0.25)) /
+      100
     : "";
-  
+
   console.log("Initial product:", initialProduct);
 
   // If we were given an initialProduct (edit mode), prefill the form
@@ -98,10 +102,15 @@ export default function CreateWatchForm({
       price: String(initialPriceWithVAT),
       stock: String(initialProduct.stock ?? prev.stock),
     }));
-  }, [initialProduct, brands]);
 
-  console.log("Form state:", form);
-  console.log("initialProduct:", initialProduct);
+    // Prefill any existing product images into uploadedImages
+    if (initialProduct.productImages && initialProduct.productImages.length) {
+      const urls = initialProduct.productImages
+        .map((img: any) => img.imageUrl)
+        .filter(Boolean);
+      setUploadedImages(urls);
+    }
+  }, [initialProduct, brands]);
 
   function handleChange(
     e: React.ChangeEvent<
@@ -167,10 +176,31 @@ export default function CreateWatchForm({
     // imageUrls as comma separated string (action splits)
     fd.append("imageUrls", uploadedImages.join(","));
 
+    // if we're editing (initialProduct provided or on edit route), call update
+    const onEditPath = Boolean(
+      pathname && /\/admin\/watches\/[^/]+\/edit$/.test(pathname)
+    );
+
+    // When updating, ensure we include productId (prefer initialProduct, otherwise parse from path)
+    if (initialProduct?.id) {
+      fd.append("productId", initialProduct.id);
+    } else if (onEditPath && pathname) {
+      const m = pathname.match(/\/admin\/watches\/([^/]+)\/edit$/);
+      if (m) fd.append("productId", m[1]);
+    }
+
     try {
-      const res = await createWatch(fd);
+      const res =
+        initialProduct || onEditPath
+          ? await updateWatch(fd)
+          : await createWatch(fd);
       if (res?.success) {
-        const watchId = res?.data?.watch?.id ?? res?.data?.id;
+        // update and create actions return different shapes — try both
+        const watchId =
+          res?.data?.watch?.id ??
+          res?.data?.id ??
+          res?.data?.product?.id ??
+          undefined;
         if (watchId) {
           router.push(`/admin/watches`);
           return;
@@ -420,18 +450,55 @@ export default function CreateWatchForm({
             {errors.dialColor && <FieldError>{errors.dialColor}</FieldError>}
           </FieldContent>
         </Field>
+        {/* Show any already-uploaded images for this product */}
+        {uploadedImages.length > 0 && (
+          <div className="grid grid-cols-3 gap-2">
+            {uploadedImages.map((src) => (
+              <div key={src} className="p-2">
+                <img
+                  src={src}
+                  alt="existing image"
+                  className="h-28 w-full object-cover rounded-md"
+                />
+                <div className="flex justify-center mt-1">
+                  <button
+                    type="button"
+                    className="text-xs text-destructive underline"
+                    onClick={() =>
+                      setUploadedImages((prev) => prev.filter((u) => u !== src))
+                    }
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         <MultiImageUpload
+          // when editing, pass productId so upload endpoint attaches files to product
+          productId={initialProduct?.id}
           onComplete={(items) => {
             // prefer publicUrl, fallback to path
             const urls = items.map((i) => i.publicUrl ?? i.path);
-            setUploadedImages(urls.filter(Boolean) as string[]);
+            // merge with any existing uploadedImages (avoid duplicates)
+            setUploadedImages((prev) =>
+              Array.from(new Set([...prev, ...urls.filter(Boolean)]))
+            );
           }}
         />
 
         <div className="flex gap-2">
-          <Button type="submit" disabled={loading}>
-            {loading ? "Saving..." : "Create watch"}
-          </Button>
+          {initialProduct ? (
+            <Button type="submit" disabled={loading}>
+              {loading ? "Saving..." : "Update watch"}
+            </Button>
+          ) : (
+            <Button type="submit" disabled={loading}>
+              {loading ? "Saving..." : "Create watch"}
+            </Button>
+          )}
           <Button
             variant="ghost"
             type="button"

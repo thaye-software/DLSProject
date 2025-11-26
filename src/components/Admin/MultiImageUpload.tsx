@@ -12,10 +12,12 @@ type UploadedItem = {
 export default function MultiImageUpload({
   bucket = "product_images",
   folder = "uploads",
+  productId,
   onComplete,
 }: {
   bucket?: string;
   folder?: string;
+  productId?: string;
   onComplete?: (items: UploadedItem[]) => void;
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -54,6 +56,7 @@ export default function MultiImageUpload({
 
     // send files as FormData to server endpoint
     const formData = new FormData();
+    if (productId) formData.append("productId", productId);
     for (const f of targetFiles) formData.append("files", f);
     // include optional folder and bucket for future flexibility
     formData.append("folder", folder);
