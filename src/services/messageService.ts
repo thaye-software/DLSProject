@@ -15,7 +15,6 @@ export type PersistableMessage = {
 
 export async function persistMessage(message: PersistableMessage): Promise<any> {
   // ensure types align with the DB schema
-  console.log("Persisting message:", message);
   const insertResult = await db.insert(messages).values({
     conversationId: message.conversationId,
     senderId: message.senderId,

@@ -3,8 +3,10 @@ import { WatchCard } from "@/components/Watches/WatchCard";
 
 import { Product } from "../../app/watches/type";
 import { getLocalCurrencyString } from "@/services/currencyService";
+import { calculateSubtotalCents } from "@/lib/priceUtils";
 import { useEffect, useState } from "react";
 import { ProductModel } from "@/database/types";
+import { getCountryVATByCode } from "@/services/countryService";
 
 export function WatchesGrid({
   watches,
@@ -16,7 +18,9 @@ export function WatchesGrid({
   removeOnFavorite?: boolean;
 }) {
   const [products, setProducts] = useState<ProductModel[]>([]);
-  const [formattedPrices, setFormattedPrices] = useState<Record<string, string>>({});
+  const [formattedPrices, setFormattedPrices] = useState<
+    Record<string, string>
+  >({});
 
   useEffect(() => {
     setProducts(watches);
@@ -25,15 +29,24 @@ export function WatchesGrid({
     let mounted = true;
     (async () => {
       try {
+        // Determine VAT rate for customer location and build formatted prices including VAT.
+        const vatRate = await getCountryVATByCode(customerGeoLocation);
+
         const entries = await Promise.all(
-          watches.map(
-            async (p) =>
-              [
-                p.id,
-                await getLocalCurrencyString(p.priceDkk, customerGeoLocation),
-              ] as const
-          )
+          watches.map(async (p) => {
+            // product.priceDkk is stored in DKK cents (net); calculate subtotal (net + VAT) in cents
+            const subtotalCents = calculateSubtotalCents(
+              p.priceDkk,
+              vatRate ?? 25
+            );
+            const formatted = await getLocalCurrencyString(
+              subtotalCents,
+              customerGeoLocation
+            );
+            return [p.id, formatted] as const;
+          })
         );
+
         if (!mounted) return;
         setFormattedPrices(Object.fromEntries(entries));
       } catch (e) {
