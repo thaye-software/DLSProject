@@ -1,11 +1,11 @@
-"use client";
-
+import { WatchTable } from "@/components/Admin/watches/WatchTable";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { getAllProducts } from "@/services/productService";
 
-export default function WatchesAdminPage() {
-
-  async function fetchAllWatches() { }  
+export default async function WatchesAdminPage() {
+  // Server-side: fetch all products and pass into the client WatchTable.
+  const products = await getAllProducts();
 
   return (
     <div>
@@ -13,7 +13,7 @@ export default function WatchesAdminPage() {
       <Link href="/admin/watches/new">
         <Button>Create new listing</Button>
       </Link>
-      <Button onClick={() => fetchAllWatches()}>Fetch all watches</Button>
+      <WatchTable initialProducts={products} />
     </div>
   );
 }
