@@ -2,8 +2,8 @@ name: (CronJob) Release Expired Order Reservations
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "*/30 * * * *"   # runs every 30 minutes
+#  schedule:
+#    - cron: "*/30 * * * *"   # runs every 30 minutes
 
 jobs:
   scheduled-cleanup:
