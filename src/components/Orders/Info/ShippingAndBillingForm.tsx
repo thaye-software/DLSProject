@@ -41,10 +41,14 @@ export default function ShippingAndBillingForm({
   customer,
   productSlug,
   customerGeoLocation,
+  discountedPrice,
+  offerToken,
 }: {
   customer: CustomerInfo;
   productSlug: string;
   customerGeoLocation: string;
+  discountedPrice?: number;
+  offerToken?: string;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
@@ -64,6 +68,9 @@ export default function ShippingAndBillingForm({
   const [selectedCountry, setSelectedCountry] = useState<CountryModel | null>(
     null
   );
+
+  console.log("offerToken in ShippingAndBillingForm:", offerToken);
+  console.log("discountedPrice in ShippingAndBillingForm:", discountedPrice);
 
   // Central helper reused by useEffect and onChange handlers.
   async function computeAndSetAmounts(
@@ -165,6 +172,11 @@ export default function ShippingAndBillingForm({
             `(Client) ${product.watch.brand.name} ${product.watch.model} is out of stock`
           );
 
+        // Apply discount if available
+        if (discountedPrice) {
+          product.priceDkk = discountedPrice;
+        }
+
         // Use fixed EUR shipping for non-DK visitors; for DK format the DKK amount
         const shippingDisplay =
           (customerGeoLocation || "DK").toUpperCase() === "DK"
@@ -222,6 +234,9 @@ export default function ShippingAndBillingForm({
     data.shippingSameAsBilling = String(sameAsShipping);
     data.customerId = customerUpdated.id;
     data.shippingPriceDkk = String(constants.SHIPPING_PRICE_DKK);
+    if (offerToken) {
+      data.offerToken = offerToken;
+    }
 
     const customerCountry = customerUpdated.country || null;
 

@@ -27,6 +27,7 @@ import { OrderStatus } from "./type";
 import { Product } from "../watches/type";
 import { createOrder } from "@/services/orderService";
 import { CountryModel } from "@/database/types";
+import { verifyOfferToken } from "@/services/offerService";
 
 // import shippingAndBillingForm from "@/components/Orders/Info/ShippingAndBillingForm"
 // z.infer<typeof shippingAndBillingForm>
@@ -56,6 +57,7 @@ export interface customerBillingDetails {
   saveBillingInfo: string;
   shippingSameAsBilling: string;
   customerId: string;
+  offerToken?: string;
 }
 
 export interface Address {
@@ -103,6 +105,17 @@ export async function submitOrderDetails(
 
   const billingAddressCountry = await getCountryByName(formData.country);
 
+  // Verify offer token if present and override price
+  if (formData.offerToken) {
+    const offer = await verifyOfferToken(formData.offerToken);
+    // We check if the offer is for this product. 
+    // Note: product.watch.slug might need to be checked against offer.productSlug
+    // or we just trust that if the token is valid and signed, it's good.
+    // But we should ensure it matches the product being ordered.
+    if (offer && (offer.productSlug === product.watch.slug || offer.productSlug === product.id)) {
+      product.priceDkk = offer.priceDkk;
+    }
+  }
 
   const billingAddress: Address = {
     userId: formData.customerId,
