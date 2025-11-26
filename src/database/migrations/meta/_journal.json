@@ -43,6 +43,13 @@
       "when": 1764077265037,
       "tag": "20251125132745_added-2-new-status-to-order",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1764157353489,
+      "tag": "20251126114233_add-visibility-column-to-products",
+      "breakpoints": true
     }
   ]
 }

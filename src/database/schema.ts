@@ -67,6 +67,7 @@ export const products = pgTable(
     priceDkk: bigint("price_dkk", { mode: "number" }).notNull(),
     description: text("description").notNull(),
     stock: integer("stock").notNull().default(0),
+    visible: boolean("visible").notNull().default(false),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [

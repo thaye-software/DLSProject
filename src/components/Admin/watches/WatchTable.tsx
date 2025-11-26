@@ -112,8 +112,8 @@ export const columns: ColumnDef<ProductRow>[] = [
         row.watch?.reference ?? ""
       }`,
     header: () => null,
-    enableHiding: true,
-    enableSorting: false,
+    enableHiding: false,
+    
   },
   {
     accessorKey: "stock",
