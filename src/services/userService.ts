@@ -229,7 +229,7 @@ export async function saveCustomerNameAndPhone(customerInfo: CustomerNameAndPhon
 
 
 
-export async function updateCusterUsername(userId: string, newUsername: string) {
+export async function changeUsername(userId: string, newUsername: string) {
   try {
     const updatedLimitedWatchesUser = await db
       .update(users)
@@ -257,6 +257,65 @@ export async function updateCusterUsername(userId: string, newUsername: string) 
   } catch(error) {
     console.error(`(server) failed to upadte customer username to: ${newUsername}`, error);
   }
+}
+
+export async function initiateEmailChange(userId: string, newEmail: string) {
+  try {
+    const supabase = await createClient();
+    
+    // This sends a confirmation email to the NEW email address
+    // Once email gets confirmed the new email will get synced with public.users ie. limitecwatches users table
+    const { error } = await supabase.auth.updateUser({
+      email: newEmail
+    });
+
+    if (error) {
+      console.error(`(server) failed to initiate email change for auth user: ${userId}`, error);
+      throw error;
+    }
+
+    return true;
+    
+  } catch (error) {
+    console.error(`(server) failed to initiate email change for user: ${userId}`, error);
+    throw error;
+  }
+}
+
+// export async function changeEmail(userId: string, newEmail: string) {
+//   try{
+//     const updatedLimitedWatchesUser = await db
+//       .update(users)
+//       .set({email: newEmail})
+//       .where(eq(users.id, userId))
+//       .returning();
+
+//     if (updatedLimitedWatchesUser.length === 0) {
+//       throw new Error(`(server) failed to update email for user with id: ${userId} for the limited watches user table`);
+//     }
+
+
+//     const supabase = await createClient();
+//     const {data, error} = await supabase.auth.updateUser({
+//       data: {email: newEmail}
+//     });
+//     const updatedAuthUser = data.user;
+
+//     if(error) {
+//       console.error(`(server) failed to update email for authUser with id: ${userId}`);
+//       throw error;
+//     }
+
+//     return { updatedLimitedWatchesUser, updatedAuthUser};
+
+//   } catch (error) {
+//     console.error(`(server) failed to change email for user with id: ${userId}`, error);
+//     throw error;
+//   }
+// }
+
+export async function changePassword() {
+
 }
 
 
