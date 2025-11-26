@@ -18,6 +18,8 @@ import BuyButton from "@/components/Watches/BuyButton";
 import ContactButton from "@/components/Contact/ContactButton";
 import constants from "@/lib/constants";
 import { getLimitedWatchesUser, getUserLocation } from "@/lib/utils/server/utils";
+import { getCountryVATByCode } from "@/services/countryService";
+import { calculateSubtotalCents } from "@/lib/priceUtils";
 
 function getOptionName(
   options: { id: number; name: string }[],
@@ -40,7 +42,9 @@ export default async function ViewWatchPage({
   const limitedWatchesUser = await getLimitedWatchesUser();
 
   const userGeoLocationData = await getUserLocation();
-  const formattedPrice = await getLocalCurrencyString(product?.priceDkk, userGeoLocationData.currency);
+  const vatRate = await getCountryVATByCode(userGeoLocationData.countryCode);
+  const subtotalCents = calculateSubtotalCents(product?.priceDkk, vatRate ?? 25);
+  const formattedPrice = await getLocalCurrencyString(subtotalCents, userGeoLocationData.currency);
 
   let brandName = "";
   let productSafetyInfo = null;
@@ -103,7 +107,6 @@ export default async function ViewWatchPage({
             <div>
               <div className="text-4xl font-bold">{formattedPrice}</div>
               <div className="text-muted-foreground text-xs mt-2">
-                Including {product.watch.vat || 0}% VAT
               </div>
             </div>
 
