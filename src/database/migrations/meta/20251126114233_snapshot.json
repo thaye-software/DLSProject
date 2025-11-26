@@ -1,6 +1,6 @@
 {
-  "id": "1e80d103-63b7-4dc4-91ef-ea7111809777",
-  "prevId": "4a63112c-e60f-4df6-ac02-e2fc8a9401e8",
+  "id": "1210f899-8e78-40a8-954e-ce9059ecdb3a",
+  "prevId": "1e80d103-63b7-4dc4-91ef-ea7111809777",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -624,6 +624,13 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
+        },
+        "vat_rate": {
+          "name": "vat_rate",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
         }
       },
       "indexes": {
@@ -1615,6 +1622,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
+        },
+        "visible": {
+          "name": "visible",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "created_at": {
           "name": "created_at",

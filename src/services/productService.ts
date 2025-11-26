@@ -234,6 +234,24 @@ export async function searchProducts(query: string): Promise<Product[]> {
   }
 }
 
+export async function setProductVisibility(
+  productId: string,
+  visible: boolean
+): Promise<void> {
+  try {
+    await db
+      .update(products)
+      .set({ visible })
+      .where(eq(products.id, productId))
+  } catch (error) {
+    console.error(
+      `(server) failed to set product visibility for productId: ${productId}`,
+      error
+    );
+    throw error;
+  }
+}
+
 export async function getFilterPriceRange() {
   try {
     const [lowest] = await db

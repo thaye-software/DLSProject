@@ -1,7 +1,8 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { createWatch } from "@/app/admin/watches/new/actions";
+import { updateWatch } from "@/app/admin/watches/[id]/edit/actions";
 import { createNewWatchSchema } from "@/app/admin/watches/new/validation";
 import { z } from "zod";
 import constants from "@/lib/constants";
@@ -19,13 +20,18 @@ import CustomSelect from "@/components/CustomSelect";
 import MultiImageUpload from "../MultiImageUpload";
 import { BrandModel } from "@/database/types";
 import { useEffect, useState } from "react";
+import { calculateVAT } from "@/lib/priceUtils";
 
 export default function CreateWatchForm({
-  initialBrands
+  initialBrands,
+  initialProduct,
 }: {
   initialBrands: any[];
+  // Optional product when used for editing
+  initialProduct?: import("@/database/types").ProductModel | null;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [brands, setBrands] = useState<BrandModel[]>([]);
@@ -38,8 +44,8 @@ export default function CreateWatchForm({
     }
     fetchBrands();
   }, [initialBrands]);
-  
-  const [form, setForm] = useState({
+
+  const [form, setForm] = useState(() => ({
     brand: "",
     model: "",
     description: "",
@@ -60,7 +66,51 @@ export default function CreateWatchForm({
     vat: "0",
     stock: "1",
     productSafetyInfoId: "",
-  });
+  }));
+
+  const initialPriceWithVAT = initialProduct
+    ? (initialProduct.priceDkk +
+        calculateVAT(initialProduct.priceDkk * 100, 0.25)) /
+      100
+    : "";
+
+  console.log("Initial product:", initialProduct);
+
+  // If we were given an initialProduct (edit mode), prefill the form
+  useEffect(() => {
+    if (!initialProduct) return;
+
+    setForm((prev) => ({
+      ...prev,
+      brand: initialProduct.watch?.brand?.id ?? prev.brand,
+      reference: initialProduct.watch?.reference ?? prev.reference,
+      serialNumber: initialProduct.watch?.serialNumber ?? prev.serialNumber,
+      year: String(initialProduct.watch?.year ?? prev.year),
+      condition: String(initialProduct.watch?.condition ?? prev.condition),
+      box: initialProduct.watch?.box ? "true" : "false",
+      papers: initialProduct.watch?.papers ? "true" : "false",
+      limited: initialProduct.watch?.limited ? "true" : "false",
+      glassType: initialProduct.watch?.glassType ?? prev.glassType,
+      braceletType: initialProduct.watch?.braceletType ?? prev.braceletType,
+      braceletColor: initialProduct.watch?.braceletColor ?? prev.braceletColor,
+      dialColor: initialProduct.watch?.dialColor ?? prev.dialColor,
+      vat: String(initialProduct.watch?.vat ?? prev.vat),
+      size: String(initialProduct.watch?.size ?? prev.size),
+      movement: initialProduct.watch?.movement ?? prev.movement,
+      model: initialProduct.name ?? initialProduct.watch?.model ?? prev.model,
+      description: initialProduct.description ?? prev.description,
+      price: String(initialPriceWithVAT),
+      stock: String(initialProduct.stock ?? prev.stock),
+    }));
+
+    // Prefill any existing product images into uploadedImages
+    if (initialProduct.productImages && initialProduct.productImages.length) {
+      const urls = initialProduct.productImages
+        .map((img: any) => img.imageUrl)
+        .filter(Boolean);
+      setUploadedImages(urls);
+    }
+  }, [initialProduct, brands]);
 
   function handleChange(
     e: React.ChangeEvent<
@@ -126,10 +176,31 @@ export default function CreateWatchForm({
     // imageUrls as comma separated string (action splits)
     fd.append("imageUrls", uploadedImages.join(","));
 
+    // if we're editing (initialProduct provided or on edit route), call update
+    const onEditPath = Boolean(
+      pathname && /\/admin\/watches\/[^/]+\/edit$/.test(pathname)
+    );
+
+    // When updating, ensure we include productId (prefer initialProduct, otherwise parse from path)
+    if (initialProduct?.id) {
+      fd.append("productId", initialProduct.id);
+    } else if (onEditPath && pathname) {
+      const m = pathname.match(/\/admin\/watches\/([^/]+)\/edit$/);
+      if (m) fd.append("productId", m[1]);
+    }
+
     try {
-      const res = await createWatch(fd);
+      const res =
+        initialProduct || onEditPath
+          ? await updateWatch(fd)
+          : await createWatch(fd);
       if (res?.success) {
-        const watchId = res?.data?.watch?.id ?? res?.data?.id;
+        // update and create actions return different shapes — try both
+        const watchId =
+          res?.data?.watch?.id ??
+          res?.data?.id ??
+          res?.data?.product?.id ??
+          undefined;
         if (watchId) {
           router.push(`/admin/watches`);
           return;
@@ -155,8 +226,8 @@ export default function CreateWatchForm({
               placeholderText={"Select a brand"}
               array={brands}
               value={form.brand}
-              onValueChange={(val) =>
-                setForm((prev) => ({ ...prev, brand: val }))
+              onValueChange={(value) =>
+                setForm((prev) => ({ ...prev, brand: value }))
               }
             />
             <FieldDescription>Brand of the watch</FieldDescription>
@@ -277,19 +348,6 @@ export default function CreateWatchForm({
               {errors.condition && <FieldError>{errors.condition}</FieldError>}
             </FieldContent>
           </Field>
-
-          <Field>
-            <FieldLabel>VAT (DKK)</FieldLabel>
-            <FieldContent>
-              <Input
-                name="vat"
-                // value={form.vat}
-                defaultValue={20}
-                onChange={handleChange}
-                type="number"
-              />
-            </FieldContent>
-          </Field>
         </div>
 
         <div className="grid grid-cols-3 gap-4">
@@ -392,18 +450,55 @@ export default function CreateWatchForm({
             {errors.dialColor && <FieldError>{errors.dialColor}</FieldError>}
           </FieldContent>
         </Field>
+        {/* Show any already-uploaded images for this product */}
+        {uploadedImages.length > 0 && (
+          <div className="grid grid-cols-3 gap-2">
+            {uploadedImages.map((src) => (
+              <div key={src} className="p-2">
+                <img
+                  src={src}
+                  alt="existing image"
+                  className="h-28 w-full object-cover rounded-md"
+                />
+                <div className="flex justify-center mt-1">
+                  <button
+                    type="button"
+                    className="text-xs text-destructive underline"
+                    onClick={() =>
+                      setUploadedImages((prev) => prev.filter((u) => u !== src))
+                    }
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         <MultiImageUpload
+          // when editing, pass productId so upload endpoint attaches files to product
+          productId={initialProduct?.id}
           onComplete={(items) => {
             // prefer publicUrl, fallback to path
             const urls = items.map((i) => i.publicUrl ?? i.path);
-            setUploadedImages(urls.filter(Boolean) as string[]);
+            // merge with any existing uploadedImages (avoid duplicates)
+            setUploadedImages((prev) =>
+              Array.from(new Set([...prev, ...urls.filter(Boolean)]))
+            );
           }}
         />
 
         <div className="flex gap-2">
-          <Button type="submit" disabled={loading}>
-            {loading ? "Saving..." : "Create watch"}
-          </Button>
+          {initialProduct ? (
+            <Button type="submit" disabled={loading}>
+              {loading ? "Saving..." : "Update watch"}
+            </Button>
+          ) : (
+            <Button type="submit" disabled={loading}>
+              {loading ? "Saving..." : "Create watch"}
+            </Button>
+          )}
           <Button
             variant="ghost"
             type="button"
