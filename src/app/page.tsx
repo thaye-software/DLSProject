@@ -63,17 +63,17 @@ export default function Home() {
           <div className="flex justify-end items-center col-span-3">
             <Image
               className="shadow-2xl rounded-lg hover:scale-105 transition-transform duration-300"
-              src="/audemars-piguet.jpg"
-              alt="Audemars Piguet"
-              width={700}
+              src="/landing-hero-1.jpg"
+              alt="Landing Hero 1"
+              width={600}
               height={500}
             />
           </div>
           <div className="col-span-3">
             <Image
-              src="/unboxing2.jpg"
-              alt="Unboxing experience"
-              width={700}
+              src="/landing-hero-2.jpg"
+              alt="Landing Hero 2"
+              width={600}
               height={500}
               className="shadow-2xl rounded-lg hover:scale-105 transition-transform duration-300"
             />
@@ -106,7 +106,7 @@ export default function Home() {
             </p>
           </div>
           <div className="col-span-3 flex justify-end">
-            <Image src="/onwrist.jpg" alt="On wrist" width={700} height={500} className="shadow-2xl rounded-lg hover:scale-105 transition-transform duration-300" />
+            <Image layout="" src="/landing-hero-3.jpg" alt="Landing Hero 3" width={600} height={500} className="shadow-2xl rounded-lg hover:scale-105 transition-transform duration-300" />
           </div>
           
         </div>
