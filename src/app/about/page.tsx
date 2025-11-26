@@ -1,6 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 
 const teamMembers = [
@@ -8,19 +9,19 @@ const teamMembers = [
     name: "Helle",
     role: "Founder & Co-CEO",
     bio: "Helle brings a passion for horology and a keen eye for quality to Limited Watches, ensuring that every timepiece in our collection meets the highest standards.",
-    photoUrl: "/team/helle.jpg",
+    photoUrl: "/helle-profile.png",
   },
   {
     name: "Erik",
     role: "Founder & Co-CEO",
     bio: "Erik combines his deep knowledge of horology with a commitment to exceptional customer service, ensuring every client finds their perfect watch.",
-    photoUrl: "/team/erik.jpg",
+    photoUrl: "/erik-profile.png",
   },
   {
     name: "Sara",
     role: "SoMe & Marketing",
     bio: "Sara brings creativity and strategic thinking to our marketing efforts, ensuring our brand resonates with watch enthusiasts worldwide.",
-    photoUrl: "/team/sara.jpg",
+    photoUrl: "/sara-profile.png",
   },
 ]
 
@@ -92,7 +93,9 @@ export default function AboutPage() {
               className="flex flex-col items-center text-center p-4 rounded-lg hover:shadow-lg transition-all"
             >
               <div className="h-28 w-28 rounded-full overflow-hidden bg-slate-200 mb-4 flex items-center justify-center">
-                <span className="text-muted-foreground">Photo</span>
+                <Image src={member.photoUrl} alt={member.name} width={112} height={112} />
+
+                
               </div>
               <h4 className="font-semibold">{member.name}</h4>
               <h3 className="text-sm text-foreground/80 mb-4">{member.role}</h3>
