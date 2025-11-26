@@ -282,40 +282,25 @@ export async function initiateEmailChange(userId: string, newEmail: string) {
   }
 }
 
-// export async function changeEmail(userId: string, newEmail: string) {
-//   try{
-//     const updatedLimitedWatchesUser = await db
-//       .update(users)
-//       .set({email: newEmail})
-//       .where(eq(users.id, userId))
-//       .returning();
+export async function changePassword(newPassword: string) {
+  try{
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+    const updatedAuthUser = data.user;
 
-//     if (updatedLimitedWatchesUser.length === 0) {
-//       throw new Error(`(server) failed to update email for user with id: ${userId} for the limited watches user table`);
-//     }
-
-
-//     const supabase = await createClient();
-//     const {data, error} = await supabase.auth.updateUser({
-//       data: {email: newEmail}
-//     });
-//     const updatedAuthUser = data.user;
-
-//     if(error) {
-//       console.error(`(server) failed to update email for authUser with id: ${userId}`);
-//       throw error;
-//     }
-
-//     return { updatedLimitedWatchesUser, updatedAuthUser};
-
-//   } catch (error) {
-//     console.error(`(server) failed to change email for user with id: ${userId}`, error);
-//     throw error;
-//   }
-// }
-
-export async function changePassword() {
-
+    if(error) {
+      console.error(`(server) error happen on the side of supabase, could not change password`);
+      throw error;
+    }
+    
+    return updatedAuthUser;
+    
+  }catch (error) {
+    console.error(`(server) failed to change password`, error);
+    throw error;
+  }
 }
 
 
