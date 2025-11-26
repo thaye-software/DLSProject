@@ -14,6 +14,7 @@ export async function createWatch(formData: FormData): Promise<any> {
       watchData: {
         brandId: newWatch.brandId as string,
         model: newWatch.model as string,
+        internalId: newWatch.internalId as string,
         reference: newWatch.reference as string,
         serialNumber: newWatch.serialNumber as string,
         year: parseInt(newWatch.year as string),

@@ -47,6 +47,7 @@ export default function CreateWatchForm({
 
   const [form, setForm] = useState(() => ({
     brand: "",
+    internalId: "",
     model: "",
     description: "",
     reference: "",
@@ -83,6 +84,7 @@ export default function CreateWatchForm({
     setForm((prev) => ({
       ...prev,
       brand: initialProduct.watch?.brand?.id ?? prev.brand,
+      internalId: initialProduct.watch?.internalId ?? prev.internalId,
       reference: initialProduct.watch?.reference ?? prev.reference,
       serialNumber: initialProduct.watch?.serialNumber ?? prev.serialNumber,
       year: String(initialProduct.watch?.year ?? prev.year),
@@ -102,6 +104,8 @@ export default function CreateWatchForm({
       price: String(initialPriceWithVAT),
       stock: String(initialProduct.stock ?? prev.stock),
     }));
+
+    console.log("internalid", initialProduct.watch?.internalId);
 
     // Prefill any existing product images into uploadedImages
     if (initialProduct.productImages && initialProduct.productImages.length) {
@@ -152,6 +156,7 @@ export default function CreateWatchForm({
     // Build FormData for server action (action expects FormData)
     const fd = new FormData();
     fd.append("brandId", form.brand);
+    fd.append("internalId", form.internalId);
     fd.append("model", form.model ?? "");
     fd.append("reference", form.reference ?? "");
     fd.append("serialNumber", form.serialNumber ?? "");
@@ -232,6 +237,20 @@ export default function CreateWatchForm({
             />
             <FieldDescription>Brand of the watch</FieldDescription>
             {errors.brand && <FieldError>{errors.brand}</FieldError>}
+          </FieldContent>
+        </Field>
+
+        <Field>
+          <FieldLabel>Internal ID</FieldLabel>
+          <FieldContent>
+            <Input
+              name="internalId"
+              value={form.internalId}
+              onChange={handleChange}
+            />
+            {errors.internalId && (
+              <FieldError>{errors.internalId}</FieldError>
+            )}
           </FieldContent>
         </Field>
 
