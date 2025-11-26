@@ -37,10 +37,11 @@ import {
 } from "@/components/ui/table";
 
 import { ProductModel } from "@/database/types";
+import { setProductVisibility } from "@/services/productService";
 
 export type ProductRow = ProductModel;
 
-export const columns: ColumnDef<ProductRow>[] = [
+const createColumns = (onVisibleChange: (productId: string, visible: boolean) => Promise<void>): ColumnDef<ProductRow>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -123,6 +124,21 @@ export const columns: ColumnDef<ProductRow>[] = [
     ),
   },
   {
+    accessorFn: (row) => !!row.visible,
+    id: "visible",
+    header: () => <div className="text-center">Visible</div>,
+    cell: ({ row }) => (
+      <div className="text-center">
+        <Checkbox
+          id={`visible-${row.id}`}
+          defaultChecked={Boolean(row.original.visible)}
+          
+          onCheckedChange={() => setProductVisibility(row.original.id, !row.original.visible)}
+        />
+      </div>
+    ),
+  },
+  {
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
@@ -167,6 +183,18 @@ export function WatchTable({
   const [rowSelection, setRowSelection] = React.useState({});
 
   const [data, setData] = React.useState<ProductRow[]>(initialProducts ?? []);
+
+  async function onVisibleChange(productId: string, visible: boolean) {
+    await setProductVisibility(productId, visible);
+    console.log(`Visibility for product ${productId} set to ${visible}`);
+    setData((prevData) =>
+      prevData.map((product) =>
+        product.id === productId ? { ...product, visible } : product
+      )
+    );
+  }
+
+  const columns = createColumns(onVisibleChange);
 
   const table = useReactTable({
     data: data,
