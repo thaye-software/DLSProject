@@ -280,3 +280,25 @@ export async function deleteCustomerNameAndPhone(customerId: string) {
   }
 }
 
+export async function deleteAccount(userId: string): Promise<boolean> {
+  try {
+    const deletedLimitedWatchesUser = await db.delete(users).where(eq(users.id, userId)).returning();
+    if(deletedLimitedWatchesUser.length === 0) {
+      throw new Error(`(server) could not delete limited watches user, since no user with that id: ${userId}`);
+    }
+
+    const supabase = await createClient();
+    const { error } = await supabase.auth.admin.deleteUser(userId);
+    if(error) {
+      console.error(`(server) could not delete auth users, potentially could not find user with id: ${userId}`, error);
+      throw error;
+    }
+
+    return true;
+
+  } catch(error) {
+    console.error(`(server) failed to delete account for user with id: ${userId}`, error);
+    throw error;
+  }
+}
+
