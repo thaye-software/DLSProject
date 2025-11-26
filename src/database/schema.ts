@@ -143,6 +143,7 @@ export const watches = pgTable(
   "watches",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    internalId: text("internal_id").notNull().default(""),
     productId: uuid("product_id")
       .notNull()
       .references(() => products.id, { onDelete: "cascade" }),
