@@ -19,7 +19,6 @@ export default function CustomSelect({
   value?: string;
   onValueChange?: (val: string) => void;
   }) {
-  console.log("Rendering CustomSelect with value:", value);
   
   return (
     <Select value={value} onValueChange={onValueChange}>
