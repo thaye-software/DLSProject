@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Select,
   SelectContent,
@@ -16,8 +18,9 @@ export default function CustomSelect({
   array: Array<{ id: string | number; name: string }>;
   value?: string;
   onValueChange?: (val: string) => void;
-}) {
-
+  }) {
+  console.log("Rendering CustomSelect with value:", value);
+  
   return (
     <Select value={value} onValueChange={onValueChange}>
       <SelectTrigger className="w-full">

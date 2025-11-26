@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -41,7 +42,9 @@ import { setProductVisibility } from "@/services/productService";
 
 export type ProductRow = ProductModel;
 
-const createColumns = (onVisibleChange: (productId: string, visible: boolean) => Promise<void>): ColumnDef<ProductRow>[] => [
+const createColumns = (
+  onVisibleChange: (productId: string, visible: boolean) => Promise<void>
+): ColumnDef<ProductRow>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -114,7 +117,6 @@ const createColumns = (onVisibleChange: (productId: string, visible: boolean) =>
       }`,
     header: () => null,
     enableHiding: false,
-    
   },
   {
     accessorKey: "stock",
@@ -132,8 +134,9 @@ const createColumns = (onVisibleChange: (productId: string, visible: boolean) =>
         <Checkbox
           id={`visible-${row.id}`}
           defaultChecked={Boolean(row.original.visible)}
-          
-          onCheckedChange={() => setProductVisibility(row.original.id, !row.original.visible)}
+          onCheckedChange={() =>
+            setProductVisibility(row.original.id, !row.original.visible)
+          }
         />
       </div>
     ),
@@ -143,6 +146,7 @@ const createColumns = (onVisibleChange: (productId: string, visible: boolean) =>
     enableHiding: false,
     cell: ({ row }) => {
       const product = row.original as ProductRow;
+      console.log("Rendering actions for product", product.id);
 
       return (
         <DropdownMenu>
@@ -160,6 +164,14 @@ const createColumns = (onVisibleChange: (productId: string, visible: boolean) =>
               Copy product ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <Link
+                href={`/admin/watches/${product.id}/edit`}
+                className="block w-full h-full"
+              >
+                Edit watch
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem>View product</DropdownMenuItem>
             <DropdownMenuItem>View details</DropdownMenuItem>
           </DropdownMenuContent>
