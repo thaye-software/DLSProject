@@ -7,6 +7,7 @@ import { users } from "@/database/schema";
 import { NewUserModel } from "@/database/types";
 
 import { CustomerNameAndPhone } from "@/app/orders/actions"
+import { createClient } from "@/database/supabase/server";
 
 
 
@@ -162,6 +163,12 @@ export async function getCustomerInfoByEmail(email: string): Promise<CustomerInf
   }
 }
 
+
+
+
+
+
+
 export async function createUser(user: NewUserModel) {
   // check if user with the same username already exists
   const existingUser = await db
@@ -200,7 +207,6 @@ export async function createUser(user: NewUserModel) {
   }
 }
 
-
 export async function saveCustomerNameAndPhone(customerInfo: CustomerNameAndPhone): Promise<void> {
   try {
     await db.update(users).set({
@@ -216,6 +222,47 @@ export async function saveCustomerNameAndPhone(customerInfo: CustomerNameAndPhon
     throw error;
   }
 }
+
+
+
+
+
+
+
+export async function updateCusterUsername(userId: string, newUsername: string) {
+  try {
+    const updatedLimitedWatchesUser = await db
+      .update(users)
+      .set({username: newUsername})
+      .where(eq(users.id, userId))
+      .returning();
+
+    if(!updatedLimitedWatchesUser[0]) {
+      throw new Error(`(server) failed to update username for user with id: ${userId} for the limited watches user table`);
+    }
+
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.updateUser({
+      data: { display_name: newUsername }
+    });
+    const updatedAuthUser = data.user;
+
+    if(error) {
+      console.error(`(server) failed to update username/display_name for supabase auth user`, error);
+      throw error;
+    }
+
+    return {updatedLimitedWatchesUser, updatedAuthUser};
+
+  } catch(error) {
+    console.error(`(server) failed to upadte customer username to: ${newUsername}`, error);
+  }
+}
+
+
+
+
+
 
 export async function deleteCustomerNameAndPhone(customerId: string) {
   try {
