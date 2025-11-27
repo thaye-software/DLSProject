@@ -84,20 +84,19 @@ export default function SearchBar() {
         <AnimatePresence>
           {isFocused && (
             <SearchResultsDialog
-          open={isFocused}
-          onClose={() => setIsFocused(false)}
-          results={results}
-          onSelect={(item) => {
-            // Clear input and remove focus when a result is selected
-            setQuery("");
-            if (inputRef.current) {
-              inputRef.current.blur();
-            }
-          }}
-          />
+              open={isFocused}
+              onClose={() => setIsFocused(false)}
+              results={results}
+              onSelect={(item) => {
+                // Clear input and remove focus when a result is selected
+                setQuery("");
+                if (inputRef.current) {
+                  inputRef.current.blur();
+                }
+              }}
+            />
           )}
-        
-          </AnimatePresence>
+        </AnimatePresence>
       </div>
     </div>
   );
