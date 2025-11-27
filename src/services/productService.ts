@@ -203,6 +203,7 @@ export async function searchProducts(query: string): Promise<Product[]> {
   const lowerQuery = query.trim().toLowerCase();
   try {
     const results = await db.query.products.findMany({
+      where: and(gte(products.stock, 1), eq(products.visible, true)),
       with: {
         watch: {
           with: {
@@ -242,7 +243,7 @@ export async function setProductVisibility(
     await db
       .update(products)
       .set({ visible })
-      .where(eq(products.id, productId))
+      .where(eq(products.id, productId));
   } catch (error) {
     console.error(
       `(server) failed to set product visibility for productId: ${productId}`,
@@ -297,20 +298,14 @@ export async function checkAndUpdateProductStock(
 
     const result = await dbContext
       .update(products)
-      .set({ 
-        stock: sql`${products.stock} - 1` 
+      .set({
+        stock: sql`${products.stock} - 1`,
       })
-      .where(
-        and(
-          eq(products.id, productId),
-          gt(products.stock, 0)
-        )
-      )
+      .where(and(eq(products.id, productId), gt(products.stock, 0)))
       .returning({ updatedStock: products.stock });
 
     // If result is empty, means stock not availabe
-    return result.length > 0; 
-
+    return result.length > 0;
   } catch (error) {
     console.error("(server) failed to decremant stock", error);
     throw error;
@@ -322,6 +317,7 @@ function getAppliedSerachFilters(filters: Partial<WatchFilters>) {
   const appliedSearchFilters = [];
 
   appliedSearchFilters.push(gte(products.stock, 1));
+  appliedSearchFilters.push(eq(products.visible, true));
 
   if (filters.brandNames && filters.brandNames?.length > 0) {
     const brandArray = Array.isArray(filters.brandNames)

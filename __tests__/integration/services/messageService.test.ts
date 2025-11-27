@@ -1,77 +1,102 @@
-// import { setupTestDatabase, cleanDatabase, teardownTestDatabase } from '../setup/testDb';
-// import { persistMessage, markAsRead } from '@/services/messageService';
-// import { messages } from '@/database/schema';
-// import { eq } from 'drizzle-orm';
+/**
+ * @jest-environment node
+ */
+import {
+  setupTestDatabase,
+  cleanDatabase,
+  teardownTestDatabase,
+  disableForeignKeys,
+  enableForeignKeys,
+} from "../setup/testDb";
+import { setDb } from "../setup/testDbInstance";
 
-// describe('Message Service - Integration Tests', () => {
-//   let db: any;
+// Mock the database module to use our test instance
+jest.mock("@/database/drizzle", () => require("../setup/testDbInstance"));
 
-//   beforeAll(async () => {
-//     const setup = await setupTestDatabase();
-//     db = setup.db;
-//   });
+import { persistMessage, markAsRead } from "@/services/messageService";
+import { messages } from "@/database/schema";
+import { eq } from "drizzle-orm";
 
-//   afterAll(async () => {
-//     await teardownTestDatabase();
-//   });
+describe("Message Service - Integration Tests", () => {
+  let db: any;
 
-//   beforeEach(async () => {
-//     await cleanDatabase();
-//   });
+  beforeAll(async () => {
+    const setup = await setupTestDatabase();
+    db = setup.db;
+    setDb(db);
+    await disableForeignKeys();
+  });
 
-//   it('should persist message to database', async () => {
-//     const message = {
-//       conversationId: 'test-conv',
-//       senderId: 'user-123',
-//       senderType: 'customer' as const,
-//       content: 'Test message',
-//     };
+  afterAll(async () => {
+    await enableForeignKeys();
+    await teardownTestDatabase();
+  });
 
-//     await persistMessage(message);
+  beforeEach(async () => {
+    await cleanDatabase();
+  });
 
-//     const [saved] = await db
-//       .select()
-//       .from(messages)
-//       .where(eq(messages.conversationId, 'test-conv'));
+  it("should persist message to database", async () => {
+    const conversationId = crypto.randomUUID();
+    const senderId = crypto.randomUUID();
+    const message = {
+      conversationId,
+      senderId,
+      senderType: "customer" as const,
+      content: "Test message",
+    };
 
-//     expect(saved).toBeDefined();
-//     expect(saved.content).toBe('Test message');
-//   });
+    await persistMessage(message);
 
-//   it('should mark messages as read', async () => {
-//     // Insert test data
-//     await db.insert(messages).values([
-//       {
-//         id: crypto.randomUUID(),
-//         conversationId: 'test-conv',
-//         senderId: 'user-other',
-//         senderType: 'customer',
-//         content: 'Message 1',
-//         isRead: false,
-//         createdAt: new Date(),
-//       },
-//       {
-//         id: crypto.randomUUID(),
-//         conversationId: 'test-conv',
-//         senderId: 'user-current',
-//         senderType: 'customer',
-//         content: 'Message 2',
-//         isRead: false,
-//         createdAt: new Date(),
-//       },
-//     ]);
+    const [saved] = await db
+      .select()
+      .from(messages)
+      .where(eq(messages.conversationId, conversationId));
 
-//     await markAsRead('test-conv', 'user-current');
+    expect(saved).toBeDefined();
+    expect(saved.content).toBe("Test message");
+  });
 
-//     const result = await db
-//       .select()
-//       .from(messages)
-//       .where(eq(messages.conversationId, 'test-conv'));
+  it("should mark messages as read", async () => {
+    const conversationId = crypto.randomUUID();
+    const userOtherId = crypto.randomUUID();
+    const userCurrentId = crypto.randomUUID();
 
-//     const otherUserMsg = result.find((m: any) => m.senderId === 'user-other');
-//     const currentUserMsg = result.find((m: any) => m.senderId === 'user-current');
+    // Insert test data
+    await db.insert(messages).values([
+      {
+        id: crypto.randomUUID(),
+        conversationId: conversationId,
+        senderId: userOtherId,
+        senderType: "customer",
+        content: "Message 1",
+        isRead: false,
+        createdAt: new Date(),
+      },
+      {
+        id: crypto.randomUUID(),
+        conversationId: conversationId,
+        senderId: userCurrentId,
+        senderType: "customer",
+        content: "Message 2",
+        isRead: false,
+        createdAt: new Date(),
+      },
+    ]);
 
-//     expect(otherUserMsg?.isRead).toBe(true);
-//     expect(currentUserMsg?.isRead).toBe(false);
-//   });
-// });
+    await markAsRead(conversationId, userCurrentId);
+
+    const result = await db
+      .select()
+      .from(messages)
+      .where(eq(messages.conversationId, conversationId));
+
+    const otherUserMsg = result.find((m: any) => m.senderId === userOtherId);
+    const currentUserMsg = result.find(
+      (m: any) => m.senderId === userCurrentId
+    );
+
+    expect(otherUserMsg?.isRead).toBe(true);
+    expect(currentUserMsg?.isRead).toBe(false);
+  });
+});

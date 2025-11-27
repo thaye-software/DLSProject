@@ -45,7 +45,7 @@ export const RealtimeChat = ({
   } = useRealtimeChat({
     conversation,
     username,
-    onMessageReceived, 
+    onMessageReceived,
   });
 
   const [newMessage, setNewMessage] = useState("");
@@ -59,7 +59,8 @@ export const RealtimeChat = ({
     const uniqueMessages = [] as typeof mergedMessages;
 
     for (const orig of mergedMessages) {
-      const createdAtStr = typeof orig.createdAt === "string"
+      const createdAtStr =
+        typeof orig.createdAt === "string"
           ? orig.createdAt
           : orig.createdAt
           ? new Date(orig.createdAt).toISOString()
@@ -71,9 +72,10 @@ export const RealtimeChat = ({
         uniqueMessages.push({ ...orig, createdAt: createdAtStr } as any);
       }
     }
-    
+
     uniqueMessages.sort(
-      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
     return uniqueMessages;
@@ -96,22 +98,22 @@ export const RealtimeChat = ({
     const handleReadStatus = async () => {
       if (!conversation?.id || !userId) return;
 
-      const lastMsg = realtimeMessages.length > 0 
-        ? realtimeMessages[realtimeMessages.length - 1] 
-        : initialMessages[initialMessages.length - 1];
+      const lastMsg =
+        realtimeMessages.length > 0
+          ? realtimeMessages[realtimeMessages.length - 1]
+          : initialMessages[initialMessages.length - 1];
 
       if (lastMsg && String(lastMsg.senderId) !== String(userId)) {
-         try {
-           await markAsRead(conversation.id, userId);
-         } catch (err) {
-           console.error("Failed to mark as read", err);
-         }
+        try {
+          await markAsRead(conversation.id, userId);
+        } catch (err) {
+          console.error("Failed to mark as read", err);
+        }
       }
     };
 
     handleReadStatus();
-  }, [realtimeMessages, conversation?.id, userId, initialMessages]); 
-
+  }, [realtimeMessages, conversation?.id, userId, initialMessages]);
 
   // preselect the textare/input when chat/conversations has been selected
   useEffect(() => {
@@ -127,32 +129,32 @@ export const RealtimeChat = ({
     if (!textarea) return;
 
     // Reset height to auto to get the correct scrollHeight
-    textarea.style.height = 'auto';
-    
+    textarea.style.height = "auto";
+
     // Set height to scrollHeight, but cap at max-height (200px)
     const maxHeight = 200; // Match max-h-[200px] in className
     const newHeight = Math.min(textarea.scrollHeight, maxHeight);
     textarea.style.height = `${newHeight}px`;
   }, [newMessage]);
 
-
-
   const handleSendMessage = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
       if (!newMessage.trim()) return;
 
-      if(newMessage.length > 2000) {
-        toast.error("Your message is to long cant exceed more than 2000 characters.")
+      if (newMessage.length > 2000) {
+        toast.error(
+          "Your message is to long cant exceed more than 2000 characters."
+        );
         return;
       }
 
       sendMessage(newMessage);
       setNewMessage("");
-      
+
       // Reset textarea height after sending
       if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto';
+        textareaRef.current.style.height = "auto";
       }
     },
     [newMessage, sendMessage]
@@ -165,8 +167,8 @@ export const RealtimeChat = ({
 
   return (
     <div className="relative flex flex-col h-full min-h-0 w-full antialiased">
-      <div 
-        ref={containerRef} 
+      <div
+        ref={containerRef}
         className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4"
       >
         {allMessages.length === 0 ? (
@@ -177,10 +179,15 @@ export const RealtimeChat = ({
           <div className="space-y-1">
             {allMessages.map((message, index) => {
               const prevMessage = index > 0 ? allMessages[index - 1] : null;
-              const showHeader = !prevMessage || prevMessage.sender.username !== message.sender.username;
+              const showHeader =
+                !prevMessage ||
+                prevMessage.sender.username !== message.sender.username;
 
               return (
-                <div key={message.id || index} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div
+                  key={message.id || index}
+                  className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+                >
                   <ChatMessageItem
                     message={message}
                     isOwnMessage={String(message.sender.id) === String(userId)}
@@ -198,17 +205,16 @@ export const RealtimeChat = ({
         className="shrink-0 flex w-full items-end gap-2 border-t border-border p-4 bg-background"
       >
         <div className="flex items-end gap-3 w-full">
-    
           {/* Textarea container (now flex-1 and flex-col to stack badge and textarea) */}
           <div className="flex-1 flex flex-col">
             {/* Badge stays above the textarea */}
             <Badge
-                variant="secondary"
-                className="text-xs mb-2 self-start" // Added self-start for better alignment
+              variant="secondary"
+              className="text-xs mb-2 self-start" // Added self-start for better alignment
             >
-                {newMessage.length}/2000
+              {newMessage.length}/2000
             </Badge>
-            
+
             <textarea
               ref={textareaRef}
               className={cn(
@@ -221,7 +227,7 @@ export const RealtimeChat = ({
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   if (isConnected && newMessage.trim()) {
                     handleSendMessage(e as any);
@@ -233,26 +239,29 @@ export const RealtimeChat = ({
               maxLength={-1} // no max length
             />
           </div>
-            
-            {/* Action buttons (aligned to the bottom by the parent div) */}
-            {role === "admin" && (
-                <OfferPricePopover product={conversation?.product} />
-            )}
-            
-            <Button
-                className="aspect-square rounded-full shrink-0"
-                type="submit"
-                disabled={!isConnected || !newMessage.trim()}
-            >
-                <Send className="size-4" />
-            </Button>
+
+          {/* Action buttons (aligned to the bottom by the parent div) */}
+          {role === "admin" && (
+            <OfferPricePopover
+              product={conversation?.product}
+              sendMessage={sendMessage}
+            />
+          )}
+
+          <Button
+            className="aspect-square rounded-full shrink-0"
+            type="submit"
+            disabled={!isConnected || !newMessage.trim()}
+          >
+            <Send className="size-4" />
+          </Button>
         </div>
       </form>
 
       {!autoScrollEnabled && (
         <div className="absolute left-1/2 -translate-x-1/2 bottom-20 z-40">
-          <Button 
-            size="sm" 
+          <Button
+            size="sm"
             className="rounded-full shadow-md mb-10 border-2 border-background"
             onClick={handleScrollToBottomClick}
           >

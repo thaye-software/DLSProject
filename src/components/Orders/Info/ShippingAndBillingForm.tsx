@@ -33,6 +33,7 @@ import {
   calculateVatCents,
   calculateSubtotalCents,
   calculateTotalCents,
+  calculateVAT,
 } from "@/lib/priceUtils";
 import { getAllCountries } from "@/services/countryService";
 import { CountryModel } from "@/database/types";
@@ -41,10 +42,14 @@ export default function ShippingAndBillingForm({
   customer,
   productSlug,
   customerGeoLocation,
+  discountedPrice,
+  offerToken,
 }: {
   customer: CustomerInfo;
   productSlug: string;
   customerGeoLocation: string;
+  discountedPrice?: number;
+  offerToken?: string;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
@@ -165,6 +170,18 @@ export default function ShippingAndBillingForm({
             `(Client) ${product.watch.brand.name} ${product.watch.model} is out of stock`
           );
 
+        // Apply discount if available
+        if (discountedPrice) {
+          // The discountedPrice is the Gross price (including 25% VAT).
+          // We need to convert it to Net price because the form logic adds VAT on top of product.priceDkk.
+          if (discountedPrice && customerGeoLocation === "DK") {
+            product.priceDkk = Math.round(discountedPrice / 1.25);
+          } else {
+            // TODO: handle non-DK discounted prices properly
+            product.priceDkk = discountedPrice;
+          }
+        }
+
         // Use fixed EUR shipping for non-DK visitors; for DK format the DKK amount
         const shippingDisplay =
           (customerGeoLocation || "DK").toUpperCase() === "DK"
@@ -222,6 +239,10 @@ export default function ShippingAndBillingForm({
     data.shippingSameAsBilling = String(sameAsShipping);
     data.customerId = customerUpdated.id;
     data.shippingPriceDkk = String(constants.SHIPPING_PRICE_DKK);
+    if (offerToken) {
+      console.log("setting offerToken in form submission:", offerToken);
+      data.offerToken = offerToken;
+    }
 
     const customerCountry = customerUpdated.country || null;
 

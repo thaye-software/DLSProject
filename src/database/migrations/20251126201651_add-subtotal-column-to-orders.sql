@@ -1,0 +1,1 @@
+ALTER TABLE "orders" ADD COLUMN "sub_total_dkk" numeric(12, 2) DEFAULT '0' NOT NULL;

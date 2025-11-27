@@ -3,6 +3,36 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { calculateVAT } from "@/lib/priceUtils";
+import { getLocalCurrencyString } from "@/services/currencyService";
+import { getUserLocationAction } from "@/app/actions/location";
+import { useEffect, useState } from "react";
+
+function PriceDisplay({
+  priceDkk,
+  countryCode,
+}: {
+  priceDkk: number;
+  countryCode: string;
+}) {
+  const [formattedPrice, setFormattedPrice] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    getLocalCurrencyString(priceDkk, countryCode).then((price) => {
+      if (isMounted) setFormattedPrice(price);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [priceDkk, countryCode]);
+
+  if (formattedPrice === null) {
+    return <div className="h-5 w-20 bg-muted animate-pulse rounded" />;
+  }
+
+  return <div>{formattedPrice}</div>;
+}
 
 export function SearchResultsDialog({
   open,
@@ -16,9 +46,12 @@ export function SearchResultsDialog({
   onSelect?: (item: any) => void;
 }) {
   const router = useRouter();
+  const [userLocation, setUserLocation] = useState<any>(null);
 
-  console.log("Rendering SearchResultsDialog with results:", results);
-  
+  useEffect(() => {
+    getUserLocationAction().then(setUserLocation);
+  }, []);
+
   return (
     <motion.div
       key="search-results-dialog"
@@ -38,13 +71,14 @@ export function SearchResultsDialog({
               const brand = r.watch?.brand?.name;
               const reference = r.watch?.reference;
               const img = r.productImages[0]?.imageUrl;
+              const VAT = calculateVAT(r.priceDkk, 25);
 
               return (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}  
+                  exit={{ opacity: 0 }}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => {
                     if (onSelect) onSelect(r);
@@ -52,33 +86,36 @@ export function SearchResultsDialog({
                     router.push(`/watches/view/${r.watch?.slug}`);
                   }}
                   className="group flex flex-col items-start gap-2 rounded-md p-2 text-left transition-all cursor-pointer"
-                  >
-                    {img ? (
-                      <div className="relative w-full h-40 overflow-hidden rounded">
-                        <Image
-                          src={img}
-                          alt={title}
-                          fill
-                          unoptimized
-                          className="absolute inset-0 h-full object-cover transform transition-transform duration-500 group-hover:scale-105"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-full h-40 flex items-center justify-center rounded bg-muted text-sm text-muted-foreground">
-                        No image
+                >
+                  {img ? (
+                    <div className="relative w-full h-40 overflow-hidden rounded">
+                      <Image
+                        src={img}
+                        alt={title}
+                        fill
+                        unoptimized
+                        className="absolute inset-0 h-full object-cover transform transition-transform duration-500 group-hover:scale-105"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full h-40 flex items-center justify-center rounded bg-muted text-sm text-muted-foreground">
+                      No image
+                    </div>
+                  )}
+                  <div className="w-full">
+                    <div className="font-bold truncate">{title}</div>
+                    <div className="text-sm text-muted-foreground">{brand}</div>
+                    {reference && (
+                      <div className="text-xs text-muted-foreground">
+                        Ref: {reference}
                       </div>
                     )}
-                    <div className="w-full">
-                      <div className="font-bold truncate">{title}</div>
-                      <div className="text-sm text-muted-foreground">{brand}</div>
-                      {reference && (
-                        <div className="text-xs text-muted-foreground">
-                          Ref: {reference}
-                        </div>
-                      )}
-                      <div>{r.priceDkk} Kr.</div>
-                    </div>
-                  </motion.div>
+                    <PriceDisplay
+                      priceDkk={r.priceDkk + (userLocation ? VAT : 0)}
+                      countryCode={userLocation?.countryCode || "DK"}
+                    />
+                  </div>
+                </motion.div>
               );
             })}
           </div>

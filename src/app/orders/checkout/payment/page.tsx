@@ -72,7 +72,7 @@ export default async function PaymentPage({
     " " +
     foundOrderItem?.product.watch.model;
 
-  const itemAmount = foundOrderItem?.product.priceDkk;
+  const itemAmount = parseFloat(foundOrderItem?.order.subTotalDkk || "0");
   // Prefer the billing country stored on the order (keeps display consistent with checkout),
   const billingCountryName = foundOrderItem?.order.billingAddress?.country;
   const deliveryCountryName = foundOrderItem?.order.deliveryAddress?.country;
@@ -90,16 +90,10 @@ export default async function PaymentPage({
     countryCode = deliveryCountry?.abbreviation;
   }
 
-  // calculate VAT for item
-  const VAT = calculateVAT(
-    Number(foundOrderItem?.product.priceDkk),
-    //@ts-ignore
-    billingCountry.vatRate
-  );
-  const subtotal = itemAmount + VAT;
+  const subtotal = itemAmount;
   // Get the subtotal amount in local currency format
   const subtotalFormatted = await getLocalCurrencyString(
-    itemAmount + VAT,
+    itemAmount,
     countryCode as string
   );
   
@@ -114,7 +108,7 @@ export default async function PaymentPage({
   if (countryCode === "DK") {
     total = subtotal + shippingDkkCents;
   } else {
-    total = (subtotalEur + shippingEurCents) / 100;
+    total = (subtotalEur + shippingEurCents);
     console.log(total)
   }
 
@@ -130,7 +124,7 @@ export default async function PaymentPage({
     displayTotalAmount = new Intl.NumberFormat("en-IE", {
       style: "currency",
       currency: "EUR",
-    }).format(total);
+    }).format(total / 100);
   }
   // Use the _flat_ shipping price (50 EUR) as the ground truth for display — this keeps the payment page consistent and explicit about the flat-rate.
 
@@ -146,7 +140,7 @@ export default async function PaymentPage({
         }).format(constants.SHIPPING_PRICE_EUR);
 
   // Charge the buyer the gross total (product net + VAT + shipping)
-  const stripeAmountToBePaid = countryCode === "DK" ? Number(total) : Number(total * 100);
+  const stripeAmountToBePaid = countryCode === "DK" ? Number(total / 100) : Number(total * 100);
   if (!stripe) throw new Error("Stripe not available");
   const paymentIntent = await stripe.paymentIntents.create({
     amount: stripeAmountToBePaid,

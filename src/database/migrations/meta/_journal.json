@@ -57,6 +57,13 @@
       "when": 1764163253834,
       "tag": "20251126132053_add-internal-id-for-watches",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1764188211904,
+      "tag": "20251126201651_add-subtotal-column-to-orders",
+      "breakpoints": true
     }
   ]
 }

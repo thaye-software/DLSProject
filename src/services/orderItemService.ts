@@ -15,10 +15,11 @@ export async function getOrderItemByOrderId(orderId: string) {
       with: {
         order: {
           columns: {
+            subTotalDkk: true,
             totalPriceDkk: true,
             shippingPriceDkk: true,
             createdAt: true,
-                    status: true,
+            status: true,
           },
           with: {
             user: {

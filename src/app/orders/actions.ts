@@ -27,6 +27,8 @@ import { OrderStatus } from "./type";
 import { Product } from "../watches/type";
 import { createOrder } from "@/services/orderService";
 import { CountryModel } from "@/database/types";
+import { verifyOfferToken } from "@/services/offerService";
+import { calculateVAT } from "@/lib/priceUtils";
 
 // import shippingAndBillingForm from "@/components/Orders/Info/ShippingAndBillingForm"
 // z.infer<typeof shippingAndBillingForm>
@@ -56,6 +58,7 @@ export interface customerBillingDetails {
   saveBillingInfo: string;
   shippingSameAsBilling: string;
   customerId: string;
+  offerToken?: string;
 }
 
 export interface Address {
@@ -83,6 +86,7 @@ export interface OrderDetails {
   currencyId: string;
   status: string;
   shippingPriceDkk: string;
+  subTotalDkk: string;
   totalPriceDkk: string;
   totalPriceCurrency: string;
   deliveryAddressId?: string;
@@ -95,7 +99,6 @@ export async function submitOrderDetails(
   product: Product,
   country: CountryModel
 ) {
-
   const userGeoLocationData = await getUserLocation();
   let currencyCode = userGeoLocationData.currency.toUpperCase();
   currencyCode = currencyCode == "DKK" ? "DKK" : "EUR";
@@ -103,6 +106,29 @@ export async function submitOrderDetails(
 
   const billingAddressCountry = await getCountryByName(formData.country);
 
+  
+  let finalPriceDkk = product.priceDkk * 1.25;
+
+  // Verify offer token if present and override price
+  if (formData.offerToken) {
+    console.log(
+      "Verifying offer token in order submission:",
+      formData.offerToken
+    );
+    const offer = await verifyOfferToken(formData.offerToken);
+    // We check if the offer is for this product.
+    // Note: product.watch.slug might need to be checked against offer.productSlug
+    // or we just trust that if the token is valid and signed, it's good.
+    // But we should ensure it matches the product being ordered.
+    if (
+      offer &&
+      (offer.productSlug === product.watch.slug ||
+        offer.productSlug === product.id)
+    ) {
+      // The offer price is Gross (incl. 25% VAT). Convert to Net for storage.
+      finalPriceDkk = Math.round(offer.priceDkk / 1.25);
+    }
+  }
 
   const billingAddress: Address = {
     userId: formData.customerId,
@@ -141,16 +167,20 @@ export async function submitOrderDetails(
     currencyId: billingAddressCountry?.currencyId || localeCurrency.id,
     status: "RESERVED",
     shippingPriceDkk: formData.shippingPriceDkk,
-    totalPriceDkk: String(product.priceDkk + parseInt(formData.shippingPriceDkk)),
-
+    subTotalDkk: String(finalPriceDkk),
+    totalPriceDkk: String(
+      finalPriceDkk + parseInt(formData.shippingPriceDkk) * 100
+    ),
 
     //todo might just refactor this to use billingaddress
     totalPriceCurrency:
       country === null
         ? String(
-            Math.round(product.priceDkk * Number(localeCurrency.exchangeRate))
+            Math.round(finalPriceDkk * Number(localeCurrency.exchangeRate))
           ) // In cents
-        : String(Math.round(product.priceDkk * parseInt(country.currency.exchangeRate))), // In cents
+        : String(
+            Math.round(finalPriceDkk * parseInt(country.currency.exchangeRate))
+          ), // In cents
     productId: product.id,
   };
 
@@ -179,7 +209,11 @@ export async function submitOrderDetails(
 
     // if shipping is same as billing
     shippingAddress = billingAddress;
-    const createdOrderId = await createOrder(orderDetails, billingAddress, shippingAddress);
+    const createdOrderId = await createOrder(
+      orderDetails,
+      billingAddress,
+      shippingAddress
+    );
     return createdOrderId;
   } catch (error) {
     throw error;
@@ -200,8 +234,6 @@ export async function convertEuroToDkk(priceEur: number) {
     throw error;
   }
 }
-
-
 
 export async function sendOrderConfirmationEmail(
   customerEmail: string,
