@@ -38,43 +38,40 @@ npm run supabase:start
 npm run supabse:stop
 ```
 
-
-
 ## Playwright tests commands
 
 Inside that directory, you can run several commands:
 
-  npx playwright test
-    Runs the end-to-end tests.
+npx playwright test
+Runs the end-to-end tests.
 
-  npx playwright test --ui
-    Starts the interactive UI mode.
+npx playwright test --ui
+Starts the interactive UI mode.
 
-  npx playwright test --project=chromium
-    Runs the tests only on Desktop Chrome.
+npx playwright test --project=chromium
+Runs the tests only on Desktop Chrome.
 
-  npx playwright test example
-    Runs the tests in a specific file.
+npx playwright test example
+Runs the tests in a specific file.
 
-  npx playwright test --debug
-    Runs the tests in debug mode.
+npx playwright test --debug
+Runs the tests in debug mode.
 
-  npx playwright codegen
-    Auto generate tests with Codegen.
+npx playwright codegen
+Auto generate tests with Codegen.
 
 We suggest that you begin by typing:
 
     npx playwright test
 
 And check out the following files:
-  - .\playwright_tests\example.spec.ts - Example end-to-end test
-  - .\playwright.config.ts - Playwright Test configuration
+
+- .\playwright_tests\example.spec.ts - Example end-to-end test
+- .\playwright.config.ts - Playwright Test configuration
 
 Visit https://playwright.dev/docs/intro for more information. ✨
 
 Happy hacking! 🎭
-
-
 
 ## Jest tests commands
 
@@ -84,6 +81,15 @@ For running all jests test you can simply do:
 npm run test
 ```
 
+⚠️ Safety note: To avoid accidental deletion of your development database, tests must run against a dedicated test database. Set the `DATABASE_URL_TEST` environment variable before running tests. Example:
+
+```bash
+export DATABASE_URL_TEST="postgresql://postgres:postgres@127.0.0.1:54322/limited_watches_test"
+npm run test
+```
+
+The test utilities will refuse to run if `DATABASE_URL_TEST` is not set, or if the DB name looks like a non-test DB (e.g., `postgres`). If you intentionally want to bypass the DB name check, you can set `DISABLE_REQUIRE_TEST_DB_NAME=true`, but use with caution.
+
 To only run either unit or integration test do the following:
 
 ```bash
@@ -92,11 +98,10 @@ npm run test:integration
 ```
 
 You can also watch jest in progress using this command:
+
 ```bash
 npm run test:watch
 ```
-
-
 
 ## Learn More
 
