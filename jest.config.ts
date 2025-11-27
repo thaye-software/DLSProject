@@ -12,6 +12,7 @@ const config: Config = {
   testPathIgnorePatterns: [
     '/node_modules/',
     '/playwright_tests/',
+    '/setup/',
   ],
   
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
