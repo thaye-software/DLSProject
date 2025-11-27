@@ -272,7 +272,7 @@ export function ConversationDashboard({ initialConversations }:{initialConversat
               {chat && (
                 <>
                   <CardHeader>...</CardHeader>
-                  <div className="flex-1 min-h-0 overflow-hidden">
+                  <div className="flex-1 min-h-0 w-full">
                     <RealtimeChat
                       conversation={conv}
                       //@ts-ignore

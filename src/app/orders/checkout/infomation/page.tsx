@@ -9,6 +9,7 @@ import { getCustomerInfoByEmail } from "@/services/userService";
 import { getSignedInUser, getUserLocation } from "@/lib/utils/server/utils";
 import { Suspense } from "react";
 import { Spinner } from "@/components/ui/spinner";
+import { verifyOfferToken } from "@/services/offerService";
 
 export default async function OrdersInfoPage({
   searchParams,
@@ -18,7 +19,19 @@ export default async function OrdersInfoPage({
   const userGeoLocationData = await getUserLocation();
   const countryCode = userGeoLocationData.countryCode;
 
-  const productSlug = (await searchParams).product;
+  const resolvedSearchParams = await searchParams;
+  const productSlug = resolvedSearchParams.product as string;
+  const offerToken = resolvedSearchParams.offer as string | undefined;
+
+  let discountedPrice: number | undefined;
+
+  if (offerToken) {
+    const offer = await verifyOfferToken(offerToken);
+    if (offer && offer.productSlug === productSlug) {
+      discountedPrice = offer.priceDkk;
+    }
+  }
+
   let state = { success: true, message: "", redirectUrl: "" };
   const {
     data: { user },
@@ -53,6 +66,8 @@ export default async function OrdersInfoPage({
             customer={customer}
             productSlug={productSlug as string}
             customerGeoLocation={countryCode}
+            discountedPrice={discountedPrice}
+            offerToken={offerToken}
           />
         </Suspense>
       ) : (

@@ -74,14 +74,12 @@ export default async function SuccessPage({
     : null;
   const targetCountryCode = targetCountryModel?.abbreviation;
 
-  const itemAmount = foundOrder?.orderItems[0].product.priceDkk;
-  const shippingAmount = foundOrder?.shippingPriceDkk;
-  const totalAmount = foundOrder?.totalPriceDkk;
+  const itemAmount = parseFloat(foundOrder?.subTotalDkk || "0");
   const vatRate = targetCountryModel ? targetCountryModel.vatRate : 0;
   
-  const VAT = calculateVAT(Number(itemAmount), vatRate);
+  const VAT = calculateVAT(Number(itemAmount), 20);
 
-  const subtotalDkk = itemAmount + VAT;
+  const subtotalDkk = itemAmount;
   const subTotalEur = await convertCurrencyReturnCents(
     subtotalDkk,
     targetCountryCode as string
