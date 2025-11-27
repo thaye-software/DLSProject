@@ -106,6 +106,7 @@ export function OfferPricePopover({
                     variant={currency === "EUR" ? "default" : "ghost"}
                     size={"sm"}
                     onClick={() => setCurrency("EUR")}
+                    disabled={true}
                   >
                     €
                   </Button>
