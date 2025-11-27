@@ -43,7 +43,18 @@ export function useSupabaseAuth() {
     getUser();
 
     // Listen for auth state changes
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        const newPassword = prompt("Please enter your new password:");
+        const { data, error } = await supabase.auth.updateUser({ password: newPassword || "" });
+        if (error) {
+          alert("Error updating password: " + error.message);
+        } else {
+          alert("Password updated successfully!");
+        }
+        return;
+      }
+
       // session?.user is the current user when signed in
       const newUser = session?.user ?? null;
       setUser(newUser);
