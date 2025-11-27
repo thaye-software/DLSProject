@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/database/drizzle";
 import { users } from "@/database/schema";
 import { NewUserModel } from "@/database/types";
+import { createClient } from "@/database/supabase/server";
 
 import { CustomerNameAndPhone } from "@/app/orders/actions"
 
@@ -233,3 +234,16 @@ export async function deleteCustomerNameAndPhone(customerId: string) {
   }
 }
 
+export async function updatePassword(newPassword: string) {
+  const supabase = await createClient();
+  try {
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+    return data;
+
+  } catch (error) {
+    console.error("(server) failed to update user password...", error);
+    throw error;
+  }
+}
