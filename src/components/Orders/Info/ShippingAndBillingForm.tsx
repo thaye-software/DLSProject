@@ -33,6 +33,7 @@ import {
   calculateVatCents,
   calculateSubtotalCents,
   calculateTotalCents,
+  calculateVAT,
 } from "@/lib/priceUtils";
 import { getAllCountries } from "@/services/countryService";
 import { CountryModel } from "@/database/types";
@@ -68,9 +69,6 @@ export default function ShippingAndBillingForm({
   const [selectedCountry, setSelectedCountry] = useState<CountryModel | null>(
     null
   );
-
-  console.log("offerToken in ShippingAndBillingForm:", offerToken);
-  console.log("discountedPrice in ShippingAndBillingForm:", discountedPrice);
 
   // Central helper reused by useEffect and onChange handlers.
   async function computeAndSetAmounts(
@@ -174,7 +172,14 @@ export default function ShippingAndBillingForm({
 
         // Apply discount if available
         if (discountedPrice) {
-          product.priceDkk = discountedPrice;
+          // The discountedPrice is the Gross price (including 25% VAT).
+          // We need to convert it to Net price because the form logic adds VAT on top of product.priceDkk.
+          if (discountedPrice && customerGeoLocation === "DK") {
+            product.priceDkk = Math.round(discountedPrice / 1.25);
+          } else {
+            // TODO: handle non-DK discounted prices properly
+            product.priceDkk = discountedPrice;
+          }
         }
 
         // Use fixed EUR shipping for non-DK visitors; for DK format the DKK amount
@@ -235,6 +240,7 @@ export default function ShippingAndBillingForm({
     data.customerId = customerUpdated.id;
     data.shippingPriceDkk = String(constants.SHIPPING_PRICE_DKK);
     if (offerToken) {
+      console.log("setting offerToken in form submission:", offerToken);
       data.offerToken = offerToken;
     }
 

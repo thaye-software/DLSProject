@@ -212,6 +212,10 @@ export const orders = pgTable(
       precision: 12,
       scale: 2,
     }).notNull().default("0"),
+    subTotalDkk: decimal("sub_total_dkk", {
+      precision: 12,
+      scale: 2,
+    }).notNull().default("0"),
     totalPriceDkk: decimal("total_price_dkk", {
       precision: 12,
       scale: 2,

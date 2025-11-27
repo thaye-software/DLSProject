@@ -23,15 +23,12 @@ export default async function OrdersInfoPage({
   const productSlug = resolvedSearchParams.product as string;
   const offerToken = resolvedSearchParams.offer as string | undefined;
 
-  console.log("Offer token in checkout info page:", offerToken);
-
   let discountedPrice: number | undefined;
 
   if (offerToken) {
     const offer = await verifyOfferToken(offerToken);
     if (offer && offer.productSlug === productSlug) {
       discountedPrice = offer.priceDkk;
-      console.log("Valid offer token, discounted price (DKK cents):", discountedPrice);
     }
   }
 
