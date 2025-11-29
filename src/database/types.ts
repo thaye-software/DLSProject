@@ -48,10 +48,10 @@ export type BrandModel = InferSelectModel<typeof brands>;
 export type NewBrandModel = InferInsertModel<typeof brands>;
 
 export type UserModel = InferSelectModel<typeof users> & {
-  addresses: AddressModel[];
-  favorites: FavoriteModel[];
-  orders: OrderModel[];
-  conversations: ConversationModel[];
+  addresses?: AddressModel[];
+  favorites?: FavoriteModel[];
+  orders?: OrderModel[];
+  conversations?: ConversationModel[];
 };
 export type NewUserModel = InferInsertModel<typeof users>;
 

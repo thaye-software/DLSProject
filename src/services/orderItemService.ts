@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { db } from "@/database/drizzle";
+import { db, DbTransaction } from "@/database/drizzle";
 import { orderItems } from "@/database/schema";
 import { NewOrderItemModel, OrderItemModel } from "@/database/types";
 
@@ -77,7 +77,6 @@ export async function getOrderItemByOrderId(orderId: string) {
   }
 }
 
-type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export async function createOrderItem(
   newOrderItem: Omit<NewOrderItemModel, "id">,
   tx?: DbTransaction

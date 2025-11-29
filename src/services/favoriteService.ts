@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@/database/drizzle";
+import { db, DbTransaction } from "@/database/drizzle";
 import { favorites, products, watches, brands, productImages } from "@/database/schema";
 import { and, eq, gte } from "drizzle-orm";
 import { FavoriteModel, NewFavoriteModel, ProductModel } from "@/database/types";
@@ -66,15 +66,7 @@ async function addFavorite(userId: string, productId: string): Promise<void> {
   await db.insert(favorites).values({ userId, productId });
 }
 
-async function removeFavorite(userId: string, productId: string): Promise<void> {
 
-  await db.delete(favorites)
-    .where(
-      and(
-        (eq(favorites.userId, userId), eq(favorites.productId, productId))
-      )
-    );
-}
 
 export async function getFavoritedProductsByUserId(userId: string): Promise<ProductModel[]> {
   try {
@@ -116,5 +108,35 @@ export async function getFavoritedProductsByUserId(userId: string): Promise<Prod
   } catch (error) {
     console.error("Error fetching favorited products:", error);
     throw new Error("Failed to fetch favorited products from database");
+  }
+}
+
+
+
+
+
+
+async function removeFavorite(userId: string, productId: string): Promise<void> {
+
+  await db.delete(favorites)
+    .where(
+      and(
+        (eq(favorites.userId, userId), eq(favorites.productId, productId))
+      )
+    );
+}
+
+export async function deleteFavorites(userId: string, tx?: DbTransaction) {
+  try {
+    const dbContext = tx || db;
+    const deletedFavorites = await dbContext
+      .delete(favorites)
+      .where(eq(favorites.userId, userId))
+      .returning();
+
+    return deletedFavorites;
+
+  } catch (error) {
+    console.error(`(server) failed to delete favorites for user with id: ${userId}`)
   }
 }

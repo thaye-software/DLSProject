@@ -2,12 +2,16 @@
 
 import { eq } from "drizzle-orm";
 
-import { db } from "@/database/drizzle";
+import { db, DbTransaction } from "@/database/drizzle";
 import { users } from "@/database/schema";
-import { NewUserModel } from "@/database/types";
+import { NewUserModel, UserModel } from "@/database/types";
 import { createClient } from "@/database/supabase/server";
 
 import { CustomerNameAndPhone } from "@/app/orders/actions"
+import { SupabaseClient } from "@supabase/supabase-js";
+import { deleteAddress } from "./addressService";
+import { deleteFavorites } from "./favoriteService";
+import { deleteOrderAddresses } from "./orderAddressService";
 
 
 
@@ -345,25 +349,126 @@ export async function deleteCustomerNameAndPhone(customerId: string) {
   }
 }
 
-export async function deleteAccount(userId: string): Promise<boolean> {
+export async function softDeleteAccount(userId: string) {
   try {
-    const deletedLimitedWatchesUser = await db.delete(users).where(eq(users.id, userId)).returning();
-    if(deletedLimitedWatchesUser.length === 0) {
-      throw new Error(`(server) could not delete limited watches user, since no user with that id: ${userId}`);
-    }
-
     const supabase = await createClient();
-    const { error } = await supabase.auth.admin.deleteUser(userId);
-    if(error) {
-      console.error(`(server) could not delete auth users, potentially could not find user with id: ${userId}`, error);
-      throw error;
-    }
+    
+    const result = await db.transaction(async (tx) => {
+    
+      const userToDelete = await tx.query.users.findFirst({
+        where: eq(users.id, userId),
+      });
+      
+      if (!userToDelete) {
+        throw new Error(`User not found with id: ${userId}`);
+      }
 
-    return true;
+      await nukeUserDependencies(userToDelete, supabase, tx);
+      
+      return true;
+    })
 
-  } catch(error) {
-    console.error(`(server) failed to delete account for user with id: ${userId}`, error);
+    return result;
+
+  } catch (error) {
+    console.error(`Failed to delete account for user ${userId}:`, error);
     throw error;
   }
 }
 
+export async function deleteAvatar(userToDelete: UserModel, supabase: SupabaseClient) {
+  try{
+
+    const fileExtention = extractExtension(userToDelete.avatarUrl as string);
+ 
+    const fileName = `${userToDelete.id}.${fileExtention}`;
+    const { error } = await supabase.storage
+      .from("avatars")
+      .remove([fileName]);
+    
+    if (error) {
+      console.error("Failed to delete avatar:", error);
+      throw new Error("Failed to delete avatar");
+    }
+
+  } catch (error) {
+    console.log("(server) failed to delete avatar from supabase buckets");
+    throw error;
+  }
+}
+
+async function softDeleteUser(userId: string, tx?: DbTransaction) {
+  try {
+    const dbContext = tx || db;
+    const softDeletedUser = await dbContext
+      .update(users)
+      .set({
+        username: `deleted_${userId}`,
+        firstName: "deleted",
+        middleName: "deleted",
+        lastName: "deleted",
+        phone: "deleted",
+        email: `deleted_${userId}@deleted.com`,
+        avatarUrl: "deleted",
+        role: "deleted",
+        countryId: "deleted",
+        deletedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+  } catch(error) {
+    console.error(`(server) failed to soft delete user with id: ${userId}`, error);
+    throw error;
+  } 
+}
+
+async function deleteSupabaseAuthUser(userId: string, supabase: SupabaseClient) {
+  try {
+    const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+    
+    if (authError) {
+      console.error("Failed to delete supabase auth user:", authError);
+      throw authError;
+    }
+
+  }catch(error) {
+    console.error(`(server) failed to delete supabase auth user`, error); 
+    throw error;
+  }
+}
+
+async function nukeUserDependencies(userToNuke: UserModel, supabase: SupabaseClient, tx: DbTransaction) {
+  try {
+    const userId = userToNuke.id;
+    await deleteAvatar(userToNuke, supabase)
+      
+    await deleteAddress(userId, tx);
+    await softDeleteUser(userId, tx);
+    await deleteFavorites(userId, tx);
+    await deleteOrderAddresses(userId, tx);
+    
+    await deleteSupabaseAuthUser(userId, supabase)
+    
+  } catch(error) {
+    console.error(`(server) failed to nuke user dependencies`, error);
+    throw error;
+  }
+} 
+
+
+
+
+
+
+
+
+//----------------------------- helper function -----------------------------
+function extractExtension(url: string): string | null {
+  // Get the part before any query parameters ex: https://jnthehekxywelxnpuplb.supabase.co/storage/v1/object/public/avatars/4ffb1ffc-6ce3-4f31-b42a-03805a0032f5.jpg?updated=1764431609344
+  const cleanUrl = url.split("?")[0];
+  const fileExtention = cleanUrl.split(".").pop()?.toLowerCase();
+
+  const supportedExtentions = ["jpg", "jpeg", "png"];
+
+  const extractedExtension = supportedExtentions.includes(fileExtention as string) ? fileExtention as string : null;
+  return extractedExtension;
+}

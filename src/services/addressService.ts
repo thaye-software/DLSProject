@@ -1,4 +1,4 @@
-import { db } from "@/database/drizzle";
+import { db, DbTransaction } from "@/database/drizzle";
 import { addresses, users } from "@/database/schema";
 import { eq } from "drizzle-orm";
 import { NewAddressModel, AddressModel } from "@/database/types";
@@ -30,24 +30,8 @@ export async function saveBillingAddress(
   }
 }
 
-export async function deleteBillingAddress(userId: string): Promise<boolean> {
-  try {
-    const billingInfo = await db.query.addresses.findFirst({
-      where: eq(addresses.userId, userId),
-    });
 
-    if (!billingInfo) {
-      return false; // Nothing to delete
-    }
 
-    await db.delete(addresses).where(eq(addresses.userId, userId));
-    await db.update(users).set({ addressId: null }).where(eq(users.id, userId));
-    return true;
-  } catch (error) {
-    console.error("(server) Error deleting billing info...", error);
-    throw error;
-  }
-}
 
 
 
@@ -71,4 +55,48 @@ export async function updateBillingAddress(
     console.error(`(server) failed to update billing address`, error);
     throw error;
   }
+}
+
+
+
+
+
+
+export async function deleteBillingAddress(userId: string): Promise<boolean> {
+  try {
+    const billingInfo = await db.query.addresses.findFirst({
+      where: eq(addresses.userId, userId),
+    });
+
+    if (!billingInfo) {
+      return false; // Nothing to delete
+    }
+
+    await db.delete(addresses).where(eq(addresses.userId, userId));
+    await db.update(users).set({ addressId: null }).where(eq(users.id, userId));
+    return true;
+  } catch (error) {
+    console.error("(server) Error deleting billing info...", error);
+    throw error;
+  }
+}
+
+export async function deleteAddress(userId: string, tx?: DbTransaction) {
+  try {
+    const dbContext = tx || db;
+    const softDeletedAddress = await dbContext
+      .delete(addresses)
+      .where(eq(addresses.userId, userId))
+      .returning();
+
+    if(softDeletedAddress.length === 0 || softDeletedAddress.length > 1) {
+      throw new Error(`(server) failed to soft delete address for user with id: ${userId}`)
+    }
+
+    return softDeletedAddress[0];
+
+  } catch(error) {
+    console.error(`(server) failed to soft delete user with id: ${userId}`, error);
+    throw error;
+  } 
 }

@@ -1,6 +1,6 @@
 import { eq, desc, and } from "drizzle-orm";
 
-import { db } from "@/database/drizzle";
+import { db, DbTransaction } from "@/database/drizzle";
 import { orderItems, orders, users } from "@/database/schema";
 import { NewOrderModel, NewOrderAddressModel } from "@/database/types";
 
@@ -25,7 +25,6 @@ export async function createOrder(
 
       // If customer already has a pending order return early (it will only be pending for 30min)
       const foundOrderId = await doesCustomerHasExistingOrder(orderDetails, newBillingAddress, newShippingAddress, tx)
-      console.log("¨åfgæ¨åfægdh",foundOrderId)
       if(foundOrderId) return foundOrderId;
       
       console.log("should ghit")
@@ -114,7 +113,6 @@ export async function getOrderById(orderId: string) {
 }
 
 //--------------------------------------- helper functions ---------------------------------------
-type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 async function getCustomerOrder(customerId: string, productId: string, tx?: DbTransaction) {
   const dbContext = tx || db;
 

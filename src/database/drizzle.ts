@@ -35,5 +35,6 @@ if (!globalForPostgres.__postgres_client__) {
   });
 }
 
+export type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export const client = globalForPostgres.__postgres_client__!;
 export const db = drizzle({ client, schema });
