@@ -1,6 +1,6 @@
 "use server"
 
-import { changeAvatar, changeUsername, getUserById, initiateEmailChange } from "@/services/userService";
+import { changeAvatar, changeUsername, getUserById, initiateEmailChange, softDeleteAccount } from "@/services/userService";
 
 
 
@@ -62,6 +62,26 @@ export async function saveAvatarUrlAction(userId: string, avatarUrl: string) {
 
     } catch(error) {
         console.error(error);
+        throw error;
+    }
+}
+
+
+
+
+
+
+export async function softDeleteAccountAction(userId: string) {
+    try {
+        const success = await softDeleteAccount(userId);
+        if(!success) {
+            throw new Error(`failed to soft delete account with user id: ${userId}`);
+        }
+
+        return success;
+
+    }catch(error) {
+        console.error(`(server action) failed to delete user with id: ${userId}`,error);
         throw error;
     }
 }
