@@ -18,6 +18,7 @@ import ChatBox from "@/components/Chat/ChatBox";
 import { Toaster } from "sonner";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { getUserById } from "@/services/userService";
+import { SupabaseAuthProvider } from "@/context/SupabaseAuthContext";
 
 const theSeasons = theSeasonsFont({
   src: [
@@ -84,17 +85,17 @@ export default function RootLayout({
 }>) {
   const [userRole, setUserRole] = useState<string>(""); 
   
-  const { user } = useSupabaseAuth();
   const pathname = usePathname();
   const hideRootShell =
-    pathname === "/login" ||
-    pathname?.startsWith("/admin") ||
-    pathname?.startsWith("/login/");
-
+  pathname === "/login" ||
+  pathname?.startsWith("/admin") ||
+  pathname?.startsWith("/login/");
+  
   // chat state is provided by ChatProvider via context
-
+  
   useEffect(() => {
     async function getUserRole() {
+      const { user } = useSupabaseAuth();
       const limitedWatchesUser = await getUserById(user?.id as string);
       const userRole = limitedWatchesUser?.role;
 
@@ -110,56 +111,58 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="antialiased min-h-screen flex flex-col">
-        <ChatProvider>
-          <Toaster />
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {!hideRootShell && (
-              <nav className="container mx-auto">
-                <header>
-                  <div className="flex items-center justify-between w-full px-4">
-                    <div></div>
-                    <div className="pt-4 pb-4">
-                      <div
-                        onClick={() => redirect("/")}
-                        className="flex flex-col items-center justify-center gap-2 cursor-pointer"
-                      >
-                        <div className="">
-                          <Logo className="h-12 w-12 dark:text-white" />
+        <SupabaseAuthProvider>
+          <ChatProvider>
+            <Toaster />
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {!hideRootShell && (
+                <nav className="container mx-auto">
+                  <header>
+                    <div className="flex items-center justify-between w-full px-4">
+                      <div></div>
+                      <div className="pt-4 pb-4">
+                        <div
+                          onClick={() => redirect("/")}
+                          className="flex flex-col items-center justify-center gap-2 cursor-pointer"
+                        >
+                          <div className="">
+                            <Logo className="h-12 w-12 dark:text-white" />
+                          </div>
+                          <h1 className="text-2xl font-bold">Limited Watches</h1>
                         </div>
-                        <h1 className="text-2xl font-bold">Limited Watches</h1>
+                      </div>
+
+                      <div className="w-20 flex justify-end">
+                        <ModeToggle />
                       </div>
                     </div>
+                  </header>
+                  <Navbar />
+                </nav>
+              )}
 
-                    <div className="w-20 flex justify-end">
-                      <ModeToggle />
-                    </div>
-                  </div>
-                </header>
-                <Navbar />
-              </nav>
-            )}
+              {/* main content area */}
+              {hideRootShell ? (
+                // For the auth page (login) we want the page to take full height
+                // and not show the navbar and footer.
+                <div className="min-h-screen w-full">{children}</div>
+              ) : (
+                <main className="min-h-screen pt-5 pb-5">{children}</main>
+              )}
 
-            {/* main content area */}
-            {hideRootShell ? (
-              // For the auth page (login) we want the page to take full height
-              // and not show the navbar and footer.
-              <div className="min-h-screen w-full">{children}</div>
-            ) : (
-              <main className="min-h-screen pt-5 pb-5">{children}</main>
-            )}
+              {!hideRootShell && <Footer />}
 
-            {!hideRootShell && <Footer />}
-
-            {/* Floating chat button + panel (visible on all non-admin/login pages) */}
-            {userRole !== "admin" && !hideRootShell && <LayoutChatControls />}
-          </ThemeProvider>
-        </ChatProvider>
-        <Toaster />
+              {/* Floating chat button + panel (visible on all non-admin/login pages) */}
+              {userRole !== "admin" && !hideRootShell && <LayoutChatControls />}
+            </ThemeProvider>
+          </ChatProvider>
+          <Toaster />
+        </SupabaseAuthProvider>
       </body>
     </html>
   );
