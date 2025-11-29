@@ -64,6 +64,13 @@
       "when": 1764188211904,
       "tag": "20251126201651_add-subtotal-column-to-orders",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1764450714730,
+      "tag": "20251129211154_added-deletedAt-field-to-userstable",
+      "breakpoints": true
     }
   ]
 }
