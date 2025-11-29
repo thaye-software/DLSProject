@@ -197,6 +197,7 @@ const seededProducts = await db
       priceDkk: 9500000,
       description: "The iconic diver’s watch, crafted in Oystersteel.",
       stock: 15,
+      visible: true
     },
     {
       productType: "watch",
@@ -204,6 +205,7 @@ const seededProducts = await db
       priceDkk: 6200000,
       description: "The legendary chronograph that went to the moon.",
       stock: 23,
+      visible: true
     },
     {
       productType: "watch",
@@ -211,6 +213,7 @@ const seededProducts = await db
       priceDkk: 4900000,
       description: "Distinctive square case with racing heritage.",
       stock: 44,
+      visible: true
     },
     {
       productType: "watch",
@@ -218,6 +221,7 @@ const seededProducts = await db
       priceDkk: 28000000,
       description: "A luxury sports watch with timeless elegance.",
       stock: 23,
+      visible: true
     },
     {
       productType: "watch",
@@ -225,6 +229,7 @@ const seededProducts = await db
       priceDkk: 31000000,
       description: "Iconic octagonal bezel and refined craftsmanship.",
       stock: 12,
+      visible: true
     },
   ])
   .returning();
