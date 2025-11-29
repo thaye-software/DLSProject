@@ -1,14 +1,18 @@
+"use client"
+
 import { useEffect, useState } from "react";
+import { User, MailWarning } from "lucide-react";
+
 import { toast } from "sonner";
-import { Upload, User, MailWarning } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+import ChangeAvatar from "./ChangeAvatar";
 
 import { changeUsernameAndEmail } from "@/app/settings/actions";
 
@@ -21,8 +25,6 @@ export default function AccountDetails() {
     const [isPendingEmailConfirmation, setIsPendingEmailConfirmation] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     
-    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-
     const { user, refreshUser } = useSupabaseAuthContext();
 
 
@@ -33,17 +35,7 @@ export default function AccountDetails() {
         
     }, [isPendingEmailConfirmation, user])
 
-    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setAvatarPreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
+  
     async function handleInfoChange(event: any) {
         event.preventDefault();
         const formData = new FormData(event.currentTarget);
@@ -57,7 +49,12 @@ export default function AccountDetails() {
                 toast.error("Unexpted error no user found, try again later");
                 return;
             }
-                    
+            
+            if(!isEmailedChangeInitiated && !isUsernameChanged) {
+                toast.error("Nothing changed");
+                return;
+            }
+            
             if(isUsernameChanged) {
                 await refreshUser()
             }
@@ -86,28 +83,8 @@ export default function AccountDetails() {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Avatar Upload */}
-            <div className="flex items-center gap-6">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={avatarPreview || "https://github.com/shadcn.png"} />
-                <AvatarFallback>PD</AvatarFallback>
-              </Avatar>
-              <div className="space-y-2">
-                <Label htmlFor="avatar-upload" className="cursor-pointer">
-                  <div className="flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-accent transition-colors">
-                    <Upload className="h-4 w-4" />
-                    <span className="text-sm font-medium">Upload Avatar</span>
-                  </div>
-                  <Input
-                    id="avatar-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleAvatarChange}
-                    />
-                </Label>
-                <p className="text-xs text-muted-foreground">JPG, PNG or GIF. Max size 5MB.</p>
-              </div>
-            </div>
+
+            <ChangeAvatar/>
 
             <Separator />
 

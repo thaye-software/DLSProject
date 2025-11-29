@@ -303,6 +303,27 @@ export async function changePassword(newPassword: string) {
   }
 }
 
+//this actually also "creates a new" upload avatar, always overwrites the old one.
+export async function changeAvatar(userId: string, newAvatarUrl: string) {
+  try {
+    const updatedUser = await db
+      .update(users)
+      .set({avatarUrl: newAvatarUrl})
+      .where(eq(users.id, userId))
+      .returning();
+
+    if(updatedUser.length === 0 || updatedUser.length > 1) {
+      throw new Error("(server) failed to update user, or updated multple users");
+    }
+
+    return updatedUser[0];
+
+  } catch (error) {
+    console.error("(server) failed to save new avatar url", error)
+    throw error;
+  }
+}
+
 
 
 

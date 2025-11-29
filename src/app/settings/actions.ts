@@ -1,6 +1,6 @@
 "use server"
 
-import { changeUsername, getUserById, initiateEmailChange } from "@/services/userService";
+import { changeAvatar, changeUsername, getUserById, initiateEmailChange } from "@/services/userService";
 
 
 
@@ -50,3 +50,18 @@ function transformFormData(formData: any) {
     return formDataObject;
 }
 
+
+
+
+
+
+export async function saveAvatarUrlAction(userId: string, avatarUrl: string) {
+    try {
+        const updatedCustomer = await changeAvatar(userId, avatarUrl);
+        return updatedCustomer;
+
+    } catch(error) {
+        console.error(error);
+        throw error;
+    }
+}

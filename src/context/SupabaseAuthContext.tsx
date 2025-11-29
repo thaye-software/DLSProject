@@ -139,7 +139,7 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     loading,
     isLoggedIn: !!user,
     signOut,
-    refreshUser,
+    refreshUser
   };
 
   return <SupabaseAuthContext.Provider value={value}>{children}</SupabaseAuthContext.Provider>;
