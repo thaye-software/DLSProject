@@ -1,10 +1,6 @@
 "use client"
 
-import { useState } from "react";
 import {Lock } from "lucide-react";
-import { useRouter } from "next/navigation";
-
-import { toast } from "sonner";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,12 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 import DeleteAccount from "./DeleteAccount";
-import AccountDetails from "../AccountDetails";
-
-import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
-
-import { softDeleteAccountAction } from "@/app/settings/actions";
-
+import AccountDetails from "./AccountDetails";
 
 
 
