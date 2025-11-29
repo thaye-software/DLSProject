@@ -47,6 +47,7 @@ export function SettingsTabs() {
             Notifications
           </TabsTrigger>
         </TabsList>
+        
         <TabsContent value="account">
           <AccountTab />
         </TabsContent>

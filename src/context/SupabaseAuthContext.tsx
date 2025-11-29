@@ -16,10 +16,10 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const SupabaseAuthContext = createContext<AuthContextType | undefined>(undefined);
 const supabase = createClient();
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
@@ -142,13 +142,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshUser,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <SupabaseAuthContext.Provider value={value}>{children}</SupabaseAuthContext.Provider>;
 }
 
 
 
-export function useAuthContext() {
-  const context = useContext(AuthContext);
+export function useSupabaseAuthContext() {
+  const context = useContext(SupabaseAuthContext);
   if (context === undefined) {
     throw new Error("useAuthContext must be used within an AuthProvider");
   }

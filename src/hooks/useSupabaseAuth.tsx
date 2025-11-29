@@ -1,5 +1,5 @@
-import { useAuthContext } from "@/context/AuthContext";
+import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 
 export function useSupabaseAuth() {
-  return useAuthContext();
+  return useSupabaseAuthContext();
 }
