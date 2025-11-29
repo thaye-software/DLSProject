@@ -24,6 +24,7 @@ export default async function FilterdWatches({searchParams}: {searchParams: Sear
   const countryCode = userGeoLocationData.countryCode;
   const localCurrencyCode = userGeoLocationData.currency;
 
+  //TODO refactor the getFilterRanges, so it only gets the filters by querying the products table, and only if they are visible...
   const defaultFilters = await getFilterRanges(userGeoLocationData.currency);
   const syncedFilters = syncFilters(defaultFilters, appliedFilters);
 

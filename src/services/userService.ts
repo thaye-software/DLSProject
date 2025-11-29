@@ -8,7 +8,6 @@ import { NewUserModel } from "@/database/types";
 import { createClient } from "@/database/supabase/server";
 
 import { CustomerNameAndPhone } from "@/app/orders/actions"
-import { createClient } from "@/database/supabase/server";
 
 
 
@@ -297,7 +296,7 @@ export async function changePassword(newPassword: string) {
     }
     
     return updatedAuthUser;
-    
+
   }catch (error) {
     console.error(`(server) failed to change password`, error);
     throw error;
