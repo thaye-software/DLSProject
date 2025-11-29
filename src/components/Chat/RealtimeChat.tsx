@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ArrowDown, Send } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { markAsRead } from "@/services/messageService";
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 import { OfferPricePopover } from "./OfferPricePopover";
 import { toast } from "sonner";
 import { Badge } from "../ui/badge";
@@ -49,7 +49,7 @@ export const RealtimeChat = ({
   });
 
   const [newMessage, setNewMessage] = useState("");
-  const { role } = useSupabaseAuth();
+  const { role } = useSupabaseAuthContext();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Merge messages

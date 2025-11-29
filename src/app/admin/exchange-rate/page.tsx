@@ -3,12 +3,12 @@
 import ExchangeRateSubmitButton from "@/components/Admin/ExchangeRateSubmitButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 import { getCurrencyByCode, updateExchangeRate } from "@/services/currencyService";
 import { useEffect, useState } from "react";
 
 export default function ExchangeRatePage() {
-  const { username } = useSupabaseAuth();
+  const { username } = useSupabaseAuthContext();
   const [roundedRate, setRoundedRate] = useState("Fetching...");
 
   useEffect(() => {

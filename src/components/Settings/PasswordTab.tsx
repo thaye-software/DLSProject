@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
-import { updatePassword } from "@/services/userService";
+import { changePassword } from "@/services/userService";
 
 export default function PasswordTab() {
   const [loading, setLoading] = useState(false);
@@ -36,7 +36,7 @@ export default function PasswordTab() {
 
     setLoading(true);
     try {
-      await updatePassword(newPassword);
+      await changePassword(newPassword);
       toast.success("Password updated successfully");
       setNewPassword("");
       setConfirmPassword("");

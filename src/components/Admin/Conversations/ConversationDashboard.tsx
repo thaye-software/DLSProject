@@ -18,7 +18,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import type { ConversationModel } from "@/database/types";
 
 import { ChatMessage } from "@/hooks/use-realtime-chat";
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 import useSyncUnreadCounts from "@/hooks/conversation-dashboard/useSyncUnreadCounts";
 import useUIConversations from "@/hooks/conversation-dashboard/useUIConversations";
 import useSetActiveChatReadZero from "@/hooks/conversation-dashboard/useSetActiveChatReadZero";
@@ -62,7 +62,7 @@ export function ConversationDashboard({ initialConversations }:{initialConversat
   
   const { setUnreadCounts, addRealtimeMessage } = useUnreadMessagesContext();
   const [searchQuery, setSearchQuery] = useState("");
-  const { user } = useSupabaseAuth();
+  const { user } = useSupabaseAuthContext();
 
   
   // Ref to track selected ID for the socket listener to avoid closure staleness

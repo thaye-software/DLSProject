@@ -16,7 +16,7 @@ import { FloatingChatButton } from "@/components/Chat/FloatingChatButton";
 import { AnimatePresence } from "framer-motion";
 import ChatBox from "@/components/Chat/ChatBox";
 import { Toaster } from "sonner";
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 import { getUserById } from "@/services/userService";
 import { SupabaseAuthProvider } from "@/context/SupabaseAuthContext";
 
@@ -95,7 +95,7 @@ export default function RootLayout({
   
   useEffect(() => {
     async function getUserRole() {
-      const { user } = useSupabaseAuth();
+      const { user } = useSupabaseAuthContext();
       const limitedWatchesUser = await getUserById(user?.id as string);
       const userRole = limitedWatchesUser?.role;
 

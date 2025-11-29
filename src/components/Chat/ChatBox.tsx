@@ -9,7 +9,7 @@ import { ChatPanel } from "./ChatPanel";
 
 import { useChatContext } from "@/context/ChatContext";
 
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 
 import { getConversations } from "@/services/conversationService";
 
@@ -22,7 +22,7 @@ export default function ChatBox() {
     initialConversation
   );
   const [loading, setLoading] = useState(false);
-  const { user, role } = useSupabaseAuth();
+  const { user, role } = useSupabaseAuthContext();
 
   useEffect(() => {
     let mounted = true;

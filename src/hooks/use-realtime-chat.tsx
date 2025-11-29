@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient } from "@/database/supabase/client";
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 import { persistMessage, PersistableMessage } from "@/services/messageService";
 import { getUserById } from "@/services/userService";
 import { useCallback, useEffect, useState, useRef } from "react";
@@ -38,7 +38,7 @@ export function useRealtimeChat({
   username,
   onMessageReceived,
 }: UseRealtimeChatProps) {
-  const { user } = useSupabaseAuth();
+  const { user } = useSupabaseAuthContext();
   const supabase = createClient();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);

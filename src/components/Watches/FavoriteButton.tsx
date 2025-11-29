@@ -1,6 +1,6 @@
 "use client";
 
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 import { Button } from "../ui/button";
 import { Heart } from "lucide-react";
 import { isFavorite, handleFavoriteToggle } from "@/services/favoriteService";
@@ -14,7 +14,7 @@ export default function FavoriteButton({
   productId: string;
   onFavoriteClick?: () => void;
 }) {
-  const { user } = useSupabaseAuth();
+  const { user } = useSupabaseAuthContext();
   const [favorited, setFavorited] = useState(false);
 
   async function isFavorited() {
