@@ -7,6 +7,7 @@ import { calculateVAT } from "@/lib/priceUtils";
 import { getLocalCurrencyString } from "@/services/currencyService";
 import { getUserLocationAction } from "@/app/actions/location";
 import { useEffect, useState } from "react";
+import { getUserLocation } from "@/lib/utils/server/utils";
 
 function PriceDisplay({
   priceDkk,

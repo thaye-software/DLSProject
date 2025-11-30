@@ -3,7 +3,7 @@
 import { createClient } from "@/database/supabase/client";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { persistMessage, PersistableMessage } from "@/services/messageService";
-import { getUserById } from "@/services/userService";
+import { getUserByIdAction } from "@/app/actions/user";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 
@@ -73,8 +73,10 @@ export function useRealtimeChat({
       })
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {
+          console.log("Subscribed to channel:", channelName);
           setIsConnected(true);
         } else {
+          console.log("Unsubscribed from channel:", channelName);
           setIsConnected(false);
         }
       });
@@ -96,7 +98,7 @@ export function useRealtimeChat({
       if (!conversation?.id || !user?.id) return;
 
       try {
-        const foundUser = await getUserById(user.id);
+        const foundUser = await getUserByIdAction(user.id);
         if(!foundUser) {
           toast.error("User not found");
           return;

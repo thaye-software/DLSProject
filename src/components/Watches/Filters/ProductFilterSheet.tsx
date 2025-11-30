@@ -23,7 +23,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Filter } from "lucide-react";
 
 export interface WatchFilters {
@@ -36,6 +36,7 @@ export interface WatchFilters {
   yearEnd: string | null;
   conditionValues: string[]; // for URL params
   conditionStats: { condition: number; count: number }[]; // for UI list
+  isLimited?: boolean;
 }
 
 export function ProductFilterSheet({
@@ -50,8 +51,11 @@ export function ProductFilterSheet({
   localCurrencyCode: string;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const showBrandFilter = pathname === "/watches";
 
-  const [currentFilters, setCurrentFilters] = useState<WatchFilters>(appliedFilters);
+  const [currentFilters, setCurrentFilters] =
+    useState<WatchFilters>(appliedFilters);
   const [open, setOpen] = useState(false);
 
   function handleBrandChange(brand: string, checked: boolean) {
@@ -127,39 +131,43 @@ export function ProductFilterSheet({
               <div className="flex-1 overflow-y-auto pr-2">
                 <Accordion
                   type="multiple"
-                  defaultValue={["brand", "price"]}
+                  defaultValue={
+                    showBrandFilter ? ["brand", "price"] : ["price"]
+                  }
                   className="w-full"
                 >
                   {/* Brand Filter */}
-                  <AccordionItem value="brand">
-                    <AccordionTrigger>Brand</AccordionTrigger>
-                    <AccordionContent>
-                      <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
-                        {defaultFilters.brandNames.map((brand) => (
-                          <div
-                            key={brand}
-                            className="flex items-center space-x-2"
-                          >
-                            <Checkbox
-                              id={`brand-${brand}`}
-                              checked={currentFilters.brandNames.includes(
-                                brand
-                              )}
-                              onCheckedChange={(checked) =>
-                                handleBrandChange(brand, !!checked)
-                              }
-                            />
-                            <Label
-                              htmlFor={`brand-${brand}`}
-                              className="font-normal"
+                  {showBrandFilter && (
+                    <AccordionItem value="brand">
+                      <AccordionTrigger>Brand</AccordionTrigger>
+                      <AccordionContent>
+                        <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
+                          {defaultFilters.brandNames.map((brand) => (
+                            <div
+                              key={brand}
+                              className="flex items-center space-x-2"
                             >
-                              {brand}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
+                              <Checkbox
+                                id={`brand-${brand}`}
+                                checked={currentFilters.brandNames.includes(
+                                  brand
+                                )}
+                                onCheckedChange={(checked) =>
+                                  handleBrandChange(brand, !!checked)
+                                }
+                              />
+                              <Label
+                                htmlFor={`brand-${brand}`}
+                                className="font-normal"
+                              >
+                                {brand}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
 
                   {/* Price Filter */}
                   <AccordionItem value="price">
