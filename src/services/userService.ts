@@ -358,7 +358,7 @@ export async function softDeleteAccount(userId: string) {
       const userToDelete = await tx.query.users.findFirst({
         where: eq(users.id, userId),
       });
-      
+
       if (!userToDelete) {
         throw new Error(`User not found with id: ${userId}`);
       }
@@ -411,10 +411,14 @@ async function softDeleteUser(userId: string, tx?: DbTransaction) {
         email: `deleted_${userId}@deleted.com`,
         avatarUrl: "deleted",
         role: "deleted",
-        countryId: "deleted",
+        countryId: null,
         deletedAt: new Date(),
       })
-      .where(eq(users.id, userId));
+      .where(eq(users.id, userId))
+      .returning();
+
+    return softDeletedUser;
+
   } catch(error) {
     console.error(`(server) failed to soft delete user with id: ${userId}`, error);
     throw error;
@@ -439,14 +443,14 @@ async function deleteSupabaseAuthUser(userId: string, supabase: SupabaseClient) 
 async function nukeUserDependencies(userToNuke: UserModel, supabase: SupabaseClient, tx: DbTransaction) {
   try {
     const userId = userToNuke.id;
-    await deleteAvatar(userToNuke, supabase)
-      
-    await deleteAddress(userId, tx);
+    
     await softDeleteUser(userId, tx);
+    await deleteAddress(userId, tx);
     await deleteFavorites(userId, tx);
     await deleteOrderAddresses(userId, tx);
     
     await deleteSupabaseAuthUser(userId, supabase)
+    await deleteAvatar(userToNuke, supabase)
     
   } catch(error) {
     console.error(`(server) failed to nuke user dependencies`, error);
