@@ -16,6 +16,7 @@ import { Button } from "../ui/button";
 import { UserNavbarDropdown } from "./UserNavbarDropdown";
 import SearchBar from "./SearchBar";
 import { Spinner } from "../ui/spinner";
+import BrandNavItem from "./BrandNavItem";
 
 export function Navbar() {
   const { user, isLoggedIn, loading, role } = useSupabaseAuthContext();
@@ -35,9 +36,9 @@ export function Navbar() {
                   <NavigationMenuLink asChild>
                     <Link href="/watches">All Watches</Link>
                   </NavigationMenuLink>
-                  <NavigationMenuLink asChild>
+                  {/* <NavigationMenuLink asChild>
                     <Link href="/watches/new">New Arrivals</Link>
-                  </NavigationMenuLink>
+                  </NavigationMenuLink> */}
                   <NavigationMenuLink asChild>
                     <Link href="/watches/limited">Limited editions</Link>
                   </NavigationMenuLink>
@@ -45,60 +46,8 @@ export function Navbar() {
               </ul>
             </NavigationMenuContent>
           </NavigationMenuItem>
-          <NavigationMenuItem className="hidden md:block">
-            <NavigationMenuTrigger className="font-bold">
-              Brands
-            </NavigationMenuTrigger>
-            <NavigationMenuContent>
-              <ul className="grid w-[200px] gap-4">
-                <li>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      href="/watches/cartier"
-                      className="flex-row items-center gap-2"
-                    >
-                      <Image
-                        src="/brands/cartier.svg"
-                        alt="Cartier Logo"
-                        width={16}
-                        height={16}
-                      />
-                      Cartier
-                    </Link>
-                  </NavigationMenuLink>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      href="/watches/omega"
-                      className="flex-row items-center gap-2"
-                    >
-                      <Image
-                        src="/brands/omega.svg"
-                        alt="Omega Logo"
-                        width={16}
-                        height={16}
-                      />
-                      Omega
-                    </Link>
-                  </NavigationMenuLink>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      href="/watches/jaeger"
-                      className="flex-row items-center gap-2"
-                    >
-                      <Image
-                        src="/brands/jaeger.svg"
-                        alt="Jaeger LeCoultre Logo"
-                        width={16}
-                        height={16}
-                      />
-                      Jaeger LeCoultre
-                    </Link>
-                  </NavigationMenuLink>
-                </li>
-              </ul>
-            </NavigationMenuContent>
-          </NavigationMenuItem>
-          <NavigationMenuItem>
+          <BrandNavItem />
+          {/* <NavigationMenuItem>
             <NavigationMenuLink
               asChild
               className={`${navigationMenuTriggerStyle()} font-bold`}
@@ -113,7 +62,7 @@ export function Navbar() {
             >
               <Link href="/blog">Blog</Link>
             </NavigationMenuLink>
-          </NavigationMenuItem>
+          </NavigationMenuItem> */}
           <NavigationMenuItem>
             <NavigationMenuLink
               asChild

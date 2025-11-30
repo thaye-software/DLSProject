@@ -5,12 +5,13 @@ import * as schema from "./schema";
 
 // Prefer a dedicated test DB if available. Otherwise fall back to APP_ENV logic.
 const connectionString =
-  process.env.DATABASE_URL_TEST ??
-  (process.env.APP_ENV == "prod"
+  process.env.APP_ENV === "test"
+    ? process.env.DATABASE_URL_TEST
+    : process.env.APP_ENV === "prod"
     ? process.env.DATABASE_URL_PROD
-    : process.env.APP_ENV == "dev"
+    : process.env.APP_ENV === "dev"
     ? process.env.DATABASE_URL_DEV
-    : process.env.DATABASE_URL_LOCAL);
+    : process.env.DATABASE_URL_LOCAL;
 
 console.log("Database connection string:", connectionString);
 if (!connectionString) {

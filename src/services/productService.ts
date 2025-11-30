@@ -358,5 +358,9 @@ function getAppliedSerachFilters(filters: Partial<WatchFilters>) {
     appliedSearchFilters.push(lte(watches.size, Number(filters.maxSize)));
   }
 
+  if (filters.isLimited) {
+    appliedSearchFilters.push(eq(watches.limited, true));
+  }
+
   return appliedSearchFilters;
 }
