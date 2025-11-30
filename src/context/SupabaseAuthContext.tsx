@@ -13,6 +13,7 @@ interface AuthContextType {
   loading: boolean;
   isLoggedIn: boolean;
   signOut: () => Promise<void>;
+  deleteLocalData: () => void;
   refreshUser: () => Promise<void>;
 }
 
@@ -131,6 +132,14 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("avatarUrl");
   }, []);
 
+  const deleteLocalData = useCallback(() => {
+    setUser(null);
+    setAvatarUrl(null);
+    setRole(null);
+    setUsername(null);
+    localStorage.removeItem("avatarUrl");
+  }, []);
+
   const value = {
     user,
     username,
@@ -139,6 +148,7 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     loading,
     isLoggedIn: !!user,
     signOut,
+    deleteLocalData,
     refreshUser
   };
 
