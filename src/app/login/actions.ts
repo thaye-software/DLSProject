@@ -18,6 +18,7 @@ export type RegisterFormState = {
     username?: string;
     email?: string;
     password?: string;
+    redirectUrl?: string
   };
   success?: boolean;
 };
@@ -184,12 +185,12 @@ export async function register(
     return { formError: errorMsg };
   }
 
-  if(redirectUrl) {
-    revalidatePath(redirectUrl, "layout");
-    redirect(redirectUrl);
-  }
-
-  return { success: true };
+  return {
+    success: true,
+    values: { 
+      redirectUrl: redirectUrl || "/", 
+    },
+  };
 }
 
 

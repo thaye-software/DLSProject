@@ -40,19 +40,23 @@ export function LoginForm({
   const {refreshUser} = useSupabaseAuthContext();
 
   useEffect(() => {
-  if (state?.success) {
-    // Refresh user data first
-    // whenever the action state changes, stop the loading spinner
-    // this covers success and error cases (server returned)
-    refreshUser().then(() => {
-      // Then redirect after a brief moment to ensure state has updated
-      setTimeout(() => {
-        window.location.href = state.values?.redirectUrl as string;
-      }, 100);
-    });
-    setLoading(false);
-  }
-}, [state?.success, state?.values?.redirectUrl, refreshUser]);
+    if(state.formError || state.fieldErrors) {
+      setLoading(false);
+    }
+    
+    if (state?.success) {
+      // Refresh user data first
+      // whenever the action state changes, stop the loading spinner
+      // this covers success and error cases (server returned)
+      refreshUser().then(() => {
+        // Then redirect after a brief moment to ensure state has updated
+        setTimeout(() => {
+          window.location.href = state.values?.redirectUrl as string;
+        }, 100);
+      });
+      setLoading(false);
+    }
+  }, [state?.success, state?.formError, state.fieldErrors, state?.values?.redirectUrl, refreshUser]);
 
   return (
     <form
@@ -120,7 +124,7 @@ export function LoginForm({
         )}
         <Field>
           <Button type="submit" disabled={loading} aria-busy={loading}>
-            {loading ? <><Spinner /> Loading...</> : "Login"}
+            {loading ? <>Loading... <Spinner /></> : "Login"}
           </Button>
         </Field>
         <FieldSeparator />
