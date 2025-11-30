@@ -89,10 +89,6 @@ export async function deleteAddress(userId: string, tx?: DbTransaction) {
       .where(eq(addresses.userId, userId))
       .returning();
 
-    if(softDeletedAddress.length === 0 || softDeletedAddress.length > 1) {
-      throw new Error(`(server) failed to soft delete address for user with id: ${userId}`)
-    }
-
     return softDeletedAddress[0];
 
   } catch(error) {

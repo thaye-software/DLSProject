@@ -450,7 +450,10 @@ async function nukeUserDependencies(userToNuke: UserModel, supabase: SupabaseCli
     await deleteOrderAddresses(userId, tx);
     
     await deleteSupabaseAuthUser(userId, supabase)
-    await deleteAvatar(userToNuke, supabase)
+
+    if (userToNuke.avatarUrl) {
+      await deleteAvatar(userToNuke, supabase)
+    }
     
   } catch(error) {
     console.error(`(server) failed to nuke user dependencies`, error);
