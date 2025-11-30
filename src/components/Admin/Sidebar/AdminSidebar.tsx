@@ -37,14 +37,6 @@ const data = {
           title: "Brands",
           url: "/admin/masterdata/brands",
         },
-        {
-          title: "Product Safety Info",
-          url: "/admin/masterdata/product-safety-info",
-        },
-        {
-          title: "Users",
-          url: "/admin/masterdata/users",
-        }
       ],
     },
   ],

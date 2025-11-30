@@ -3,7 +3,7 @@
 import { createClient } from "@/database/supabase/client";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { persistMessage, PersistableMessage } from "@/services/messageService";
-import { getUserById } from "@/services/userService";
+import { getUserByIdAction } from "@/app/actions/user";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 
@@ -11,7 +11,7 @@ interface UseRealtimeChatProps {
   conversation: any;
   username: string;
   // Callback to notify parent (Dashboard) to update sidebar
-  onMessageReceived?: (message: ChatMessage) => void; 
+  onMessageReceived?: (message: ChatMessage) => void;
 }
 
 export interface ChatMessage {
@@ -42,7 +42,7 @@ export function useRealtimeChat({
   const supabase = createClient();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
-  
+
   // Ref to track current channel to prevent race conditions in cleanup
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
@@ -61,10 +61,10 @@ export function useRealtimeChat({
     newChannel
       .on("broadcast", { event: EVENT_MESSAGE_TYPE }, (payload) => {
         const incomingMessage = payload.payload as ChatMessage;
-        
+
         if (incomingMessage.conversationId === conversation.id) {
           setMessages((current) => [...current, incomingMessage]);
-          
+
           // Notify parent to update sidebar
           if (onMessageReceived) {
             onMessageReceived(incomingMessage);
@@ -73,8 +73,10 @@ export function useRealtimeChat({
       })
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {
+          console.log("Subscribed to channel:", channelName);
           setIsConnected(true);
         } else {
+          console.log("Unsubscribed from channel:", channelName);
           setIsConnected(false);
         }
       });
@@ -85,25 +87,25 @@ export function useRealtimeChat({
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
-      setMessages([]); 
+      setMessages([]);
     };
   }, [conversation?.id, supabase, onMessageReceived]);
 
   const sendMessage = useCallback(
     async (content: string) => {
-      // Allow sending if we have a user, even if socket momentarily disconnected (optimistic), 
+      // Allow sending if we have a user, even if socket momentarily disconnected (optimistic),
       // though usually we want to wait for connection.
       if (!conversation?.id || !user?.id) return;
 
       try {
-        const foundUser = await getUserById(user.id);
-        if(!foundUser) {
+        const foundUser = await getUserByIdAction(user.id);
+        if (!foundUser) {
           toast.error("User not found");
           return;
         }
 
         const userRole = foundUser.role;
-        
+
         const message: ChatMessage = {
           id: crypto.randomUUID(),
           conversationId: conversation.id,
@@ -122,12 +124,12 @@ export function useRealtimeChat({
 
         // Update local state
         setMessages((current) => [...current, message]);
-        
+
         // Notify Parent (Dashboard) immediately for own message too
         if (onMessageReceived) {
           onMessageReceived(message);
         }
-        
+
         // Broadcast
         if (channelRef.current && isConnected) {
           await channelRef.current.send({
@@ -136,7 +138,7 @@ export function useRealtimeChat({
             payload: message,
           });
         }
-        
+
         // Persist
         const messageToPersist: PersistableMessage = {
           conversationId: conversation.id,
@@ -146,9 +148,8 @@ export function useRealtimeChat({
           isRead: false,
           createdAt: new Date().toISOString(),
         };
-        
-        await persistMessage(messageToPersist);
 
+        await persistMessage(messageToPersist);
       } catch (error) {
         console.error("Failed to send message", error);
         toast.error("Failed to send message");
