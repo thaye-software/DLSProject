@@ -38,7 +38,7 @@ export function useRealtimeChat({
   username,
   onMessageReceived,
 }: UseRealtimeChatProps) {
-  const { user } = useSupabaseAuth();
+  const { user } = useSupabaseAuthContext();
   const supabase = useMemo(() => createClient(), []);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
