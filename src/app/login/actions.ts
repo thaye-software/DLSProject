@@ -104,14 +104,14 @@ export async function login(
   }
   
   
-  if (redirectUrl) {
-    revalidatePath(redirectUrl, "layout");
-    redirect(redirectUrl);
-
-  } else {
-    revalidatePath("/", "layout");
-    redirect("/");
-  }
+  return {
+    success: true,
+    values: { 
+      email, 
+      password, 
+      redirectUrl: redirectUrl || "/", 
+    },
+  };
 }
 
 export async function register(
