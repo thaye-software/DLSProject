@@ -275,7 +275,8 @@ export default function ShippingAndBillingForm({
         <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
             <h1 className="text-3xl font-bold text-foreground">Checkout</h1>
-            <BackButton addClassName="mb-8" />
+            {/* passing redurectUrl, to catch the edge case where a user attempts to buy a watch but has no account, so they sign in, and to avoid going back to register page, we send them back to the original page with the watch details */}
+            <BackButton addClassName="mb-8" redirectUrl={`/watches/view/${encodeURIComponent(productSlug)}`}/>
 
             <div className="grid lg:grid-cols-2 gap-8">
               {/* Left Column - Forms */}
