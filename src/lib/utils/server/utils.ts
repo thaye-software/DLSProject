@@ -10,7 +10,6 @@ export async function getLimitedWatchesUser() {
   const { user } = await getAuthUser();
 
   if(!user) {
-    console.error("(server) failed to get limited watches user")
     return null;
   }
 
