@@ -32,7 +32,7 @@ export type CountryModel = InferSelectModel<typeof countries> & {
 export type NewCountryModel = InferInsertModel<typeof countries>;
 
 export type AddressModel = InferSelectModel<typeof addresses> & {
-  user: UserModel;
+  user?: UserModel;
 };
 export type NewAddressModel = InferInsertModel<typeof addresses>;
 

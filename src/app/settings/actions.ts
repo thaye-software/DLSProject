@@ -1,5 +1,7 @@
 "use server"
 
+import { AddressModel } from "@/database/types";
+import { updateBillingAddressByUserId } from "@/services/addressService";
 import { changeAvatar, changeUsername, getUserById, initiateEmailChange, softDeleteAccount } from "@/services/userService";
 
 
@@ -49,6 +51,43 @@ function transformFormData(formData: any) {
 
     return formDataObject;
 }
+
+
+
+
+
+export interface BillingDetails {
+  firstName: string;
+  middleName?: string | null;
+  lastName: string;
+  email: string;
+  phone?: string | null;
+  address: string;
+  address2?: string | null;
+  city: string;
+  postalCode: string;
+  country: string;
+  stateProvince?: string | null;
+
+  customerId: string;
+}
+
+export async function updateBillingInfo(billingDetails: BillingDetails) {
+    try {
+        const success = await updateBillingAddressByUserId(billingDetails);
+        if(!success) {
+            throw new Error("unexpected error during update/save billing information");
+        }
+
+        return success;
+        
+    } catch(error) {
+        console.error(`failed to update/create billing address for user with id: ${billingDetails.customerId}`, error);
+        throw error;
+    }
+    
+}
+
 
 
 
