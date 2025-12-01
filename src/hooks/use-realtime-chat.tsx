@@ -47,7 +47,9 @@ export function useRealtimeChat({
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
-    console.log("useRealtimeChat: useEffect triggered", { conversationId: conversation?.id });
+    console.log("useRealtimeChat: useEffect triggered", {
+      conversationId: conversation?.id,
+    });
     if (!conversation?.id) {
       console.log("No conversation ID provided, skipping channel setup.");
       return;
@@ -64,21 +66,28 @@ export function useRealtimeChat({
     const newChannel = supabase.channel(channelName);
     channelRef.current = newChannel;
 
+    // Check if already joined (e.g. by Sidebar)
+    const isAlreadyJoined = newChannel.state === "joined";
+    if (isAlreadyJoined) {
+      console.log("Channel already joined, setting connected immediately");
+      setIsConnected(true);
+    }
+
     newChannel
-      .on("broadcast", { event: EVENT_MESSAGE_TYPE }, (payload) => {
+      .on("broadcast", { event: EVENT_MESSAGE_TYPE }, (payload: any) => {
         const incomingMessage = payload.payload as ChatMessage;
         console.log("Received broadcast message:", incomingMessage);
-        
+
         if (incomingMessage.conversationId === conversation.id) {
           setMessages((current) => [...current, incomingMessage]);
-          
+
           // Notify parent to update sidebar
           if (onMessageReceived) {
             onMessageReceived(incomingMessage);
           }
         }
       })
-      .subscribe((status) => {
+      .subscribe((status: string) => {
         console.log(`Channel ${channelName} status change:`, status);
         if (status === "SUBSCRIBED") {
           console.log("Subscribed to channel:", channelName);
@@ -92,19 +101,30 @@ export function useRealtimeChat({
     return () => {
       console.log("useRealtimeChat: cleanup");
       setIsConnected(false);
-      if (channelRef.current) {
+
+      // Only remove channel if it wasn't already joined when we got it
+      // This prevents killing the Sidebar's subscription
+      if (channelRef.current && !isAlreadyJoined) {
+        console.log("Removing channel (was not pre-joined)");
         supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
+      } else {
+        console.log("Skipping removeChannel (was pre-joined)");
       }
-      setMessages([]); 
+      channelRef.current = null;
+      setMessages([]);
     };
   }, [conversation?.id, supabase, onMessageReceived]);
 
   const sendMessage = useCallback(
     async (content: string) => {
-      console.log("sendMessage called", { content, conversationId: conversation?.id, userId: user?.id, isConnected });
+      console.log("sendMessage called", {
+        content,
+        conversationId: conversation?.id,
+        userId: user?.id,
+        isConnected,
+      });
 
-      // Allow sending if we have a user, even if socket momentarily disconnected (optimistic), 
+      // Allow sending if we have a user, even if socket momentarily disconnected (optimistic),
       // though usually we want to wait for connection.
       if (!conversation?.id || !user?.id) {
         console.warn("Cannot send message: Missing conversation ID or User ID");
@@ -156,7 +176,10 @@ export function useRealtimeChat({
             payload: message,
           });
         } else {
-          console.warn("Not broadcasting: Channel not ready or disconnected", { channel: !!channelRef.current, isConnected });
+          console.warn("Not broadcasting: Channel not ready or disconnected", {
+            channel: !!channelRef.current,
+            isConnected,
+          });
         }
 
         // Persist
