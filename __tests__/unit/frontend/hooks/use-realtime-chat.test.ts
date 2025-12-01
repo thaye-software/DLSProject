@@ -3,13 +3,13 @@ import { useRealtimeChat, ChatMessage } from '@/hooks/use-realtime-chat';
 import { createClient } from '@/database/supabase/client';
 import { getUserById } from '@/services/userService';
 import { persistMessage } from '@/services/messageService';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 
 // Mock all external dependencies
 jest.mock('@/database/supabase/client');
 jest.mock('@/services/userService');
 jest.mock('@/services/messageService');
-jest.mock('@/hooks/useSupabaseAuth');
+jest.mock('@/hooks/useSupabaseAuthContext');
 jest.mock('sonner', () => ({
   toast: {
     error: jest.fn(),
@@ -59,7 +59,7 @@ describe('useRealtimeChat', () => {
     };
 
     (createClient as jest.Mock).mockReturnValue(mockSupabase);
-    (useSupabaseAuth as jest.Mock).mockReturnValue({ user: mockUser });
+    (useSupabaseAuthContext as jest.Mock).mockReturnValue({ user: mockUser });
     (getUserById as jest.Mock).mockResolvedValue({
       id: 'user-123',
       email: 'test@example.com',

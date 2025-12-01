@@ -6,7 +6,7 @@ import ShippingAndBillingForm from "@/components/Orders/Info/ShippingAndBillingF
 
 import { getCustomerInfoByEmail } from "@/services/userService";
 
-import { getSignedInUser, getUserLocation } from "@/lib/utils/server/utils";
+import { getAuthUser, getUserLocation } from "@/lib/utils/server/utils";
 import { Suspense } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { verifyOfferToken } from "@/services/offerService";
@@ -33,10 +33,7 @@ export default async function OrdersInfoPage({
   }
 
   let state = { success: true, message: "", redirectUrl: "" };
-  const {
-    data: { user },
-    error,
-  } = await getSignedInUser();
+  const { user } = await getAuthUser();
 
   if (!user) {
     redirect(

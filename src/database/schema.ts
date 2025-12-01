@@ -114,6 +114,8 @@ export const users = pgTable(
     addressId: uuid("address_id").references(() => addresses.id, {
       onDelete: "set null",
     }),
+
+    deletedAt: timestamp("deleted_at"),
   },
   (table) => [
     index("idx_users_country").on(table.countryId),
@@ -424,14 +426,18 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     fields: [users.addressId],
     references: [addresses.id],
   }),
+  addresses: many(addresses),
   orders: many(orders),
   blogPosts: many(blogPosts),
   conversations: many(conversations),
   sentMessages: many(messages),
 }));
 
-export const addressesRelations = relations(addresses, ({ many }) => ({
-  users: many(users),
+export const addressesRelations = relations(addresses, ({ one, many }) => ({
+  user: one(users, {
+    fields: [addresses.userId],
+    references: [users.id],
+  }),
 }));
 
 export const productsRelations = relations(products, ({ one, many }) => ({

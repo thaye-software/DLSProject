@@ -7,7 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 import { LogOut, Scroll, Settings, Truck, User } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -15,7 +15,7 @@ import { Avatar } from "../ui/avatar";
 import { AvatarImage } from "@radix-ui/react-avatar";
 
 export function UserNavbarDropdown() {
-  const { user, signOut, avatarUrl, role } = useSupabaseAuth();
+  const { user, signOut, avatarUrl, role } = useSupabaseAuthContext();
 
   function handleSignOut() {
     signOut();

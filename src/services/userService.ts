@@ -2,12 +2,16 @@
 
 import { eq } from "drizzle-orm";
 
-import { db } from "@/database/drizzle";
+import { db, DbTransaction } from "@/database/drizzle";
 import { users } from "@/database/schema";
-import { NewUserModel } from "@/database/types";
+import { NewUserModel, UserModel } from "@/database/types";
 import { createClient } from "@/database/supabase/server";
 
 import { CustomerNameAndPhone } from "@/app/orders/actions"
+import { SupabaseClient } from "@supabase/supabase-js";
+import { deleteAddress } from "./addressService";
+import { deleteFavorites } from "./favoriteService";
+import { deleteOrderAddresses } from "./orderAddressService";
 
 
 
@@ -163,6 +167,12 @@ export async function getCustomerInfoByEmail(email: string): Promise<CustomerInf
   }
 }
 
+
+
+
+
+
+
 export async function createUser(user: NewUserModel) {
   // check if user with the same username already exists
   const existingUser = await db
@@ -201,7 +211,6 @@ export async function createUser(user: NewUserModel) {
   }
 }
 
-
 export async function saveCustomerNameAndPhone(customerInfo: CustomerNameAndPhone): Promise<void> {
   try {
     await db.update(users).set({
@@ -217,6 +226,112 @@ export async function saveCustomerNameAndPhone(customerInfo: CustomerNameAndPhon
     throw error;
   }
 }
+
+
+
+
+
+
+
+export async function changeUsername(userId: string, newUsername: string) {
+  try {
+    const updatedLimitedWatchesUser = await db
+      .update(users)
+      .set({username: newUsername})
+      .where(eq(users.id, userId))
+      .returning();
+
+    if(!updatedLimitedWatchesUser[0]) {
+      throw new Error(`(server) failed to update username for user with id: ${userId} for the limited watches user table`);
+    }
+
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.updateUser({
+      data: { display_name: newUsername }
+    });
+    const updatedAuthUser = data.user;
+
+    if(error) {
+      console.error(`(server) failed to update username/display_name for supabase auth user`, error);
+      throw error;
+    }
+
+    return {updatedLimitedWatchesUser, updatedAuthUser};
+
+  } catch(error) {
+    console.error(`(server) failed to upadte customer username to: ${newUsername}`, error);
+  }
+}
+
+export async function initiateEmailChange(userId: string, newEmail: string) {
+  try {
+    const supabase = await createClient();
+    
+    // This sends a confirmation email to the NEW email address
+    // Once email gets confirmed the new email will get synced with public.users ie. limitecwatches users table
+    const { error } = await supabase.auth.updateUser({
+      email: newEmail
+    });
+
+    if (error) {
+      console.error(`(server) failed to initiate email change for auth user: ${userId}`, error);
+      throw error;
+    }
+
+    return true;
+    
+  } catch (error) {
+    console.error(`(server) failed to initiate email change for user: ${userId}`, error);
+    throw error;
+  }
+}
+
+export async function changePassword(newPassword: string) {
+  try{
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+    const updatedAuthUser = data.user;
+
+    if(error) {
+      console.error(`(server) error happen on the side of supabase, could not change password`);
+      throw error;
+    }
+    
+    return updatedAuthUser;
+
+  }catch (error) {
+    console.error(`(server) failed to change password`, error);
+    throw error;
+  }
+}
+
+//this actually also "creates a new" upload avatar, always overwrites the old one.
+export async function changeAvatar(userId: string, newAvatarUrl: string) {
+  try {
+    const updatedUser = await db
+      .update(users)
+      .set({avatarUrl: newAvatarUrl})
+      .where(eq(users.id, userId))
+      .returning();
+
+    if(updatedUser.length === 0 || updatedUser.length > 1) {
+      throw new Error("(server) failed to update user, or updated multple users");
+    }
+
+    return updatedUser[0];
+
+  } catch (error) {
+    console.error("(server) failed to save new avatar url", error)
+    throw error;
+  }
+}
+
+
+
+
+
 
 export async function deleteCustomerNameAndPhone(customerId: string) {
   try {
@@ -234,16 +349,133 @@ export async function deleteCustomerNameAndPhone(customerId: string) {
   }
 }
 
-export async function updatePassword(newPassword: string) {
-  const supabase = await createClient();
+export async function softDeleteAccount(userId: string) {
   try {
-    const { data, error } = await supabase.auth.updateUser({
-      password: newPassword
-    });
-    return data;
+    const supabase = await createClient();
+    
+    const result = await db.transaction(async (tx) => {
+    
+      const userToDelete = await tx.query.users.findFirst({
+        where: eq(users.id, userId),
+      });
+
+      if (!userToDelete) {
+        throw new Error(`User not found with id: ${userId}`);
+      }
+
+      await nukeUserDependencies(userToDelete, supabase, tx);
+      
+      return true;
+    })
+
+    return result;
 
   } catch (error) {
-    console.error("(server) failed to update user password...", error);
+    console.error(`Failed to delete account for user ${userId}:`, error);
     throw error;
   }
+}
+
+export async function deleteAvatar(userToDelete: UserModel, supabase: SupabaseClient) {
+  try{
+
+    const fileExtention = extractExtension(userToDelete.avatarUrl as string);
+ 
+    const fileName = `${userToDelete.id}.${fileExtention}`;
+    const { error } = await supabase.storage
+      .from("avatars")
+      .remove([fileName]);
+    
+    if (error) {
+      console.error("Failed to delete avatar:", error);
+      throw new Error("Failed to delete avatar");
+    }
+
+  } catch (error) {
+    console.log("(server) failed to delete avatar from supabase buckets");
+    throw error;
+  }
+}
+
+async function softDeleteUser(userId: string, tx?: DbTransaction) {
+  try {
+    const dbContext = tx || db;
+    const softDeletedUser = await dbContext
+      .update(users)
+      .set({
+        username: `deleted_${userId}`,
+        firstName: "deleted",
+        middleName: "deleted",
+        lastName: "deleted",
+        phone: "deleted",
+        email: `deleted_${userId}@deleted.com`,
+        avatarUrl: "deleted",
+        role: "deleted",
+        countryId: null,
+        deletedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning();
+
+    return softDeletedUser;
+
+  } catch(error) {
+    console.error(`(server) failed to soft delete user with id: ${userId}`, error);
+    throw error;
+  } 
+}
+
+async function deleteSupabaseAuthUser(userId: string, supabase: SupabaseClient) {
+  try {
+    const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+    
+    if (authError) {
+      console.error("Failed to delete supabase auth user:", authError);
+      throw authError;
+    }
+
+  }catch(error) {
+    console.error(`(server) failed to delete supabase auth user`, error); 
+    throw error;
+  }
+}
+
+async function nukeUserDependencies(userToNuke: UserModel, supabase: SupabaseClient, tx: DbTransaction) {
+  try {
+    const userId = userToNuke.id;
+    
+    await softDeleteUser(userId, tx);
+    await deleteAddress(userId, tx);
+    await deleteFavorites(userId, tx);
+    await deleteOrderAddresses(userId, tx);
+    
+    await deleteSupabaseAuthUser(userId, supabase)
+
+    if (userToNuke.avatarUrl) {
+      await deleteAvatar(userToNuke, supabase)
+    }
+    
+  } catch(error) {
+    console.error(`(server) failed to nuke user dependencies`, error);
+    throw error;
+  }
+} 
+
+
+
+
+
+
+
+
+//----------------------------- helper function -----------------------------
+function extractExtension(url: string): string | null {
+  // Get the part before any query parameters ex: https://jnthehekxywelxnpuplb.supabase.co/storage/v1/object/public/avatars/4ffb1ffc-6ce3-4f31-b42a-03805a0032f5.jpg?updated=1764431609344
+  const cleanUrl = url.split("?")[0];
+  const fileExtention = cleanUrl.split(".").pop()?.toLowerCase();
+
+  const supportedExtentions = ["jpg", "jpeg", "png"];
+
+  const extractedExtension = supportedExtentions.includes(fileExtention as string) ? fileExtention as string : null;
+  return extractedExtension;
 }

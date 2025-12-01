@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import AccountTab from "./AccountTab";
+import AccountTab from "./AccountTab/AccountTab";
 import FavoritesTab from "./FavoritesTab";
 import PasswordTab from "./PasswordTab";
 import NotificationsTab from "./NotificationsTab";
@@ -47,6 +47,7 @@ export function SettingsTabs() {
             Notifications
           </TabsTrigger>
         </TabsList>
+        
         <TabsContent value="account">
           <AccountTab />
         </TabsContent>

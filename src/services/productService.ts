@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@/database/drizzle";
+import { db, DbTransaction } from "@/database/drizzle";
 import { products, brands, watches, productImages } from "@/database/schema.ts";
 import { NewProductModel, ProductModel } from "@/database/types";
 
@@ -8,7 +8,7 @@ import { Product } from "../app/watches/type";
 import { and, gte, lte, inArray, eq, desc, asc, sql, gt } from "drizzle-orm";
 import { WatchFilters } from "@/components/Watches/Filters/ProductFilterSheet";
 
-type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 
 export async function getProductBySlug(
   watchSlug: string

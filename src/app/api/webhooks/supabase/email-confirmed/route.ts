@@ -1,0 +1,78 @@
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/database/drizzle";
+import { users } from "@/database/schema";
+import { eq } from "drizzle-orm";
+
+
+
+export async function POST(request: NextRequest) {
+
+  try {
+    const payload = await validateSupabaseWebhookCall(request);
+
+    const newEmail = payload.record.email;
+    const oldEmail = payload.old_record.email;
+    const userId = payload.record.id;
+
+
+    if (newEmail === oldEmail) {
+      throw new Error(`(server) detected no changes to the email`);
+    }
+
+    const updatedLimitedWatchesUser = await db
+      .update(users)
+      .set({email: newEmail})
+      .where(eq(users.id, userId))
+      .returning();
+
+    if (updatedLimitedWatchesUser.length === 0) {
+      console.error(`User ${userId} not found in database`);
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      message: "Email synced successfully",
+      data: updatedLimitedWatchesUser
+    });
+
+
+  } catch (error) {
+    console.error("Webhook processing error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+
+
+//-------------------------------------------- helper function --------------------------------------------
+
+async function validateSupabaseWebhookCall(request: NextRequest) {
+
+  const env = process.env.APP_ENV!.toLowerCase();
+  const webhookSecret = env == "prod" ? process.env.SUPABASE_WEBHOOK_SECRET_PROD! : env == "dev" ? process.env.SUPABASE_WEBHOOK_SECRET_DEV! : process.env.SUPABASE_WEBHOOK_SECRET_LOCAL!
+  if (!webhookSecret) {
+    console.error("SUPABASE_WEBHOOK_SECRET not configured");
+    return NextResponse.json(
+      { error: "Webhook not configured" },
+      { status: 500 }
+    );
+  }
+    
+  const incomingSecret = request.headers.get("x-supabasewebhook-secret");
+  if (incomingSecret !== webhookSecret) {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
+
+  const payload = await request.json();
+  if (payload.eventType !== "UPDATE" || payload.table !== "users") {
+    throw new Error(`(server) unexpected error, reciveced webhook call from supabase, eventhough either no UPDATE or table that triggered was not users table`)
+  }
+
+  return payload;
+}

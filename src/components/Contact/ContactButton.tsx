@@ -1,13 +1,13 @@
 "use client";
 
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 import { Button } from "../ui/button";
 import { redirect } from "next/navigation";
 import { createConversation } from "@/services/conversationService";
 import { useChatContext } from "@/context/ChatContext";
 
 export default function ContactButton({ productId }: { productId?: string }) {
-  const { user } = useSupabaseAuth();
+  const { user } = useSupabaseAuthContext();
   const { setChatOpen, setInitialConversation } = useChatContext();
 
   async function handleContactClick() {

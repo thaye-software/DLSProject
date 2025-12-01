@@ -18,6 +18,7 @@ export type RegisterFormState = {
     username?: string;
     email?: string;
     password?: string;
+    redirectUrl?: string
   };
   success?: boolean;
 };
@@ -104,14 +105,14 @@ export async function login(
   }
   
   
-  if (redirectUrl) {
-    revalidatePath(redirectUrl, "layout");
-    redirect(redirectUrl);
-
-  } else {
-    revalidatePath("/", "layout");
-    redirect("/");
-  }
+  return {
+    success: true,
+    values: { 
+      email, 
+      password, 
+      redirectUrl: redirectUrl || "/", 
+    },
+  };
 }
 
 export async function register(
@@ -184,12 +185,12 @@ export async function register(
     return { formError: errorMsg };
   }
 
-  if(redirectUrl) {
-    revalidatePath(redirectUrl, "layout");
-    redirect(redirectUrl);
-  }
-
-  return { success: true };
+  return {
+    success: true,
+    values: { 
+      redirectUrl: redirectUrl || "/", 
+    },
+  };
 }
 
 

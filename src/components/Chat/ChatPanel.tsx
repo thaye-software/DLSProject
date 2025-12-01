@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { RealtimeChat } from "./RealtimeChat";
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 import { Item } from "../ui/item";
 import Image from "next/image";
 import Link from "next/link";

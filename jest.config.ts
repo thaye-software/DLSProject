@@ -5,7 +5,7 @@ const createJestConfig = nextJest({
   dir: './',
 })
  
-const config: Config = {
+const customJestConfig: Config = {
   coverageProvider: 'v8',
   testEnvironment: 'jsdom',
 
@@ -23,4 +23,4 @@ const config: Config = {
   },
 }
  
-export default createJestConfig(config)
+export default createJestConfig(customJestConfig)

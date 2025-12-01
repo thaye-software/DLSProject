@@ -5,30 +5,15 @@ import { headers } from "next/headers";
 import { createClient } from "@/database/supabase/server";
 import { getUserById } from "@/services/userService";
 
-export async function getSignedInUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  return { data: { user }, error };
-}
 
 export async function getLimitedWatchesUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  const { user } = await getAuthUser();
 
-  if(error) {
-    console.error("(server) failed to get limited watches user", error)
+  if(!user) {
     return null;
   }
 
   const limitedWatchesUser = await getUserById(user?.id as string);
-
   return limitedWatchesUser;
 }
 
@@ -38,15 +23,18 @@ export async function getAuthUser() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
   if (!user) {
     loading = false;
     return { user: null, loading, role: null, avatarUrl: null, username: null };
   }
+
   const username = user.user_metadata?.display_name || null;
   const dbUser = await getUserById(user.id);
   const role = dbUser ? dbUser.role : null;
   const avatarUrl = dbUser ? dbUser.avatarUrl : null;
   loading = false;
+
   return { user, loading, role, avatarUrl, username };
 }
 

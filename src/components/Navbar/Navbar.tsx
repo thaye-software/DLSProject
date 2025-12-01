@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { User as UserIcon } from "lucide-react";
 import Image from "next/image";
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 
 import {
   NavigationMenu,
@@ -19,7 +19,7 @@ import { Spinner } from "../ui/spinner";
 import BrandNavItem from "./BrandNavItem";
 
 export function Navbar() {
-  const { user, isLoggedIn, loading, role } = useSupabaseAuth();
+  const { user, isLoggedIn, loading, role } = useSupabaseAuthContext();
 
   return (
     <div className="flex justify-between items-center ">

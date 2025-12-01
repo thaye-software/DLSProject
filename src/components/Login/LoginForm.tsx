@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/tailwindUtils";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +13,7 @@ import { Spinner } from "../ui/spinner";
 
 import { login, type LoginFormState } from "@/app/login/actions";
 import { useActionState } from "react";
+import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 
 function toggleLoginState(
   isLogin: boolean,
@@ -33,17 +33,30 @@ export function LoginForm({
   setIsLogin: (isLogin: boolean) => void;
   redirectUrl?: string;
 }) {
-  const router = useRouter();
   const initialState: LoginFormState = {};
   const [state, formAction] = useActionState(login, initialState);
   const [loading, setLoading] = useState(false);
 
+  const {refreshUser} = useSupabaseAuthContext();
+
   useEffect(() => {
-    // whenever the action state changes, stop the loading spinner
-    // this covers success and error cases (server returned)
-    setLoading(false);
+    if(state.formError || state.fieldErrors) {
+      setLoading(false);
+    }
     
-  }, [state]);
+    if (state?.success) {
+      // Refresh user data first
+      // whenever the action state changes, stop the loading spinner
+      // this covers success and error cases (server returned)
+      refreshUser().then(() => {
+        // Then redirect after a brief moment to ensure state has updated
+        setTimeout(() => {
+          window.location.href = state.values?.redirectUrl as string;
+        }, 100);
+      });
+      setLoading(false);
+    }
+  }, [state?.success, state?.formError, state.fieldErrors, state?.values?.redirectUrl, refreshUser]);
 
   return (
     <form
@@ -111,7 +124,7 @@ export function LoginForm({
         )}
         <Field>
           <Button type="submit" disabled={loading} aria-busy={loading}>
-            {loading ? <><Spinner /> Loading...</> : "Login"}
+            {loading ? <>Loading... <Spinner /></> : "Login"}
           </Button>
         </Field>
         <FieldSeparator />

@@ -4,13 +4,13 @@
 import { useEffect } from "react";
 import { createClient } from "@/database/supabase/client";
 import { useUnreadMessagesContext } from "@/context/UnreadMessagesContext";
-import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 import type { ConversationModel } from "@/database/types";
 import { ChatMessage } from "@/hooks/use-realtime-chat";
 
 export function useRealtimeConversations(initialConversations: ConversationModel[]) {
   const supabase = createClient();
-  const { user } = useSupabaseAuth();
+  const { user } = useSupabaseAuthContext();
   
   // Destructure the new helper from context
   const { setUnreadCounts, addRealtimeMessage } = useUnreadMessagesContext();
