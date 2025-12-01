@@ -12,7 +12,7 @@ import { loadStripe } from "@stripe/stripe-js"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
-import { baseUrl } from "@/lib/tailwindUtils"
+import { baseUrl } from "@/lib/utils/client/utils"
 import { toast } from "sonner"
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)

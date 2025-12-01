@@ -6,7 +6,6 @@ import { NextRequest, NextResponse } from "next/server";
 export async function PATCH(req: NextRequest) {
   try {
 
-    //TODO implemented HMAC signatures (Hash-based Message Authentication Codes) basicly stronger auth
     const secret = req.headers.get("x-limitedwatches-secret");
     if (secret !== process.env.LIMITED_WATCHES_WEBHOOK_SECRET!) {
       return new NextResponse("Unauthorized", { status: 401 });

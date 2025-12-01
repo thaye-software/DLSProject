@@ -1,14 +1,16 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { RegisterSchema, LoginSchema } from "./validation";
+
+import { createUser } from "@/services/userService";
 
 import { createClient } from "@/database/supabase/server";
-import { RegisterSchema, LoginSchema } from "./validation";
-import { createUser } from "@/services/userService";
-import posthog from "posthog-js";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+import { baseUrl } from "@/lib/utils/client/utils";
+
+
+
+
 
 
 export type RegisterFormState = {

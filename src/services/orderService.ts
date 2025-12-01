@@ -26,8 +26,6 @@ export async function createOrder(
       // If customer already has a pending order return early (it will only be pending for 30min)
       const foundOrderId = await doesCustomerHasExistingOrder(orderDetails, newBillingAddress, newShippingAddress, tx)
       if(foundOrderId) return foundOrderId;
-      
-      console.log("should ghit")
 
       const foundProduct = await getProductById(orderDetails.productId, tx);
       if(!foundProduct) throw new Error(`(server) no product found with id: ${orderDetails.productId}`)
