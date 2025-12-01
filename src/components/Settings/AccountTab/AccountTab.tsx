@@ -10,12 +10,69 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 
 import DeleteAccount from "./DeleteAccount";
 import AccountDetails from "./AccountDetails";
+import BillingForm from "@/components/Orders/Info/BillingForm";
+import { useEffect, useState } from "react";
+import { CustomerInfo } from "@/services/userService";
+import { getUserLocationAction } from "@/app/actions/location";
+import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
+import { getUserByEmailAction, getUserByIdAction } from "@/app/actions/user";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Spinner } from "@/components/ui/spinner";
 
 
 
 
 
 export default function AccountTab() {
+  const router = useRouter();
+
+  // 1. Get the loading state from your hook
+  const { user, loading } = useSupabaseAuthContext(); 
+
+  const [customer, setCustomer] = useState<CustomerInfo | null>(null);
+  const [customerGeoLocation, setCustomerGeoLocation] = useState<string>("");
+
+  useEffect(() => {
+    // 2. If auth is still loading, DO NOTHING. Return early.
+    if (loading) return;
+
+    async function getCustomerData() {
+      try {
+        // 3. Now that loading is false, if user is STILL null, then redirect.
+        if (!user) {
+          router.push(`/login?redirect=${encodeURIComponent("/settings")}`);
+          return;
+        }
+
+        const userGeoLocationData = await getUserLocationAction();
+        const countryName = userGeoLocationData.country;
+        setCustomerGeoLocation(countryName);
+        
+        // user.email is now safe to access because we passed the checks above
+        const foundCustomer = await getUserByEmailAction(user.email as string);
+        console.log("asdasd",foundCustomer)
+        if (!foundCustomer) return;
+        setCustomer(foundCustomer);
+
+      } catch (error) {
+        if (error instanceof Error) {
+          toast.error(error.message);
+        } else {
+          toast.error("An unexpected error occurred");
+        }
+      }
+    }
+
+    getCustomerData();
+
+  }, [user, loading, router]); // 4. Add isLoading to dependency array
+
+  // Optional: Return a spinner while loading so the UI doesn't flash empty
+  if (loading) {
+    return <div>Loading account... <Spinner/> </div>; 
+  }
+
 
   return (
     <div className="container p-6 space-y-6">
@@ -30,34 +87,11 @@ export default function AccountTab() {
 
         <AccountDetails/>
 
-{/* TODO replace with billing infomation */}
-        {/* Security */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Lock className="h-5 w-5" />
-              <CardTitle>Security</CardTitle>
-            </div>
-            <CardDescription>Manage your password and account security</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-3">
-              <Label htmlFor="current-password">Current Password</Label>
-              <Input id="current-password" type="password" placeholder="Enter current password" />
-            </div>
-            <div className="grid gap-3">
-              <Label htmlFor="new-password">New Password</Label>
-              <Input id="new-password" type="password" placeholder="Enter new password" />
-            </div>
-            <div className="grid gap-3">
-              <Label htmlFor="confirm-password">Confirm New Password</Label>
-              <Input id="confirm-password" type="password" placeholder="Confirm new password" />
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button>Update Password</Button>
-          </CardFooter>
-        </Card>
+        <BillingForm
+          key={customer?.id ?? "loading"}
+          customer={customer as CustomerInfo}
+          customerGeoLocation={customerGeoLocation}
+        />
       </div>
 
       <DeleteAccount/>
