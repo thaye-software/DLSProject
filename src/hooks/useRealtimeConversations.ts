@@ -26,7 +26,7 @@ export function useRealtimeConversations(initialConversations: ConversationModel
       const channel = supabase.channel(channelName);
 
       channel
-        .on("broadcast", { event: "message" }, (payload) => {
+        .on("broadcast", { event: "message" }, (payload: any) => {
           const incomingMessage = payload.payload as ChatMessage;
 
           if (incomingMessage.conversationId === conv.id) {
