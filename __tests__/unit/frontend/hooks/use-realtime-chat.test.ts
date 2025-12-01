@@ -9,7 +9,7 @@ import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 jest.mock('@/database/supabase/client');
 jest.mock('@/services/userService');
 jest.mock('@/services/messageService');
-jest.mock('@/context/useSupabaseAuthContext');
+jest.mock('@/context/SupabaseAuthContext');
 jest.mock('sonner', () => ({
   toast: {
     error: jest.fn(),
