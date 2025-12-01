@@ -147,7 +147,7 @@ export default function ShippingAndBillingForm({
       const allCountries: CountryModel[] = await getAllCountries();
       setCountries(allCountries);
       const foundCountry = allCountries.find(
-        (country) => country.abbreviation === customerGeoLocation
+        (country) => country.abbreviation === customerUpdated.country?.abbreviation
       );
       if (foundCountry) setSelectedCountry(foundCountry);
     }
@@ -344,7 +344,7 @@ export default function ShippingAndBillingForm({
                         </div>
                       </div>
 
-                      <div className="space-y-2">
+                      <div className="space-y-2"> 
                         <Label htmlFor="email">Email*</Label>
                         <Input
                           id="email"
