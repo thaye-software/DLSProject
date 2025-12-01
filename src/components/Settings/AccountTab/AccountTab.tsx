@@ -27,19 +27,17 @@ import { Spinner } from "@/components/ui/spinner";
 export default function AccountTab() {
   const router = useRouter();
 
-  // 1. Get the loading state from your hook
   const { user, loading } = useSupabaseAuthContext(); 
 
   const [customer, setCustomer] = useState<CustomerInfo | null>(null);
   const [customerGeoLocation, setCustomerGeoLocation] = useState<string>("");
 
   useEffect(() => {
-    // 2. If auth is still loading, DO NOTHING. Return early.
+    // we want to return early if the useSupabaseAuthContext have yet to set and fetch the user data, before user would just be null causing race condition.
     if (loading) return;
 
     async function getCustomerData() {
       try {
-        // 3. Now that loading is false, if user is STILL null, then redirect.
         if (!user) {
           router.push(`/login?redirect=${encodeURIComponent("/settings")}`);
           return;
@@ -49,7 +47,6 @@ export default function AccountTab() {
         const countryName = userGeoLocationData.country;
         setCustomerGeoLocation(countryName);
         
-        // user.email is now safe to access because we passed the checks above
         const foundCustomer = await getUserByEmailAction(user.email as string);
         console.log("asdasd",foundCustomer)
         if (!foundCustomer) return;
@@ -66,11 +63,14 @@ export default function AccountTab() {
 
     getCustomerData();
 
-  }, [user, loading, router]); // 4. Add isLoading to dependency array
+  }, [user, loading, router]);
 
-  // Optional: Return a spinner while loading so the UI doesn't flash empty
   if (loading) {
-    return <div>Loading account... <Spinner/> </div>; 
+    return (
+      <div className="flex justify-center items-center mt-24">
+        Loading account... <Spinner />
+      </div>
+    ); 
   }
 
 
@@ -88,7 +88,7 @@ export default function AccountTab() {
         <AccountDetails/>
 
         <BillingForm
-          key={customer?.id ?? "loading"}
+          key={customer?.id ?? "loading"} // argument key, ensures that BillingForm will be mounted correctly with customer data, initially customer is null, but as soon as customer is loaded key changes forcing react to destroy and recreate passing customer data, ensuring sync data.
           customer={customer as CustomerInfo}
           customerGeoLocation={customerGeoLocation}
         />
