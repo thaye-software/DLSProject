@@ -24,9 +24,11 @@ import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 import { softDeleteAccountAction } from "@/app/settings/actions";
 import { Spinner } from "@/components/ui/spinner";
 
+
+
 export default function DeleteAccount() {
   const router = useRouter();
-  const { user, deleteLocalData } = useSupabaseAuthContext();
+  const { user, signOut } = useSupabaseAuthContext();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
@@ -47,11 +49,13 @@ export default function DeleteAccount() {
 
         const success = await softDeleteAccountAction(user?.id as string);
         if (success) {
-            deleteLocalData();
-            
+            await signOut();
+
             toast.success("Your account has been successfully deleted");
-            setIsDialogOpen(false);
-            router.push("/");
+            
+            setTimeout(() => {
+              router.push("/");
+            }, 10);
         }
 
     } catch (error) {

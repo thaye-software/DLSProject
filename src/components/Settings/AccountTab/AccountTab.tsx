@@ -1,12 +1,7 @@
 "use client"
 
-import {Lock } from "lucide-react";
 
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 import DeleteAccount from "./DeleteAccount";
 import AccountDetails from "./AccountDetails";
