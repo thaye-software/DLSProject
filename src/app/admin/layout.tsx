@@ -14,6 +14,7 @@ import { UnreadMessagesProvider } from "@/context/UnreadMessagesContext";
 
 import { getAuthUser } from "@/lib/utils/server/utils";
 import { ModeToggle } from "@/components/Navbar/ModeToggle";
+import { UserNavbarDropdown } from "@/components/Navbar/UserNavbarDropdown";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +55,10 @@ export default async function AdminLayout({
                   />
               </div>
 
-              <ModeToggle />
+              <div className="flex items-center justify-center gap-2">
+                <ModeToggle />
+                <UserNavbarDropdown />
+              </div>
             </div>
           </header>
           <main className="p-6">{children}</main>
