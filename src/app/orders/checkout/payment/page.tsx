@@ -18,7 +18,7 @@ import Image from "next/image";
 import ToastWrapper from "@/components/Toast/ToastWrapper";
 import { Suspense } from "react";
 import { Spinner } from "@/components/ui/spinner";
-import BackButton from "@/components/BackButton";
+import BackButton from "@/components/Miscellaneous/BackButton";
 import { calculateVAT } from "@/lib/priceUtils";
 import { redirect } from 'next/navigation'
 

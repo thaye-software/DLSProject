@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import { ArrowLeft } from 'lucide-react';
 
 export default function BackButton({addClassName, redirectUrl}: {addClassName?: string, redirectUrl?: string}) {
