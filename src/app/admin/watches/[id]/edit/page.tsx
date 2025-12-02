@@ -1,6 +1,6 @@
 import { getProductById } from "@/services/productService";
 import Link from "next/link";
-import CreateWatchForm from "@/components/Admin/Watch/CreateWatchForm";
+import CreateWatchForm from "@/components/Admin/Watches/CreateWatchForm";
 import { getAllBrands } from "@/services/brandService";
 import { Suspense } from "react";
 
