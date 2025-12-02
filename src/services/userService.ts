@@ -3,7 +3,7 @@
 import { eq } from "drizzle-orm";
 
 import { db, DbTransaction } from "@/database/drizzle";
-import { users } from "@/database/schema";
+import { orders, users } from "@/database/schema";
 import { NewUserModel, UserModel } from "@/database/types";
 import { createClient } from "@/lib/supabase/server";
 
@@ -165,6 +165,20 @@ export async function getCustomerInfoByEmail(email: string): Promise<CustomerInf
     console.error(error)
     throw error;
   }
+}
+
+// users/customer who have completed orders
+export async function getAllUniqueCustomers() {
+  const customers = await db.query.users.findMany({
+    where: eq(users.role, "customer"),
+    with: {
+      orders: {
+        where: eq(orders.status, "COMPLETED"),
+      },
+    },
+  });
+
+  return customers.filter(c => c.orders.length > 0).length;
 }
 
 

@@ -90,6 +90,22 @@ export async function getAllProducts(): Promise<ProductModel[]> {
   }
 }
 
+export async function getTotalProductStock() {
+  try {
+    const totalStock = await db
+      .select({
+        total: sql<number>`SUM(${products.stock})`,
+      })
+      .from(products);
+
+    return totalStock[0].total;
+
+  } catch (error) {
+    console.error("(server) failed to get total product stock", error);
+    throw error;
+  }
+} 
+
 export async function getFilteredProducts(
   filters: Partial<WatchFilters>
 ): Promise<Product[]> {
@@ -298,7 +314,7 @@ export async function checkAndUpdateProductStock(
     const result = await dbContext
       .update(products)
       .set({
-        stock: sql`${products.stock} - 1`,
+        stock: sql`${products.stock} - 1`, // hardcoded 1 since requirment that customer can only buy one watch at a time.
       })
       .where(and(eq(products.id, productId), gt(products.stock, 0)))
       .returning({ updatedStock: products.stock });
@@ -310,6 +326,53 @@ export async function checkAndUpdateProductStock(
     throw error;
   }
 }
+
+
+
+
+
+export async function updateProductStock(
+  productId: string,
+  quantity: number,
+  tx?: DbTransaction,
+  isIncrement: boolean = true
+) {
+  if (quantity <= 0) {
+    throw new Error("Quantity must be a positive number.");
+  }
+
+  const dbContext = tx || db;
+
+  try {
+    const updatedProduct = await dbContext
+      .update(products)
+      .set({
+        stock: isIncrement
+          ? sql`${products.stock} + ${quantity}`
+          : sql`${products.stock} - ${quantity}`
+      })
+      .where(eq(products.id, productId))
+      .returning();
+
+      
+    const product = updatedProduct[0];
+    if (!product) {
+      throw new Error("Product not found");
+    }
+
+    if (product.stock < 0) {
+      throw new Error("Stock update resulted in negative stock");
+    }
+
+    return product;
+
+  } catch (error) {
+    console.error("Failed to update product stock:", error);
+    throw error;
+  }
+}
+
+
 
 //------------------------------------------ helper functions ------------------------------------------
 function getAppliedSerachFilters(filters: Partial<WatchFilters>) {
