@@ -1,4 +1,4 @@
-import { BrandTable } from "@/components/Admin/BrandTable";
+import { BrandTable } from "@/components/Admin/Brands/BrandTable";
 import { getAllBrands } from "@/services/brandService";
 import { getAllProducts } from "@/services/productService";
 

@@ -6,13 +6,18 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { AdminSidebar } from "@/components/Admin/Sidebar/AdminSidebar";
 import { Separator } from "@/components/ui/separator";
 
-import { getAuthUser } from "@/lib/utils/server/utils";
+import { AdminSidebar } from "@/components/Admin/Sidebar/AdminSidebar";
+
 import { UnreadMessagesProvider } from "@/context/UnreadMessagesContext";
 
+import { getAuthUser } from "@/lib/utils/server/utils";
+import { ModeToggle } from "@/components/Navbar/ModeToggle";
+
 export const dynamic = "force-dynamic";
+
+
 
 export default async function AdminLayout({
   children,
@@ -40,11 +45,17 @@ export default async function AdminLayout({
         <AdminSidebar />
         <SidebarInset>
           <header className="flex h-16 shrink-0 items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator
-              orientation="vertical"
-              className="mr-2 data-[orientation=vertical]:h-4"
-              />
+            <div className="flex justify-between w-full items-center">
+              <div className="flex items-center justify-center">
+                <SidebarTrigger className="-ml-1" />
+                <Separator
+                  orientation="vertical"
+                  className="mr-2 data-[orientation=vertical]:h-4"
+                  />
+              </div>
+
+              <ModeToggle />
+            </div>
           </header>
           <main className="p-6">{children}</main>
         </SidebarInset>

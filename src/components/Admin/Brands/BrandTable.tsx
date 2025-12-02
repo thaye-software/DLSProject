@@ -1,4 +1,7 @@
 "use client";
+
+import { useState } from "react";
+
 import {
   Table,
   TableBody,
@@ -7,10 +10,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "../ui/button";
-import { EditBrandDialog } from "./EditBrandDialog";
-import { AddBrandDialog } from "./Brands/AddBrandDialog";
-import { useState } from "react";
+
+import { AddBrandDialog } from "@/components/Admin/Brands/AddBrandDialog";
+import { EditBrandDialog } from "@/components/Admin/Brands/EditBrandDialog";
+
+
 
 export function BrandTable({ initialBrands, initialProducts }: { initialBrands: any[]; initialProducts: any[] }) {
   const [brands, setBrands] = useState(initialBrands);
