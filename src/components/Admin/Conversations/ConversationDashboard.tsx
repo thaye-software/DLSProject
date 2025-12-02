@@ -17,7 +17,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 
 import type { ConversationModel } from "@/database/types";
 
-import { ChatMessage } from "@/hooks/use-realtime-chat";
+import { ChatMessage } from "@/hooks/useRealtimeChat";
 import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 import useSyncUnreadCounts from "@/hooks/conversation-dashboard/useSyncUnreadCounts";
 import useUIConversations from "@/hooks/conversation-dashboard/useUIConversations";

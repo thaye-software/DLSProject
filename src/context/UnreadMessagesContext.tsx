@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode } from "react";
-import { ChatMessage } from "@/hooks/use-realtime-chat";
+import { ChatMessage } from "@/hooks/useRealtimeChat";
 
 type UnreadMessagesContextType = {
   unreadCounts: Record<string, number>;

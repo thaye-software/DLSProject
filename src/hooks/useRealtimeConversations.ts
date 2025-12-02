@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useUnreadMessagesContext } from "@/context/UnreadMessagesContext";
 import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 import type { ConversationModel } from "@/database/types";
-import { ChatMessage } from "@/hooks/use-realtime-chat";
+import { ChatMessage } from "@/hooks/useRealtimeChat";
 
 export function useRealtimeConversations(initialConversations: ConversationModel[]) {
   const supabase = createClient();
