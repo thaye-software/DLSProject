@@ -1,4 +1,4 @@
-import { WatchTable } from "@/components/Admin/watches/WatchTable";
+import { WatchTable } from "@/components/Admin/Watch/WatchTable";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getAllProducts } from "@/services/productService";

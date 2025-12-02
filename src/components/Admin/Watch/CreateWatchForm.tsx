@@ -17,8 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 
-import MultiImageUpload from "@/components/Admin/MultiImageUpload";
-import CustomSelect from "@/components/Admin/watches/CustomSelect";
+import MultiImageUpload from "@/components/Admin/Watch/MultiImageUpload";
+import CustomSelect from "@/components/Admin/Watch/CustomSelect";
 
 import { createWatch } from "@/app/admin/watches/new/actions";
 import { updateWatch } from "@/app/admin/watches/[id]/edit/actions";

@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "../ui/button";
 import { EditBrandDialog } from "./EditBrandDialog";
-import { AddBrandDialog } from "./AddBrandDialog";
+import { AddBrandDialog } from "./Brands/AddBrandDialog";
 import { useState } from "react";
 
 export function BrandTable({ initialBrands, initialProducts }: { initialBrands: any[]; initialProducts: any[] }) {
