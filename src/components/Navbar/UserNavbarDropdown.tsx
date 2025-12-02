@@ -1,5 +1,8 @@
+"use client"
+
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { useEffect, useState } from "react";
 import { LogOut, Scroll, Settings, User } from "lucide-react";
 
 import { AvatarImage } from "@radix-ui/react-avatar";
@@ -21,23 +24,32 @@ import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 
 export function UserNavbarDropdown() {
   const { user, signOut, avatarUrl, role } = useSupabaseAuthContext();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   function handleSignOut() {
     signOut();
     redirect("/");
   }
 
+  // Always render User icon during SSR
+  const avatarContent = mounted && avatarUrl ? (
+    <Avatar>
+      <AvatarImage src={avatarUrl} alt="User Avatar" />
+    </Avatar>
+  ) : (
+    <User />
+  );
+
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="font-bold">
-          {avatarUrl ? (
-            <Avatar>
-              <AvatarImage src={avatarUrl} alt="User Avatar" />
-            </Avatar>
-          ) : (
-            <User />
-          )}{" "}
+          {avatarContent}
           {user?.user_metadata.display_name}
         </Button>
       </DropdownMenuTrigger>
