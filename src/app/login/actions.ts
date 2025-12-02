@@ -210,6 +210,6 @@ async function resendEmailConfirmation(recipientEmail: string, supabase: any): P
         env == "dev" ? "https://watches.thaulow.tech/" : env == "prod" ? "TODO impleent prod url" : "http://localhost:3000/"
     }
   });
-  console.log("asd",error)
+  
   if(error) throw error;
 }

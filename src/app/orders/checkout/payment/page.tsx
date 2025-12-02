@@ -1,26 +1,28 @@
-import CheckoutForm from "@/components/Stripe/Checkout";
-import { stripe } from "@/lib/stripe/stripe";
+import Image from "next/image";
+import { Suspense } from "react";
+import { redirect } from 'next/navigation'
+
 import { Card } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 import { Separator } from "@/components/ui/separator";
+
+
+import CheckoutForm from "@/components/Stripe/Checkout";
+import ToastWrapper from "@/components/Toast/ToastWrapper";
+import BackButton from "@/components/Miscellaneous/BackButton";
 import ProgressSteps from "@/components/Orders/Info/ProgressSteps";
 
-import { getOrderItemByOrderId } from "@/services/orderItemService";
 import {
   getLocalCurrencyString,
-  convertCurrency,
   convertCurrencyReturnCents,
 } from "@/services/currencyService";
-import { convertEuroToDkk } from "@/app/orders/actions";
-import constants from "@/lib/constants";
 import getCountryByName from "@/services/countryService";
-import Image from "next/image";
+import { getOrderItemByOrderId } from "@/services/orderItemService";
 
-import ToastWrapper from "@/components/Toast/ToastWrapper";
-import { Suspense } from "react";
-import { Spinner } from "@/components/ui/spinner";
-import BackButton from "@/components/Miscellaneous/BackButton";
-import { calculateVAT } from "@/lib/priceUtils";
-import { redirect } from 'next/navigation'
+import constants from "@/lib/constants";
+import { stripe } from "@/lib/stripe/stripe";
+
+
 
 //view all transaction at this link: https://dashboard.stripe.com/acct_1SKHlN6xjyBvX39o/test/payments
 export default async function PaymentPage({
@@ -101,15 +103,13 @@ export default async function PaymentPage({
   const shippingDkkCents = constants.SHIPPING_PRICE_DKK * 100;
   const shippingEurCents = constants.SHIPPING_PRICE_EUR * 100;
 
-  console.log("subtotal before shipping:", subtotal);
   let subtotalEur = await convertCurrencyReturnCents(subtotal, countryCode as string);
-  console.log("subtotalEur:", subtotalEur);
   let total = null;
   if (countryCode === "DK") {
     total = subtotal + shippingDkkCents;
+
   } else {
     total = (subtotalEur + shippingEurCents);
-    console.log(total)
   }
 
   let displayTotalAmount;

@@ -5,12 +5,14 @@ import { SearchParams } from "next/dist/server/request/search-params";
 import ToastWrapper from "@/components/Toast/ToastWrapper";
 import ProgressSteps from "@/components/Orders/Info/ProgressSteps";
 
-import { convertCurrencyReturnCents, getLocalCurrencyString } from "@/services/currencyService";
 import { sendOrderConfirmationEmail } from "../../actions";
+
 import { getOrderById } from "@/services/orderService";
 import getCountryByName from "@/services/countryService";
-import { calculateVAT } from "@/lib/priceUtils";
+import { convertCurrencyReturnCents, getLocalCurrencyString } from "@/services/currencyService";
+
 import constants from "@/lib/constants";
+import { calculateVAT } from "@/lib/priceUtils";
 
 
 
@@ -47,7 +49,6 @@ export default async function SuccessPage({
   const foundOrder = await getOrderById(
     Array.isArray(orderId) ? orderId[0] : orderId
   );
-  console.log("found order in success page:", foundOrder);
   if (!foundOrder) {
     return (
       <div>

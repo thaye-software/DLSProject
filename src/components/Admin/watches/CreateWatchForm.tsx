@@ -1,11 +1,10 @@
 "use client";
-import { Button } from "@/components/ui/button";
+
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { createWatch } from "@/app/admin/watches/new/actions";
-import { updateWatch } from "@/app/admin/watches/[id]/edit/actions";
-import { createNewWatchSchema } from "@/app/admin/watches/new/validation";
+
 import { z } from "zod";
-import constants from "@/lib/constants";
+
 import {
   Field,
   FieldContent,
@@ -14,13 +13,25 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+
+import MultiImageUpload from "@/components/Admin/MultiImageUpload";
 import CustomSelect from "@/components/Admin/watches/CustomSelect";
-import MultiImageUpload from "../MultiImageUpload";
-import { BrandModel } from "@/database/types";
-import { useEffect, useState } from "react";
+
+import { createWatch } from "@/app/admin/watches/new/actions";
+import { updateWatch } from "@/app/admin/watches/[id]/edit/actions";
+
+import { createNewWatchSchema } from "@/app/admin/watches/new/validation";
+
+
+import constants from "@/lib/constants";
 import { calculateVAT } from "@/lib/priceUtils";
+
+import { BrandModel } from "@/database/types";
+
+
 
 export default function CreateWatchForm({
   initialBrands,
@@ -74,8 +85,6 @@ export default function CreateWatchForm({
         calculateVAT(initialProduct.priceDkk * 100, 0.25)) /
       100
     : "";
-
-  console.log("Initial product:", initialProduct);
 
   // If we were given an initialProduct (edit mode), prefill the form
   useEffect(() => {

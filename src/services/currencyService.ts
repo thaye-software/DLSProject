@@ -36,7 +36,6 @@ export async function updateExchangeRate(
   const currencyCode = formData.get("currencyCode") as string;
   const newRate = formData.get("exchangeRate") as string;
   const updatedBy = formData.get("username") as string;
-  console.log("Updating exchange rate", currencyCode, newRate, updatedBy);
   return await db.transaction(async (tx) => {
     // 1. Get current currency
     const currency = await tx.query.currencies.findFirst({
@@ -196,69 +195,3 @@ export async function toggleCurrencyStatus(currencyCode: string, isActive: boole
 
   return updated;
 }
-
-
-
-// // ============================================
-// // Usage Examples
-// // ============================================
-
-// // Example 1: Get EUR price for a product
-// async function displayProductPrice(productPriceDkk: number, userCountry: string) {
-//   const currencyCode = userCountry === "DK" ? "DKK" : "EUR";
-  
-//   if (currencyCode === "DKK") {
-//     return `${productPriceDkk} DKK`;
-//   }
-
-//   const priceInEur = await currencyService.convertPrice(productPriceDkk, "EUR");
-//   return `€${priceInEur.toFixed(2)}`;
-// }
-
-// // Example 2: Create an order with currency snapshot
-// async function createOrder(userId: number, totalDkk: number, userCountry: string) {
-//   const currencyCode = userCountry === "DK" ? "DKK" : "EUR";
-  
-//   let exchangeRate = "1.000000";
-//   let totalInCurrency = totalDkk;
-
-//   if (currencyCode !== "DKK") {
-//     const currency = await currencyService.getCurrentRate(currencyCode);
-//     exchangeRate = currency.exchangeRate;
-//     totalInCurrency = await currencyService.convertPrice(totalDkk, currencyCode);
-//   }
-
-//   const [order] = await db.insert(orders).values({
-//     userId,
-//     status: "pending",
-//     currencyCode,
-//     exchangeRateUsed: exchangeRate,
-//     totalPriceDkk: totalDkk.toFixed(2),
-//     totalPriceCurrency: totalInCurrency.toFixed(2),
-//     createdAt: new Date(),
-//   }).returning();
-
-//   return order;
-// }
-
-// // Example 3: Admin updates EUR exchange rate
-// async function adminUpdateRate() {
-//   const result = await currencyService.updateExchangeRate(
-//     "EUR",
-//     "0.138000", // New rate
-//     "admin@example.com"
-//   );
-
-//   console.log(`Rate updated from ${result.oldRate} to ${result.newRate}`);
-// }
-
-// // Example 4: View rate change history
-// async function viewRateHistory() {
-//   const history = await currencyService.getCurrencyHistory("EUR", 10);
-  
-//   history.forEach(record => {
-//     console.log(
-//       `${record.changedAt.toISOString()}: ${record.exchangeRate} (by ${record.changedBy})`
-//     );
-//   });
-// }

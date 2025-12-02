@@ -1,6 +1,7 @@
 "use client"
 
 import { FormEvent, useState } from "react"
+
 import {
   PaymentElement,
   useStripe,
@@ -8,12 +9,15 @@ import {
   Elements
 } from "@stripe/react-stripe-js"
 import { loadStripe } from "@stripe/stripe-js"
+import { toast } from "sonner"
 
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
+
 import { baseUrl } from "@/lib/utils/client/utils"
-import { toast } from "sonner"
+
+
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -38,7 +42,6 @@ function PaymentForm({ orderId }: { orderId: string }) {
       },
     })
 
-    console.log("THIS STILL RUNS AFTER CONFIRM PAYMENT");
 
     if (error) {
       setIsLoading(false)

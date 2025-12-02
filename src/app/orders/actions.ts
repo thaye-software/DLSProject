@@ -1,37 +1,29 @@
 "use server";
 
-import { z } from "zod";
-
 import {
-  getLocalCurrencyString,
-  getCurrencyByCode,
-} from "@/services/currencyService";
+  saveCustomerNameAndPhone,
+  deleteCustomerNameAndPhone,
+} from "@/services/userService";
 import {
   deleteBillingAddress,
   saveBillingAddress,
 } from "@/services/addressService";
-import {
-  saveCustomerNameAndPhone,
-  deleteCustomerNameAndPhone,
-  getUserById,
-} from "@/services/userService";
 import getCountryByName, {
   saveCustomerCountry,
   deleteCustomerCountry,
 } from "@/services/countryService";
+import { createOrder } from "@/services/orderService";
+import { verifyOfferToken } from "@/services/offerService";
+import {getCurrencyByCode} from "@/services/currencyService";
+
+import { Product } from "../watches/type";
 
 import { getUserLocation } from "@/lib/utils/server/utils";
 import { resend, originEmail } from "@/lib/resend/resend";
 
-import { OrderStatus } from "./type";
-import { Product } from "../watches/type";
-import { createOrder } from "@/services/orderService";
 import { CountryModel } from "@/database/types";
-import { verifyOfferToken } from "@/services/offerService";
-import { calculateVAT } from "@/lib/priceUtils";
 
-// import shippingAndBillingForm from "@/components/Orders/Info/ShippingAndBillingForm"
-// z.infer<typeof shippingAndBillingForm>
+
 
 export interface customerBillingDetails {
   firstName: string;
@@ -111,10 +103,6 @@ export async function submitOrderDetails(
 
   // Verify offer token if present and override price
   if (formData.offerToken) {
-    console.log(
-      "Verifying offer token in order submission:",
-      formData.offerToken
-    );
     const offer = await verifyOfferToken(formData.offerToken);
     // We check if the offer is for this product.
     // Note: product.watch.slug might need to be checked against offer.productSlug

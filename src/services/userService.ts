@@ -392,7 +392,7 @@ export async function deleteAvatar(userToDelete: UserModel, supabase: SupabaseCl
     }
 
   } catch (error) {
-    console.log("(server) failed to delete avatar from supabase buckets");
+    console.error("(server) failed to delete avatar from supabase buckets", error);
     throw error;
   }
 }

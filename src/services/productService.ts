@@ -112,7 +112,6 @@ export async function getFilteredProducts(
       .innerJoin(brands, eq(brands.id, watches.brandId))
       .leftJoin(productImages, and(eq(productImages.productId, products.id)))
       .where(filter);
-    console.log("Filtered products rows:", rows);
 
     // rows may contain multiple rows per product when there are many images
     // (left join on productImages produces one row per image). Group by

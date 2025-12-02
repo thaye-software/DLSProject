@@ -1,13 +1,17 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import Image from "next/image";
+
+import { motion } from "framer-motion";
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-import { Product } from "@/app/watches/type";
 import FavoriteButton from "./FavoriteButton";
-import { motion } from "framer-motion";
+
+import { Product } from "@/app/watches/type";
+
+
 
 export function WatchCard({
   product,
@@ -20,8 +24,10 @@ export function WatchCard({
   index?: number;
   onFavoriteClick?: () => void;
   }) {
-  console.log("rendering product:", product);
-  return (
+
+
+
+    return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
