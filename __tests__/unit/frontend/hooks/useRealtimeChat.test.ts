@@ -1,12 +1,12 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useRealtimeChat, ChatMessage } from '@/hooks/use-realtime-chat';
-import { createClient } from '@/database/supabase/client';
+import { useRealtimeChat, ChatMessage } from '@/hooks/useRealtimeChat';
+import { createClient } from '@/lib/supabase/client';
 import { getUserById } from '@/services/userService';
 import { persistMessage } from '@/services/messageService';
 import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 
 // Mock all external dependencies
-jest.mock('@/database/supabase/client');
+jest.mock('@/lib/supabase/client');
 jest.mock('@/services/userService');
 jest.mock('@/services/messageService');
 jest.mock('@/context/SupabaseAuthContext');

@@ -1,4 +1,9 @@
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { LogOut, Scroll, Settings, User } from "lucide-react";
+
+import { AvatarImage } from "@radix-ui/react-avatar";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,12 +12,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Avatar } from "@/components/ui/avatar";
+
 import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
-import { LogOut, Scroll, Settings, Truck, User } from "lucide-react";
-import Link from "next/link";
-import { redirect } from "next/navigation";
-import { Avatar } from "../ui/avatar";
-import { AvatarImage } from "@radix-ui/react-avatar";
+
+
 
 export function UserNavbarDropdown() {
   const { user, signOut, avatarUrl, role } = useSupabaseAuthContext();
@@ -61,13 +66,7 @@ export function UserNavbarDropdown() {
             <Settings className="opacity-60" />
             Settings
           </Link>
-          <Link
-            href="/orders"
-            className="cursor-pointer hover:bg-accent relative flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
-          >
-            <Truck className="opacity-60" />
-            Order history
-          </Link>
+
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem className="cursor-pointer" onClick={handleSignOut}>

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Navbar } from "@/components/Navbar/Navbar";
-import { Footer } from "@/components/Footer";
+import { Footer } from "@/components/Layout/Footer";
 import { ModeToggle } from "@/components/Navbar/ModeToggle";
 import React from "react";
 

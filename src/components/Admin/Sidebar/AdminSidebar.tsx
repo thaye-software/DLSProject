@@ -1,14 +1,11 @@
 "use client";
-import {ComponentProps} from "react"
+
 import Link from "next/link"
+import Image from "next/image";
+import {ComponentProps} from "react"
 import { usePathname } from "next/navigation"
 import { Minus, Plus } from "lucide-react"
 
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
 import {
   Sidebar,
   SidebarContent,
@@ -22,7 +19,12 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import Image from "next/image";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
+
 import ConversationsLinkContent from "./ConversationsLinkContent";
 
 
@@ -67,25 +69,17 @@ export function AdminSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
         <SidebarGroup>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname.startsWith("/admin/customers")}> 
-                <Link href="/admin/customers">Customers</Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname.startsWith("/admin/exchange-rate")}> 
                 <Link href="/admin/exchange-rate">Exchange Rate</Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname.startsWith("/admin/orders")}> 
-                <Link href="/admin/orders">Orders</Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+
             <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname.startsWith("/admin/watches")}> 
                 <Link href="/admin/watches">Watches</Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
+
             <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname.startsWith("/admin/conversations")}> 
                   <Link href="/admin/conversations">
@@ -93,6 +87,7 @@ export function AdminSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
                   </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
+
             {/* Master Data */}
             {data.navMain.map((item, index) => (
               <Collapsible
@@ -108,6 +103,7 @@ export function AdminSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
                       <Minus className="ml-auto group-data-[state=closed]/collapsible:hidden" />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
+
                   {item.items?.length ? (
                     <CollapsibleContent>
                       <SidebarMenuSub>

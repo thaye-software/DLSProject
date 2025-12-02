@@ -8,8 +8,8 @@ import { Autoplay } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { AnimatePresence, motion } from "framer-motion";
 
-import Logo from "@/components/Logo";
-import BackButton from "@/components/BackButton";
+import Logo from "@/components/Home/Logo";
+import BackButton from "@/components/Miscellaneous/BackButton";
 import { LoginForm, RegisterForm } from "@/components/Login";
 import { Spinner } from "@/components/ui/spinner";
 import { LogIn, UserPlus } from "lucide-react";

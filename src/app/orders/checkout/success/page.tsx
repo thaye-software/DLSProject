@@ -12,6 +12,8 @@ import getCountryByName from "@/services/countryService";
 import { calculateVAT } from "@/lib/priceUtils";
 import constants from "@/lib/constants";
 
+
+
 export default async function SuccessPage({
   searchParams,
 }: {
@@ -233,21 +235,14 @@ export default async function SuccessPage({
               • You'll receive an email confirmation shortly for {customerEmail}
             </li>
             <li>• We'll notify you when your order ships</li>
-            <li>• Track your order from your account dashboard (TODO?)</li>
           </ul>
         </div>
 
         {/* Action Buttons */}
         <div className="mt-6 flex gap-3">
           <Link
-            href="/orders"
-            className="flex-1 text-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-          >
-            View Orders (TODO)
-          </Link>
-          <Link
             href="/watches"
-            className="flex-1 text-center px-4 py-2 border rounded-md hover:bg-muted transition-colors"
+            className="flex-1 text-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
           >
             Continue Shopping
           </Link>

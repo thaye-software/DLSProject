@@ -1,5 +1,5 @@
 "use client";
-import { CarouselCard } from "@/components/CarouselCard";
+import { CarouselCard } from "@/components/Home/CarouselCard";
 import { animate, useMotionValue } from "framer-motion";
 import { useEffect } from "react";
 import useMeasure from "react-use-measure";

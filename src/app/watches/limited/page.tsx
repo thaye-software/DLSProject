@@ -59,7 +59,7 @@ export default async function LimitedWatches({
           </Suspense>
         ) : (
           <div className="flex justify-center items-center py-20 text-gray-500 text-lg font-medium">
-            Your filters match no products in out catalog...
+            Unfortunately there were no products found...
           </div>
         )}
       </div>

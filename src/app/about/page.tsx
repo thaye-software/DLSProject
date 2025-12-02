@@ -67,7 +67,7 @@ export default function AboutPage() {
             <Button size="lg" onClick={() => redirect("/watches")}>
               Shop Collection
             </Button>
-            <Button size="lg" variant="outline">
+            <Button size="lg" variant="outline" onClick={() => redirect("/contact")}>
               Contact Us
             </Button>
           </div>

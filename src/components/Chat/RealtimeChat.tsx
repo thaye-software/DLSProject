@@ -2,8 +2,8 @@
 
 import { cn } from "@/lib/tailwindUtils";
 import { ChatMessageItem } from "@/components/Chat/ChatMessage";
-import { useChatScroll } from "@/hooks/use-chat-scroll";
-import { type ChatMessage, useRealtimeChat } from "@/hooks/use-realtime-chat";
+import { useChatScroll } from "@/hooks/useChatScroll";
+import { type ChatMessage, useRealtimeChat } from "@/hooks/useRealtimeChat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowDown, Send } from "lucide-react";

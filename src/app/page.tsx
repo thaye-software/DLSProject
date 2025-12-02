@@ -1,9 +1,9 @@
-import Carousel from "@/components/Carousel";
-import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { redirect } from "next/navigation";
-import { motion } from "framer-motion";
-import RedirectButton from "@/components/RedirectButton";
+
+import Carousel from "@/components/Home/Carousel";
+import RedirectButton from "@/components/Miscellaneous/RedirectButton";
+
+
 
 const images = [
   { id: 1, src: "/carousel/1.jpg", brand: "Breguet" },

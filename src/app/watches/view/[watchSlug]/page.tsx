@@ -1,4 +1,4 @@
-import BackButton from "@/components/BackButton";
+import BackButton from "@/components/Miscellaneous/BackButton";
 import ProductImageSwiper from "@/components/Watches/ProductImageSwiper";
 import { getProductBySlug } from "@/services/productService";
 import { notFound } from "next/navigation";

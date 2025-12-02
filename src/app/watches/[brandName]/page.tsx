@@ -1,14 +1,18 @@
 import { Suspense } from "react";
 
 import { Spinner } from "@/components/ui/spinner";
+
 import { WatchesGrid } from "@/components/Watches/WatchesGrid";
+import { ProductFilterSheet } from "@/components/Watches/Filters/ProductFilterSheet";
+
+import { getFilterRanges } from "../page";
 
 import { getAllProductsByBrandName } from "@/services/productService";
 
 import { getUserLocation } from "@/lib/utils/server/utils";
-import { getFilterRanges } from "../page";
-import { ProductFilterSheet } from "@/components/Watches/Filters/ProductFilterSheet";
 import { ProductModel } from "@/database/types";
+
+
 
 export default async function BrandWatchesPage({
   params,

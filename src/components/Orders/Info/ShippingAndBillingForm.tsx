@@ -22,7 +22,7 @@ import { toast } from "sonner";
 
 import ProgressSteps from "@/components/Orders/Info/ProgressSteps";
 import { useRouter } from "next/navigation";
-import BackButton from "@/components/BackButton";
+import BackButton from "@/components/Miscellaneous/BackButton";
 
 import constants from "@/lib/constants";
 import {

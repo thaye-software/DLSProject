@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { db, DbTransaction } from "@/database/drizzle";
 import { users } from "@/database/schema";
 import { NewUserModel, UserModel } from "@/database/types";
-import { createClient } from "@/database/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 import { CustomerNameAndPhone } from "@/app/orders/actions"
 import { SupabaseClient } from "@supabase/supabase-js";

@@ -1,7 +1,10 @@
 "use client";
 
-import { Button } from "./ui/button";
 import { redirect } from "next/navigation";
+
+import { Button } from "../ui/button";
+
+
 
 export default function RedirectButton({targetPage, buttonText}: {targetPage: string, buttonText: string}) {
     return (

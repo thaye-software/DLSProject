@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import AccountTab from "./AccountTab/AccountTab";
-import FavoritesTab from "./FavoritesTab";
+
 import PasswordTab from "./PasswordTab";
-import NotificationsTab from "./NotificationsTab";
+import AccountTab from "./AccountTab/AccountTab";
+
+
 
 export function SettingsTabs() {
   const [activeTab, setActiveTab] = useState("account");
@@ -14,7 +16,7 @@ export function SettingsTabs() {
     const checkHash = () => {
       const hash = window.location.hash.replace("#", "");
       if (
-        ["account", "favorites", "password", "notifications"].includes(hash)
+        ["account", "password"].includes(hash)
       ) {
         setActiveTab(hash);
       }
@@ -37,28 +39,16 @@ export function SettingsTabs() {
           <TabsTrigger className="font-bold" value="account">
             Account
           </TabsTrigger>
-          <TabsTrigger className="font-bold" value="favorites">
-            Favorites
-          </TabsTrigger>
           <TabsTrigger className="font-bold" value="password">
             Password
-          </TabsTrigger>
-          <TabsTrigger className="font-bold" value="notifications">
-            Notifications
           </TabsTrigger>
         </TabsList>
         
         <TabsContent value="account">
           <AccountTab />
         </TabsContent>
-        <TabsContent value="favorites">
-          <FavoritesTab />
-        </TabsContent>
         <TabsContent value="password">
           <PasswordTab />
-        </TabsContent>
-        <TabsContent value="notifications">
-          <NotificationsTab />
         </TabsContent>
       </Tabs>
     </div>
