@@ -1,14 +1,100 @@
-import { eq, desc, and } from "drizzle-orm";
+import { eq, and, inArray, asc } from "drizzle-orm";
 
 import { db, DbTransaction } from "@/database/drizzle";
 import { orderItems, orders, users } from "@/database/schema";
 import { NewOrderModel, NewOrderAddressModel } from "@/database/types";
 
 import { createOrderItem } from "./orderItemService";
-import { checkAndUpdateProductStock, getProductById } from "./productService";
+import { checkAndUpdateProductStock, getProductById, updateProductStock } from "./productService";
 import { createOrderAddress, updateOrderAddress } from "./orderAddressService";
 
 import { OrderDetails } from "@/app/orders/actions";
+import { getLocalCurrencyString } from "./currencyService";
+import { OrderStatus } from "@/app/orders/type";
+
+
+
+
+
+
+export async function getAllTimeRevenueDkk() {
+  try {
+    const allOrders = await db.query.orders.findMany({
+      where: eq(orders.status, "DELIVERED"),
+    });
+
+    const allTimeRevenueDkk = allOrders.reduce((total, order) => {
+      return total + parseFloat(order.totalPriceDkk);
+    }, 0);
+
+    const formattedRevenue = getLocalCurrencyString(allTimeRevenueDkk, "DKK");
+    return formattedRevenue;
+
+  } catch (error) {
+    console.error("(server) failed to retrieve all time revenue", error);
+    throw error;  
+  }
+}
+
+export async function getAllPendingOrders() {
+  try {
+    const pendingOrders = await db.query.orders.findMany({
+      where: inArray(orders.status, ["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "RETURNED", "REFUNDED"]),
+      orderBy: [asc(orders.createdAt)],
+
+      with: {
+        user: {
+          columns: {
+            firstName: true,
+            middleName: true,
+            lastName: true,
+          }
+        },
+
+        orderItems: {
+          with: {
+            product: {
+              columns: {},
+              with: {
+                watch: {
+                  columns: {
+                    model: true
+                  },
+                  with: {
+                    brand: {
+                      columns: {
+                        name: true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    return pendingOrders;
+    
+  } catch (error) {
+    console.error("(server) failed to retrieve pending orders count", error);
+    throw error;  
+  }
+}
+
+export async function getAllDeliveredOrders() {
+  try {
+    const deliveredOrders = await db.query.orders.findMany({
+      where: eq(orders.status, "DELIVERED")
+    });
+
+    return deliveredOrders;
+  } catch (error) {
+    console.error("(server) failed to retrieve delivered orders", error);
+    throw error;  
+  }
+}
 
 
 
@@ -31,7 +117,6 @@ export async function createOrder(
       if(!foundProduct) throw new Error(`(server) no product found with id: ${orderDetails.productId}`)
 
 
-      // hardcoded 1 since requirment that customer can only buy one watch at a time.
       const stockAvailable = await checkAndUpdateProductStock(foundProduct.id, tx);
       if(!stockAvailable) throw new Error(`(server) Product just sold out`)
 
@@ -109,6 +194,91 @@ export async function getOrderById(orderId: string) {
     throw error;
   }
 }
+
+
+
+
+
+
+export async function changeOrderStatus(orderId: string, newStatus: OrderStatus) {
+  try {
+    const result = await db.transaction(async (tx) => {
+      
+      const previousOrderState = await tx.query.orders.findFirst({
+        where: eq(orders.id, orderId),
+        with: {
+          orderItems: {
+            columns: { 
+              quantity: true
+            },
+            with: {
+              product: {
+                columns: {
+                  id: true
+                }
+              }
+            }
+          }
+        }
+      }); 
+
+      if (!previousOrderState) {
+        throw new Error(`(server) no order found with id: ${orderId}`);
+      }
+
+      const updatedOrder = await tx
+        .update(orders)
+        .set({ status: newStatus })
+        .where(eq(orders.id, orderId))
+        .returning();
+
+      
+      const activeStatuses = ["PENDING", "PROCESSING", "SHIPPED", "DELIVERED"];
+      const inactiveStatuses = ["CANCELLED", "RETURNED", "REFUNDED"]; // for docs purposes
+
+      const previousStatus = previousOrderState.status;
+      const wasActive = activeStatuses.includes(previousStatus);
+      const isNowActive = activeStatuses.includes(newStatus);
+
+      let shouldUpdateStock = false;
+      let isIncrementStock = false;
+
+      if (wasActive && !isNowActive) {
+        // Moving from Active → Inactive: increment stock (return item to inventory)
+        shouldUpdateStock = true;
+        isIncrementStock = true;
+
+      } else if (!wasActive && isNowActive) {
+        // Moving from Inactive → Active: decrement stock (take item from inventory)
+        shouldUpdateStock = true;
+        isIncrementStock = false;
+      }
+      // If both are active or both are inactive: no stock change needed
+
+      if (shouldUpdateStock) {
+        await updateProductStock(
+          previousOrderState.orderItems[0].product.id, 
+          previousOrderState.orderItems[0].quantity,
+          tx,
+          isIncrementStock
+        );
+      }
+
+      return updatedOrder[0];
+    });
+
+    return result;
+
+  } catch (error) {
+    console.error(`(server) failed to change order status`, error);
+    throw error;
+  }
+}
+
+
+
+
+
 
 //--------------------------------------- helper functions ---------------------------------------
 async function getCustomerOrder(customerId: string, productId: string, tx?: DbTransaction) {

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import CreateWatchForm from "@/components/Admin/watches/CreateWatchForm";
+import CreateWatchForm from "@/components/Admin/Watches/CreateWatchForm";
 import { getAllBrands } from "@/services/brandService";
 
 export default async function NewWatchPage() {

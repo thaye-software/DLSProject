@@ -1,6 +1,6 @@
 import { useFormStatus } from "react-dom";
-import { Button } from "../ui/button";
-import { Spinner } from "../ui/spinner";
+import { Button } from "../../ui/button";
+import { Spinner } from "../../ui/spinner";
 
 export default function ExchangeRateSubmitButton() {
   const { pending } = useFormStatus();

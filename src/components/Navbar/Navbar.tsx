@@ -1,7 +1,6 @@
 import Link from "next/link";
+
 import { User as UserIcon } from "lucide-react";
-import Image from "next/image";
-import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 
 import {
   NavigationMenu,
@@ -13,10 +12,15 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { Button } from "../ui/button";
-import { UserNavbarDropdown } from "./UserNavbarDropdown";
-import SearchBar from "./SearchBar";
 import { Spinner } from "../ui/spinner";
+
+import SearchBar from "./SearchBar";
 import BrandNavItem from "./BrandNavItem";
+import { UserNavbarDropdown } from "./UserNavbarDropdown";
+
+import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
+
+
 
 export function Navbar() {
   const { user, isLoggedIn, loading, role } = useSupabaseAuthContext();
@@ -36,9 +40,7 @@ export function Navbar() {
                   <NavigationMenuLink asChild>
                     <Link href="/watches">All Watches</Link>
                   </NavigationMenuLink>
-                  {/* <NavigationMenuLink asChild>
-                    <Link href="/watches/new">New Arrivals</Link>
-                  </NavigationMenuLink> */}
+
                   <NavigationMenuLink asChild>
                     <Link href="/watches/limited">Limited editions</Link>
                   </NavigationMenuLink>
@@ -47,22 +49,7 @@ export function Navbar() {
             </NavigationMenuContent>
           </NavigationMenuItem>
           <BrandNavItem />
-          {/* <NavigationMenuItem>
-            <NavigationMenuLink
-              asChild
-              className={`${navigationMenuTriggerStyle()} font-bold`}
-            >
-              <Link href="/auctions">Auctions</Link>
-            </NavigationMenuLink>
-          </NavigationMenuItem>
-          <NavigationMenuItem>
-            <NavigationMenuLink
-              asChild
-              className={`${navigationMenuTriggerStyle()} font-bold`}
-            >
-              <Link href="/blog">Blog</Link>
-            </NavigationMenuLink>
-          </NavigationMenuItem> */}
+
           <NavigationMenuItem>
             <NavigationMenuLink
               asChild

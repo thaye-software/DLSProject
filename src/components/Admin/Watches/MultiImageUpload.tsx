@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "../ui/input";
+import { Input } from "../../ui/input";
 
 type UploadedItem = {
   path: string;

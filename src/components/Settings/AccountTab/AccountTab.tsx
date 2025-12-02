@@ -1,19 +1,23 @@
 "use client"
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
+import { toast } from "sonner";
+
+import { Spinner } from "@/components/ui/spinner";
 import { Separator } from "@/components/ui/separator";
 
 import DeleteAccount from "./DeleteAccount";
 import AccountDetails from "./AccountDetails";
 import BillingForm from "@/components/Orders/Info/BillingForm";
-import { useEffect, useState } from "react";
-import { CustomerInfo } from "@/services/userService";
+
+import { getUserByEmailAction } from "@/app/actions/user";
 import { getUserLocationAction } from "@/app/actions/location";
+
+import { CustomerInfo } from "@/services/userService";
+
 import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
-import { getUserByEmailAction, getUserByIdAction } from "@/app/actions/user";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { Spinner } from "@/components/ui/spinner";
 
 
 
@@ -43,7 +47,6 @@ export default function AccountTab() {
         setCustomerGeoLocation(countryName);
         
         const foundCustomer = await getUserByEmailAction(user.email as string);
-        console.log("asdasd",foundCustomer)
         if (!foundCustomer) return;
         setCustomer(foundCustomer);
 

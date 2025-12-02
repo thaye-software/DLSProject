@@ -1,6 +1,6 @@
 "use client";
 
-import ExchangeRateSubmitButton from "@/components/Admin/ExchangeRateSubmitButton";
+import ExchangeRateSubmitButton from "@/components/Admin/ExchangeRates/ExchangeRateSubmitButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";

@@ -3,8 +3,8 @@
 import Link from "next/link"
 import Image from "next/image";
 import {ComponentProps} from "react"
-import { usePathname } from "next/navigation"
 import { Minus, Plus } from "lucide-react"
+import { usePathname } from "next/navigation"
 
 import {
   Sidebar,
@@ -44,10 +44,10 @@ const data = {
   ],
 }
 
+
+
 export function AdminSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
   const pathname = usePathname() || "";
-
-
 
   return (
     <Sidebar {...props}>
@@ -55,12 +55,12 @@ export function AdminSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="#">
+              <Link href="/admin">
                   <Image src="/logo.svg" alt="Logo" width={60} height={60} />
                 <div className="flex flex-col gap-0.5 leading-none">
                   <span className="font-medium">Limited Watches | Admin</span>
                 </div>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

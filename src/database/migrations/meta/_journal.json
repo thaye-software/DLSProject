@@ -71,6 +71,13 @@
       "when": 1764450714730,
       "tag": "20251129211154_added-deletedAt-field-to-userstable",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1764701839007,
+      "tag": "20251202185719_added-refunded-and-returned",
+      "breakpoints": true
     }
   ]
 }

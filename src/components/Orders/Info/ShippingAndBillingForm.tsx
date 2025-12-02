@@ -1,42 +1,43 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 
-import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { CustomerInfo, getUserById } from "@/services/userService";
+
 import ToastWrapper from "@/components/Toast/ToastWrapper";
+import BackButton from "@/components/Miscellaneous/BackButton";
+import ProgressSteps from "@/components/Orders/Info/ProgressSteps";
 
 import { Product } from "@/app/watches/type";
 import { submitOrderDetails } from "@/app/orders/actions";
 
-import { getProductBySlug } from "@/services/productService";
-import { Spinner } from "@/components/ui/spinner";
-
-import { toast } from "sonner";
-
-import ProgressSteps from "@/components/Orders/Info/ProgressSteps";
-import { useRouter } from "next/navigation";
-import BackButton from "@/components/Miscellaneous/BackButton";
-
-import constants from "@/lib/constants";
 import {
   getLocalCurrencyString,
   convertCurrency,
 } from "@/services/currencyService";
+import { getAllCountries } from "@/services/countryService";
+import { getProductBySlug } from "@/services/productService";
+import { CustomerInfo, getUserById } from "@/services/userService";
+
 import {
   calculateVatCents,
   calculateSubtotalCents,
-  calculateTotalCents,
-  calculateVAT,
 } from "@/lib/priceUtils";
-import { getAllCountries } from "@/services/countryService";
+import constants from "@/lib/constants";
+
 import { CountryModel } from "@/database/types";
+
+
 
 export default function ShippingAndBillingForm({
   customer,
@@ -240,7 +241,6 @@ export default function ShippingAndBillingForm({
     data.customerId = customerUpdated.id;
     data.shippingPriceDkk = String(constants.SHIPPING_PRICE_DKK);
     if (offerToken) {
-      console.log("setting offerToken in form submission:", offerToken);
       data.offerToken = offerToken;
     }
 
