@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/tailwindUtils";
-import type { ChatMessage } from "@/hooks/use-realtime-chat";
+import type { ChatMessage } from "@/hooks/useRealtimeChat";
 import { Button } from "@/components/ui/button";
 
 interface ChatMessageItemProps {
