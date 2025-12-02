@@ -6,7 +6,7 @@ import { persistMessage } from '@/services/messageService';
 import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 
 // Mock all external dependencies
-jest.mock('@/database/supabase/client');
+jest.mock('@/lib/supabase/client');
 jest.mock('@/services/userService');
 jest.mock('@/services/messageService');
 jest.mock('@/context/SupabaseAuthContext');
