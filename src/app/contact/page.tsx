@@ -86,7 +86,7 @@ export default function ContactPage() {
                       <a  href="tel:+4512345678"
                         className="text-muted-foreground hover:text-foreground transition text-sm"
                       >
-                        +45 12 34 56 78
+                        +45 26 46 95 96
                       </a>
                     </div>
                   </div>
@@ -99,7 +99,7 @@ export default function ContactPage() {
                         href="mailto:contact@luxurywatches.com"
                         className="text-muted-foreground hover:text-foreground transition text-sm"
                       >
-                        contact@luxurywatches.com
+                        contact@limitedwatches.com
                       </a>
                     </div>
                   </div>
@@ -107,24 +107,6 @@ export default function ContactPage() {
               </CardContent>
             </Card>
 
-            {/* Book Appointment */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
-                  <CardTitle className="text-lg">Private Viewing</CardTitle>
-                </div>
-                <CardDescription>
-                  Schedule a personal appointment to experience our timepieces in
-                  person.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button>
-                  Book Appointment (to be implemented)
-                </Button>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
