@@ -1,6 +1,6 @@
 "use client";
 
-import { createClient } from "@/database/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 import { persistMessage, PersistableMessage } from "@/services/messageService";
 import { getUserByIdAction } from "@/app/actions/user";

@@ -4,7 +4,7 @@ import { RegisterSchema, LoginSchema } from "./validation";
 
 import { createUser } from "@/services/userService";
 
-import { createClient } from "@/database/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 import { baseUrl } from "@/lib/utils/client/utils";
 

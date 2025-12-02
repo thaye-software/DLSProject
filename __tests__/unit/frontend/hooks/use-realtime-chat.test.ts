@@ -1,6 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useRealtimeChat, ChatMessage } from '@/hooks/use-realtime-chat';
-import { createClient } from '@/database/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { getUserById } from '@/services/userService';
 import { persistMessage } from '@/services/messageService';
 import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";

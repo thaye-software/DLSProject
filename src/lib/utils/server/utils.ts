@@ -2,7 +2,7 @@ import "server-only";
 
 import { headers } from "next/headers";
 
-import { createClient } from "@/database/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { getUserById } from "@/services/userService";
 
 

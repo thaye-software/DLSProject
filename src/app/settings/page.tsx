@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { SettingsTabs } from "@/components/Settings/SettingsTabs";
-import { createClient } from "@/database/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function SettingsPage() {
   const supabase = await createClient();

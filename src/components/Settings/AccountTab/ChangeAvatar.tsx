@@ -13,7 +13,7 @@ import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 
 import { saveAvatarUrlAction } from "@/app/settings/actions";
 
-import { createClient } from "@/database/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 
 
 

@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { createClient } from "@/database/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 import { useUnreadMessagesContext } from "@/context/UnreadMessagesContext";
 import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 import type { ConversationModel } from "@/database/types";
