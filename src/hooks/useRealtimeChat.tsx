@@ -40,8 +40,6 @@ export interface ChatMessage {
   createdAt: string;
 }
 
-const EVENT_MESSAGE_TYPE = "message";
-
 export function useRealtimeChat({
   conversation,
   username,
@@ -76,7 +74,7 @@ export function useRealtimeChat({
     }
 
     newChannel
-      .on("broadcast", { event: EVENT_MESSAGE_TYPE }, (payload: any) => {
+      .on("broadcast", { event: "message" }, (payload: any) => {
         const incomingMessage = payload.payload as ChatMessage;
 
         if (incomingMessage.conversationId === conversation.id) {
@@ -157,7 +155,7 @@ export function useRealtimeChat({
         if (channelRef.current && isConnected) {
           await channelRef.current.send({
             type: "broadcast",
-            event: EVENT_MESSAGE_TYPE,
+            event: "message",
             payload: message,
           });
         }
