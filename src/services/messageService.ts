@@ -5,6 +5,7 @@ import { messages } from "@/database/schema";
 import { and, eq, ne } from "drizzle-orm";
 
 export type PersistableMessage = {
+  id?: string;
   conversationId: string;
   senderId: string;
   senderType: "customer" | "seller";
@@ -13,9 +14,12 @@ export type PersistableMessage = {
   createdAt?: string | Date;
 };
 
-export async function persistMessage(message: PersistableMessage): Promise<any> {
+export async function persistMessage(
+  message: PersistableMessage
+): Promise<any> {
   // ensure types align with the DB schema
   const insertResult = await db.insert(messages).values({
+    id: message.id,
     conversationId: message.conversationId,
     senderId: message.senderId,
     senderType: message.senderType,
@@ -35,7 +39,11 @@ export async function markAsRead(
       .update(messages)
       .set({ isRead: true })
       .where(
-        and( eq(messages.conversationId, conversationId), ne(messages.senderId, userId), eq(messages.isRead, false) )
+        and(
+          eq(messages.conversationId, conversationId),
+          ne(messages.senderId, userId),
+          eq(messages.isRead, false)
+        )
       );
   } catch (error) {
     console.error("Error marking messages as read:", error);

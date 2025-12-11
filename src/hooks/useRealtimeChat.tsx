@@ -12,16 +12,12 @@ import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 
 import { createClient } from "@/lib/supabase/client";
 
-
-
 interface UseRealtimeChatProps {
   conversation: any;
   username: string;
   // Callback to notify parent (Dashboard) to update sidebar
   onMessageReceived?: (message: ChatMessage) => void;
 }
-
-
 
 export interface ChatMessage {
   id?: string;
@@ -39,8 +35,6 @@ export interface ChatMessage {
   isRead?: boolean;
   createdAt: string;
 }
-
-const EVENT_MESSAGE_TYPE = "message";
 
 export function useRealtimeChat({
   conversation,
@@ -76,22 +70,69 @@ export function useRealtimeChat({
     }
 
     newChannel
-      .on("broadcast", { event: EVENT_MESSAGE_TYPE }, (payload: any) => {
-        const incomingMessage = payload.payload as ChatMessage;
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversation.id}`,
+        },
+        async (payload: any) => {
+          const newRecord = payload.new;
+          console.log("New message payload received:", newRecord);
+          let senderInfo = {
+            id: newRecord.sender_id,
+            username: "Unknown",
+            email: "",
+            country: "",
+            role: newRecord.sender_type as "customer" | "seller",
+          };
 
-        if (incomingMessage.conversationId === conversation.id) {
-          setMessages((current) => [...current, incomingMessage]);
+          try {
+            const senderUser = await getUserByIdAction(newRecord.sender_id);
+            if (senderUser) {
+              senderInfo = {
+                id: senderUser.id,
+                username: senderUser.username,
+                email: senderUser.email,
+                country: senderUser.country?.name || "",
+                role: senderUser.role as "customer" | "seller",
+              };
+            }
+          } catch (error) {
+            console.error("Error fetching sender info", error);
+          }
+
+          const incomingMessage: ChatMessage = {
+            id: newRecord.id,
+            conversationId: newRecord.conversation_id,
+            senderId: newRecord.sender_id,
+            senderType: newRecord.sender_type,
+            content: newRecord.content,
+            isRead: newRecord.is_read,
+            createdAt: newRecord.created_at.endsWith("Z")
+              ? newRecord.created_at
+              : `${newRecord.created_at}Z`,
+            sender: senderInfo,
+          };
+
+          setMessages((current) => {
+            if (current.some((m) => m.id === incomingMessage.id)) {
+              return current;
+            }
+            return [...current, incomingMessage];
+          });
 
           // Notify parent to update sidebar
           if (onMessageReceived) {
             onMessageReceived(incomingMessage);
           }
         }
-      })
+      )
       .subscribe((status: string) => {
         if (status === "SUBSCRIBED") {
           setIsConnected(true);
-
         } else {
           setIsConnected(false);
         }
@@ -112,7 +153,6 @@ export function useRealtimeChat({
 
   const sendMessage = useCallback(
     async (content: string) => {
-
       // Allow sending if we have a user, even if socket momentarily disconnected (optimistic),
       // though usually we want to wait for connection.
       if (!conversation?.id || !user?.id) {
@@ -128,9 +168,10 @@ export function useRealtimeChat({
         }
 
         const userRole = foundUser.role;
+        const messageId = crypto.randomUUID();
 
         const message: ChatMessage = {
-          id: crypto.randomUUID(),
+          id: messageId,
           conversationId: conversation.id,
           senderId: user.id,
           sender: {
@@ -153,17 +194,9 @@ export function useRealtimeChat({
           onMessageReceived(message);
         }
 
-        // Broadcast
-        if (channelRef.current && isConnected) {
-          await channelRef.current.send({
-            type: "broadcast",
-            event: EVENT_MESSAGE_TYPE,
-            payload: message,
-          });
-        }
-
         // Persist
         const messageToPersist: PersistableMessage = {
+          id: messageId,
           conversationId: conversation.id,
           senderId: user.id,
           senderType: userRole === "admin" ? "seller" : "customer",
