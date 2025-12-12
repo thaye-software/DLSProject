@@ -8,6 +8,7 @@ export type PersistableMessage = {
   id?: string;
   conversationId: string;
   senderId: string;
+  username: string;
   senderType: "customer" | "seller";
   content: string;
   isRead?: boolean;
@@ -22,6 +23,7 @@ export async function persistMessage(
     id: message.id,
     conversationId: message.conversationId,
     senderId: message.senderId,
+    username: message.username,
     senderType: message.senderType,
     content: message.content,
     isRead: message.isRead ?? false,

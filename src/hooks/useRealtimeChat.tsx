@@ -11,6 +11,7 @@ import { persistMessage, PersistableMessage } from "@/services/messageService";
 import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 
 import { createClient } from "@/lib/supabase/client";
+import { getUserById } from "@/services/userService";
 
 interface UseRealtimeChatProps {
   conversation: any;
@@ -23,13 +24,7 @@ export interface ChatMessage {
   id?: string;
   conversationId?: string;
   senderId?: string | null;
-  sender: {
-    id: string | null;
-    username: string;
-    email: string;
-    country: string;
-    role: "customer" | "seller";
-  };
+  username: string;
   senderType?: "customer" | "seller";
   content: string;
   isRead?: boolean;
@@ -80,43 +75,12 @@ export function useRealtimeChat({
         },
         async (payload: any) => {
           const newRecord = payload.new;
-          console.log("New message payload received:", newRecord);
-          let senderInfo = {
-            id: newRecord.sender_id,
-            username: "Unknown",
-            email: "",
-            country: "",
-            role: newRecord.sender_type as "customer" | "seller",
-          };
 
-          try {
-            const senderUser = await getUserByIdAction(newRecord.sender_id);
-            if (senderUser) {
-              senderInfo = {
-                id: senderUser.id,
-                username: senderUser.username,
-                email: senderUser.email,
-                country: senderUser.country?.name || "",
-                role: senderUser.role as "customer" | "seller",
-              };
-            }
-          } catch (error) {
-            console.error("Error fetching sender info", error);
-          }
-
-          const incomingMessage: ChatMessage = {
-            id: newRecord.id,
-            conversationId: newRecord.conversation_id,
-            senderId: newRecord.sender_id,
-            senderType: newRecord.sender_type,
-            content: newRecord.content,
-            isRead: newRecord.is_read,
-            createdAt: newRecord.created_at.endsWith("Z")
-              ? newRecord.created_at
-              : `${newRecord.created_at}Z`,
-            sender: senderInfo,
-          };
-
+          const incomingMessage = payload.new as ChatMessage;
+          incomingMessage.createdAt = newRecord.created_at.endsWith("Z")
+            ? newRecord.created_at
+            : `${newRecord.created_at}Z`;
+          
           setMessages((current) => {
             if (current.some((m) => m.id === incomingMessage.id)) {
               return current;
@@ -160,7 +124,7 @@ export function useRealtimeChat({
       }
 
       try {
-        const foundUser = await getUserByIdAction(user.id);
+        const foundUser = await getUserById(user.id);
         if (!foundUser) {
           console.error("User not found in DB:", user.id);
           toast.error("User not found");
@@ -174,20 +138,14 @@ export function useRealtimeChat({
           id: messageId,
           conversationId: conversation.id,
           senderId: user.id,
-          sender: {
-            id: user.id,
-            username,
-            email: foundUser.email || "",
-            country: foundUser.country?.name || "",
-            role: userRole === "admin" ? "seller" : "customer",
-          },
+          username: username,
           senderType: userRole === "admin" ? "seller" : "customer",
           content,
           createdAt: new Date().toISOString(),
         };
 
-        // Update local state
-        setMessages((current) => [...current, message]);
+        // // Update local state
+        // setMessages((current) => [...current, message]);
 
         // Notify Parent (Dashboard) immediately for own message too
         if (onMessageReceived) {
@@ -199,6 +157,7 @@ export function useRealtimeChat({
           id: messageId,
           conversationId: conversation.id,
           senderId: user.id,
+          username: username,
           senderType: userRole === "admin" ? "seller" : "customer",
           content,
           isRead: false,

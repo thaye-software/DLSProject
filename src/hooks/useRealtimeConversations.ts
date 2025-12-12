@@ -41,40 +41,17 @@ export function useRealtimeConversations(
           async (payload: any) => {
             const newRecord = payload.new;
 
-            let senderInfo = {
-              id: newRecord.sender_id,
-              username: "Unknown",
-              email: "",
-              country: "",
-              role: newRecord.sender_type as "customer" | "seller",
-            };
-
-            try {
-              const senderUser = await getUserByIdAction(newRecord.sender_id);
-              if (senderUser) {
-                senderInfo = {
-                  id: senderUser.id,
-                  username: senderUser.username,
-                  email: senderUser.email,
-                  country: senderUser.country?.name || "",
-                  role: senderUser.role as "customer" | "seller",
-                };
-              }
-            } catch (error) {
-              console.error("Error fetching sender info", error);
-            }
-
             const incomingMessage: ChatMessage = {
               id: newRecord.id,
               conversationId: newRecord.conversation_id,
               senderId: newRecord.sender_id,
+              username: newRecord.username,
               senderType: newRecord.sender_type,
               content: newRecord.content,
               isRead: newRecord.is_read,
               createdAt: newRecord.created_at.endsWith("Z")
                 ? newRecord.created_at
                 : `${newRecord.created_at}Z`,
-              sender: senderInfo,
             };
 
             // 1. GLOBAL: Store the message in Context (available to Dashboard)

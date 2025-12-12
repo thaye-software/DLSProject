@@ -15,6 +15,9 @@ export const ChatMessageItem = ({
   isOwnMessage,
   showHeader,
 }: ChatMessageItemProps) => {
+  console.log("Rendering message:", message);
+  console.log("Is own message:", isOwnMessage);
+
   return (
     <div
       className={`flex mt-2 ${isOwnMessage ? "justify-end" : "justify-start"}`}
@@ -31,7 +34,7 @@ export const ChatMessageItem = ({
             })}
           >
             <span className={"font-medium"}>
-              {isOwnMessage ? "You" : message.sender.username}
+              {isOwnMessage ? "You" : message.username}
             </span>
             <span className="text-foreground/50 text-xs">
               {new Date(message.createdAt).toLocaleTimeString("en-US", {

@@ -16,11 +16,16 @@ import { getConversations } from "@/services/conversationService";
 
 
 export default function ChatBox() {
-  const { setChatOpen, initialConversation, setInitialConversation } = useChatContext();
-  const [conversations, setConversations] = useState<any[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<any | null>(
-    initialConversation
-  );
+  const {
+    setChatOpen,
+    initialConversation,
+    setInitialConversation,
+    conversations,
+    setConversations,
+    selectedConversation,
+    setSelectedConversation
+  } = useChatContext();
+  
   const [loading, setLoading] = useState(false);
   const { user, role } = useSupabaseAuthContext();
 
