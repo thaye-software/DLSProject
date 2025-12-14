@@ -10,7 +10,7 @@ const connectionStringEnv =
   process.env.DATABASE_URL_TEST ?? process.env.DATABASE_URL_LOCAL;
 
 const defaultLocalConnection =
-  "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+  "postgresql://postgres:postgres@127.0.0.1:54421/postgres";
 const connectionString = connectionStringEnv ?? defaultLocalConnection;
 
 // Detect if we appear to be running under a test environment
