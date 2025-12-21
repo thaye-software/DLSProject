@@ -1,3 +1,4 @@
+import { Metadata } from "next";
 import { Suspense } from "react";
 
 import { Spinner } from "@/components/ui/spinner";
@@ -11,6 +12,33 @@ import { getAllProductsByBrandName } from "@/services/productService";
 
 import { getUserLocation } from "@/lib/utils/server/utils";
 import { ProductModel } from "@/database/types";
+
+
+
+
+
+
+export async function generateMetadata({
+  params,
+}: {params: Promise<{ brandName: string }>}): Promise<Metadata> {
+  let brandName = (await params).brandName;
+  brandName = capitalizeFirstLetter(brandName);
+
+  return {
+    title: `${brandName} | Limited Wathches`,
+    description: `Discover ${brandName} watches.`,
+    keywords: [
+      "watches",
+      "wrist watches",
+      `${brandName} watches`,
+    ],
+    robots: {
+      index: true,
+      follow: true,
+      nocache: false,
+    },
+  };
+}
 
 
 

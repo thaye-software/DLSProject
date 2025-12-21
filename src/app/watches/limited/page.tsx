@@ -1,15 +1,42 @@
-import { WatchesGrid } from "@/components/Watches/WatchesGrid";
-import { getFilteredProducts } from "@/services/productService";
+import { Metadata } from "next";
 import { Suspense } from "react";
+import { SearchParams } from "next/dist/server/request/search-params";
+
 import { Spinner } from "@/components/ui/spinner";
-import { getUserLocation } from "@/lib/utils/server/utils";
+
 import {
   ProductFilterSheet,
   WatchFilters,
 } from "@/components/Watches/Filters/ProductFilterSheet";
-import { getFilterRanges } from "../page";
-import { SearchParams } from "next/dist/server/request/search-params";
+import { WatchesGrid } from "@/components/Watches/WatchesGrid";
 import AppliedFiltersTag from "@/components/Watches/Filters/AppliedFilterTags";
+
+import { getFilterRanges } from "../page";
+
+import { getFilteredProducts } from "@/services/productService";
+
+import { baseUrl } from "@/lib/utils/client/utils";
+import { getUserLocation } from "@/lib/utils/server/utils";
+
+
+
+
+
+export const metadata: Metadata = {
+  title: "Limited Edition Watches | Limited Watches",
+  description: "Discover our exclusive limited edition watches.",
+  keywords: [
+    "omega","watches","wrist watches", "limited edition watches", "exclusive watches",
+  ],
+  alternates: {
+    canonical: `${baseUrl}/watches/limited`,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    nocache: false,
+  },
+};
 
 export default async function LimitedWatches({
   searchParams,
