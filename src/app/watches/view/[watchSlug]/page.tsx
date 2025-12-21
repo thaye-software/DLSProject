@@ -1,7 +1,6 @@
-import BackButton from "@/components/Miscellaneous/BackButton";
-import ProductImageSwiper from "@/components/Watches/ProductImageSwiper";
-import { getProductBySlug } from "@/services/productService";
+import { Metadata } from "next";
 import { notFound } from "next/navigation";
+
 import {
   Check,
   Shield,
@@ -12,14 +11,70 @@ import {
   Ruler,
   Star,
 } from "lucide-react";
-import { getLocalCurrencyString } from "@/services/currencyService";
-import ProductSafetyInfo from "@/components/Watches/ProductSafetyInfoCard";
+
 import BuyButton from "@/components/Watches/BuyButton";
 import ContactButton from "@/components/Contact/ContactButton";
-import constants from "@/lib/constants";
-import { getLimitedWatchesUser, getUserLocation } from "@/lib/utils/server/utils";
+import BackButton from "@/components/Miscellaneous/BackButton";
+import ProductImageSwiper from "@/components/Watches/ProductImageSwiper";
+import ProductSafetyInfo from "@/components/Watches/ProductSafetyInfoCard";
+
+import { getProductBySlug } from "@/services/productService";
 import { getCountryVATByCode } from "@/services/countryService";
+import { getLocalCurrencyString } from "@/services/currencyService";
+
+import constants from "@/lib/constants";
 import { calculateSubtotalCents } from "@/lib/priceUtils";
+import { baseUrl } from "@/lib/utils/client/utils";
+import { getLimitedWatchesUser, getUserLocation } from "@/lib/utils/server/utils";
+
+
+
+
+
+
+export async function generateMetadata({
+  params,
+}: {params: Promise<{ watchSlug: string }>}): Promise<Metadata> {
+
+  const product = await getProductBySlug((await params).watchSlug);
+  if (!product) {
+    return {
+      title: "Watch Not Found | Limited Watches",
+      description: "The watch could not be found.",
+      alternates: {
+        canonical: `${baseUrl}/watches/view/${(await params).watchSlug}`,
+      },
+      robots: {
+        index: true,
+        follow: true,
+        nocache: false,
+      },
+    };
+  }
+
+  let brandName = product.watch.brand.name;
+  return {
+    title: `${brandName} ${product.watch.model || "Watch"} | Limited Watches`,
+    description: product.description || `${brandName} ${product.watch.model || "Watch"}"`,
+    keywords: [
+      "watches",
+      "wrist watches",
+      brandName,
+      product.watch.model || "",
+      product.watch.model + " " + brandName || ""
+    ],
+    alternates: {
+      canonical: `${baseUrl}/watches/view/${(await params).watchSlug}`,
+    },
+    robots: {
+      index: true,
+      follow: true,
+      nocache: false,
+    },
+  };
+}
+
+
 
 function getOptionName(
   options: { id: number; name: string }[],

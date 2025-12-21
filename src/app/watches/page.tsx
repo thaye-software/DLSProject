@@ -1,18 +1,49 @@
-import { WatchesGrid } from "@/components/Watches/WatchesGrid";
-
-import { getFilteredProducts } from "@/services/productService";
-
+import { Metadata } from "next";
 import { Suspense } from "react";
+import { SearchParams } from "next/dist/server/request/search-params";
+
 import { Spinner } from "@/components/ui/spinner";
-import { getUserLocation } from "@/lib/utils/server/utils";
+
+import { WatchesGrid } from "@/components/Watches/WatchesGrid";
+import AppliedFiltersTag from "@/components/Watches/Filters/AppliedFilterTags";
 import { ProductFilterSheet, WatchFilters } from "@/components/Watches/Filters/ProductFilterSheet";
 
 import { getAllBrands } from "@/services/brandService"
-import { getFilterPriceRange } from "@/services/productService";
-import { convertCurrency } from "@/services/currencyService";
 import { watchService } from "@/services/watchService";
-import { SearchParams } from "next/dist/server/request/search-params";
-import AppliedFiltersTag from "@/components/Watches/Filters/AppliedFilterTags";
+import { convertCurrency } from "@/services/currencyService";
+import { getAllProducts, getFilterPriceRange, getFilteredProducts } from "@/services/productService";
+
+import { baseUrl } from "@/lib/utils/client/utils";
+import { getUserLocation } from "@/lib/utils/server/utils";
+
+
+
+
+export async function generateMetadata(): Promise<Metadata> {
+  const allProducts = await getAllProducts();
+  const keywords = allProducts.map((product) => product.watch.model + " " + product.watch.brand.name);
+
+  return {
+    title: "Watches | Limited Watches",
+    description: "Explore our extensive collection of watches from top brands around the world.",
+    keywords: [
+      "watches",
+      "wrist watches",
+      "luxury watches",
+      ...keywords
+    ],
+    alternates: {
+      canonical: `${baseUrl}/watches`,
+    },
+    robots: {
+      index: true,
+      follow: true,
+      nocache: false,
+    }
+  }
+};
+
+
 
 export default async function FilterdWatches({searchParams}: {searchParams: SearchParams}) {
 
