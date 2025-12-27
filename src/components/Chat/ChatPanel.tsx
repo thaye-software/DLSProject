@@ -8,20 +8,17 @@ import Image from "next/image";
 import Link from "next/link";
 
 export const ChatPanel: React.FC<{
-  user: any;
-  username: string;
   conversations: any[];
   selectedConversation: any | null;
-  setSelectedConversation: (convId: string | null) => void;
-  onClose?: () => void;
+  setSelectedConversation: (convId: string | null) => void; 
 }> = ({
-  user,
-  username,
   conversations,
   selectedConversation,
   setSelectedConversation,
-  onClose,
 }) => {
+
+  const { user, username } = useSupabaseAuthContext();
+
   // UI: if no conv selected show the convs list full-width; if selected show the conv full-width with back button
   if (!selectedConversation) {
     return (
@@ -108,8 +105,8 @@ export const ChatPanel: React.FC<{
       <div className="flex-1 min-h-0">
         <RealtimeChat
           conversation={selectedConversation}
-          userId={user?.id}
-          username={username}
+          userId={user?.id || ""}
+          username={username || "Unknown User"}
           messages={selectedConversation.messages}
         />
       </div>

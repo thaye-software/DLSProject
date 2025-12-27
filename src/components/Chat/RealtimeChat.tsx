@@ -180,7 +180,8 @@ export const RealtimeChat = ({
               const prevMessage = index > 0 ? allMessages[index - 1] : null;
               const showHeader =
                 !prevMessage || prevMessage.username !== message.username;
-
+              console.log("all messages:", allMessages);
+              
               return (
                 <div
                   key={message.id || index}

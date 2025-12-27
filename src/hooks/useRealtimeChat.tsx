@@ -75,11 +75,24 @@ export function useRealtimeChat({
         },
         async (payload: any) => {
           const newRecord = payload.new;
+          // convert payload to ChatMessage
+          const incomingMessage: ChatMessage = {
+            id: newRecord.id,
+            conversationId: newRecord.conversation_id,
+            senderId: newRecord.sender_id,
+            username: newRecord.username,
+            senderType: newRecord.sender_type,
+            content: newRecord.content,
+            isRead: newRecord.is_read,
+            createdAt: newRecord.created_at.endsWith("Z")
+              ? newRecord.created_at
+              : `${newRecord.created_at}Z`,
+          };
 
-          const incomingMessage = payload.new as ChatMessage;
-          incomingMessage.createdAt = newRecord.created_at.endsWith("Z")
-            ? newRecord.created_at
-            : `${newRecord.created_at}Z`;
+          // const incomingMessage = payload.new as ChatMessage;
+          // incomingMessage.createdAt = newRecord.created_at.endsWith("Z")
+          //   ? newRecord.created_at
+          //   : `${newRecord.created_at}Z`;
           
           setMessages((current) => {
             if (current.some((m) => m.id === incomingMessage.id)) {

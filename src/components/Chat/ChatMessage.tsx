@@ -15,8 +15,6 @@ export const ChatMessageItem = ({
   isOwnMessage,
   showHeader,
 }: ChatMessageItemProps) => {
-  console.log("Rendering message:", message);
-  console.log("Is own message:", isOwnMessage);
 
   return (
     <div

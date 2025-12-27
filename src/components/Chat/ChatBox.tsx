@@ -3,62 +3,22 @@
 import { Button } from "../ui/button";
 import { motion } from "framer-motion";
 import { ArrowLeft, X } from "lucide-react";
-import { useEffect, useState } from "react";
 
 import { ChatPanel } from "./ChatPanel";
 
 import { useChatContext } from "@/context/ChatContext";
 
-import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
-
-import { getConversations } from "@/services/conversationService";
-
-
-
 export default function ChatBox() {
   const {
     setChatOpen,
-    initialConversation,
-    setInitialConversation,
     conversations,
-    setConversations,
     selectedConversation,
     setSelectedConversation
   } = useChatContext();
-  
-  const [loading, setLoading] = useState(false);
-  const { user, role } = useSupabaseAuthContext();
-
-  useEffect(() => {
-    let mounted = true;
-    async function loadConversations() {
-      setLoading(true);
-      try {
-        if (!user || !user.id || !role) {
-          setConversations([]);
-          return;
-        }
-        const res = await getConversations(user.id, role);
-        if (!mounted) return;
-        setConversations(res);
-        setLoading(false);
-      } catch (err) {
-        // on error, fallback to empty list
-        setConversations([]);
-      }
-    }
-    loadConversations();
-    return () => {
-      mounted = false;
-    };
-  }, [user, role, selectedConversation]);
 
   function handleBackButton() {
     setSelectedConversation(null);
-    setInitialConversation(null);
   }
-
-  
 
   return (
     <motion.div
@@ -110,8 +70,6 @@ export default function ChatBox() {
       </div>
       <div className="flex-1 overflow-hidden min-h-0">
         <ChatPanel
-          user={user}
-          username={user?.user_metadata.display_name}
           conversations={conversations}
           selectedConversation={selectedConversation}
           setSelectedConversation={setSelectedConversation}

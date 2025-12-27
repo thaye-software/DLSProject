@@ -9,18 +9,15 @@ type ChatContextType = {
   setConversations: React.Dispatch<React.SetStateAction<any[]>>;
   selectedConversation: any;
   setSelectedConversation: React.Dispatch<React.SetStateAction<any>>;
-  initialConversation?: any;
-  setInitialConversation: React.Dispatch<React.SetStateAction<any>>;
 };
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   const [chatOpen, setChatOpen] = useState(false);
-  const [initialConversation, setInitialConversation] = useState<any>(null);
   const [conversations, setConversations] = useState<any[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
-  
+
   const { user, role } = useSupabaseAuthContext();
 
   useEffect(() => {
@@ -35,11 +32,11 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       }
       };
       fetchConversations();
-  }, [initialConversation]);
+  }, [user, role]);
   
 
   return (
-    <ChatContext.Provider value={{ chatOpen, setChatOpen, initialConversation, setInitialConversation, conversations, setConversations, selectedConversation, setSelectedConversation }}>
+    <ChatContext.Provider value={{ chatOpen, setChatOpen, conversations, setConversations, selectedConversation, setSelectedConversation }}>
       {children}
     </ChatContext.Provider>
   );
