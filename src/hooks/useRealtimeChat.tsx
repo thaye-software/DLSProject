@@ -4,8 +4,6 @@ import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 
 import { toast } from "sonner";
 
-import { getUserByIdAction } from "@/app/actions/user";
-
 import { persistMessage, PersistableMessage } from "@/services/messageService";
 
 import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
@@ -88,11 +86,6 @@ export function useRealtimeChat({
               ? newRecord.created_at
               : `${newRecord.created_at}Z`,
           };
-
-          // const incomingMessage = payload.new as ChatMessage;
-          // incomingMessage.createdAt = newRecord.created_at.endsWith("Z")
-          //   ? newRecord.created_at
-          //   : `${newRecord.created_at}Z`;
           
           setMessages((current) => {
             if (current.some((m) => m.id === incomingMessage.id)) {
