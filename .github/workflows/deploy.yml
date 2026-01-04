@@ -84,8 +84,6 @@ jobs:
                 tags: |
                     ghcr.io/thaye-software/limited-watches-dev:latest
                     ghcr.io/thaye-software/limited-watches-dev:${{ github.sha }}
-                # cache-from: type=registry,ref=ghcr.io/thaye-software/limited-watches-dev:cache
-                # cache-to: type=registry,mode=max,ref=ghcr.io/thaye-software/limited-watches-dev:cache
                 secrets: |
                     app_env=dev
                     database_url_dev=${{ secrets.DATABASE_URL_DEV }}

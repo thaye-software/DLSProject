@@ -19,7 +19,10 @@
     "supabase:stop": "npx supabase stop",
     "supabase:reset": "npx supabase db reset",
     "supabase:status": "npx supabase status",
-    "test": "jest",
+    "supabase:start:test": "cd supabase-test/supabase && npx supabase start",
+    "supabase:stop:test": "cd supabase-test/supabase && npx supabase stop",
+    "test:db:setup": "drizzle-kit push --schema=./src/database/schema.ts --dialect=postgresql --url=postgresql://postgres:postgres@127.0.0.1:54422/postgres",
+    "test": "jest --runInBand",
     "test:watch": "jest --watch",
     "test:unit": "jest __tests__/unit",
     "test:integration": "jest __tests__/integration"
