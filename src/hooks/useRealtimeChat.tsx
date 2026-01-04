@@ -63,11 +63,36 @@ export function useRealtimeChat({
     }
 
     newChannel
-      .on("broadcast", { event: "message" }, (payload: any) => {
-        const incomingMessage = payload.payload as ChatMessage;
-
-        if (incomingMessage.conversationId === conversation.id) {
-          setMessages((current) => [...current, incomingMessage]);
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversation.id}`,
+        },
+        async (payload: any) => {
+          const newRecord = payload.new;
+          // convert payload to ChatMessage
+          const incomingMessage: ChatMessage = {
+            id: newRecord.id,
+            conversationId: newRecord.conversation_id,
+            senderId: newRecord.sender_id,
+            username: newRecord.username,
+            senderType: newRecord.sender_type,
+            content: newRecord.content,
+            isRead: newRecord.is_read,
+            createdAt: newRecord.created_at.endsWith("Z")
+              ? newRecord.created_at
+              : `${newRecord.created_at}Z`,
+          };
+          
+          setMessages((current) => {
+            if (current.some((m) => m.id === incomingMessage.id)) {
+              return current;
+            }
+            return [...current, incomingMessage];
+          });
 
           // Notify parent to update sidebar
           if (onMessageReceived) {
@@ -125,21 +150,9 @@ export function useRealtimeChat({
           createdAt: new Date().toISOString(),
         };
 
-        // // Update local state
-        // setMessages((current) => [...current, message]);
-
         // Notify Parent (Dashboard) immediately for own message too
         if (onMessageReceived) {
           onMessageReceived(message);
-        }
-
-        // Broadcast
-        if (channelRef.current && isConnected) {
-          await channelRef.current.send({
-            type: "broadcast",
-            event: "message",
-            payload: message,
-          });
         }
 
         // Persist
