@@ -4,15 +4,12 @@ import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 
 import { toast } from "sonner";
 
-import { getUserByIdAction } from "@/app/actions/user";
-
 import { persistMessage, PersistableMessage } from "@/services/messageService";
 
 import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 
 import { createClient } from "@/lib/supabase/client";
-
-
+import { getUserById } from "@/services/userService";
 
 interface UseRealtimeChatProps {
   conversation: any;
@@ -21,19 +18,11 @@ interface UseRealtimeChatProps {
   onMessageReceived?: (message: ChatMessage) => void;
 }
 
-
-
 export interface ChatMessage {
   id?: string;
   conversationId?: string;
   senderId?: string | null;
-  sender: {
-    id: string | null;
-    username: string;
-    email: string;
-    country: string;
-    role: "customer" | "seller";
-  };
+  username: string;
   senderType?: "customer" | "seller";
   content: string;
   isRead?: boolean;
@@ -85,11 +74,10 @@ export function useRealtimeChat({
             onMessageReceived(incomingMessage);
           }
         }
-      })
+      )
       .subscribe((status: string) => {
         if (status === "SUBSCRIBED") {
           setIsConnected(true);
-
         } else {
           setIsConnected(false);
         }
@@ -110,7 +98,6 @@ export function useRealtimeChat({
 
   const sendMessage = useCallback(
     async (content: string) => {
-
       // Allow sending if we have a user, even if socket momentarily disconnected (optimistic),
       // though usually we want to wait for connection.
       if (!conversation?.id || !user?.id) {
@@ -118,7 +105,7 @@ export function useRealtimeChat({
       }
 
       try {
-        const foundUser = await getUserByIdAction(user.id);
+        const foundUser = await getUserById(user.id);
         if (!foundUser) {
           console.error("User not found in DB:", user.id);
           toast.error("User not found");
@@ -126,25 +113,20 @@ export function useRealtimeChat({
         }
 
         const userRole = foundUser.role;
+        const messageId = crypto.randomUUID();
 
         const message: ChatMessage = {
-          id: crypto.randomUUID(),
+          id: messageId,
           conversationId: conversation.id,
           senderId: user.id,
-          sender: {
-            id: user.id,
-            username,
-            email: foundUser.email || "",
-            country: foundUser.country?.name || "",
-            role: userRole === "admin" ? "seller" : "customer",
-          },
+          username: username,
           senderType: userRole === "admin" ? "seller" : "customer",
           content,
           createdAt: new Date().toISOString(),
         };
 
-        // Update local state
-        setMessages((current) => [...current, message]);
+        // // Update local state
+        // setMessages((current) => [...current, message]);
 
         // Notify Parent (Dashboard) immediately for own message too
         if (onMessageReceived) {
@@ -162,8 +144,10 @@ export function useRealtimeChat({
 
         // Persist
         const messageToPersist: PersistableMessage = {
+          id: messageId,
           conversationId: conversation.id,
           senderId: user.id,
+          username: username,
           senderType: userRole === "admin" ? "seller" : "customer",
           content,
           isRead: false,

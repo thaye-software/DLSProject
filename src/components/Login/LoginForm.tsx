@@ -37,10 +37,10 @@ export function LoginForm({
   const [state, formAction] = useActionState(login, initialState);
   const [loading, setLoading] = useState(false);
 
-  const {refreshUser} = useSupabaseAuthContext();
+  const { refreshUser } = useSupabaseAuthContext();
 
   useEffect(() => {
-    if(state.formError || state.fieldErrors) {
+    if (state.formError || state.fieldErrors) {
       setLoading(false);
     }
     

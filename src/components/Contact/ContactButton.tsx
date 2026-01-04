@@ -8,7 +8,7 @@ import { useChatContext } from "@/context/ChatContext";
 
 export default function ContactButton({ productId }: { productId?: string }) {
   const { user } = useSupabaseAuthContext();
-  const { setChatOpen, setInitialConversation } = useChatContext();
+  const { setChatOpen, setSelectedConversation } = useChatContext();
 
   async function handleContactClick() {
     if (!user) {
@@ -20,7 +20,7 @@ export default function ContactButton({ productId }: { productId?: string }) {
         productId: productId,
       };
       const newConversation = await createConversation(conversationToCreate);
-      setInitialConversation(newConversation);
+      setSelectedConversation(newConversation);
       setChatOpen(true);
     }
   }

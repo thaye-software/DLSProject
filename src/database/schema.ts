@@ -352,6 +352,7 @@ export const messages = pgTable(
     senderId: uuid("sender_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    username: text("username").default("unknown").notNull(),
     senderType: text("sender_type").notNull(), // 'customer' or 'seller'
     content: text("content").notNull(),
     isRead: boolean("is_read").default(false),

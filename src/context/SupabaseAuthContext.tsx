@@ -24,8 +24,6 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
   const [username, setUsername] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  
-  // Initialize avatar from local storage if available to prevent flash
   const [avatarUrl, setAvatarUrl] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
     return localStorage.getItem("avatarUrl");
@@ -64,22 +62,16 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-
-
   const refreshUser = useCallback(async () => {
     // Force a session refresh to get the latest metadata (like display_name)
     const { data: { session }, error } = await supabase.auth.refreshSession();
-
     if(error) {
       throw error;
     }
-
     if (session?.user) {
       await fetchUserData(session.user);
     }
   }, [fetchUserData]);
-
-
 
   useEffect(() => {
     let mounted = true;
@@ -99,17 +91,6 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     
     // Listen for auth state changes
     const { data: listener } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
-      if (event === "PASSWORD_RECOVERY") {
-        const newPassword = prompt("Please enter your new password:");
-        const { error } = await supabase.auth.updateUser({ password: newPassword || "" });
-        if (error) {
-          alert("Error updating password: " + error.message);
-        } else {
-          alert("Password updated successfully!");
-        }
-        return;
-      }
-
       // Standard auth change
       if (mounted) {
         await fetchUserData(session?.user ?? null);

@@ -7,17 +7,21 @@ import { useUnreadMessagesContext } from "@/context/UnreadMessagesContext";
 import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 import type { ConversationModel } from "@/database/types";
 import { ChatMessage } from "@/hooks/useRealtimeChat";
+import { getUserByIdAction } from "@/app/actions/user";
 
-export function useRealtimeConversations(initialConversations: ConversationModel[]) {
+export function useRealtimeConversations(
+  initialConversations: ConversationModel[]
+) {
   const supabase = createClient();
   const { user } = useSupabaseAuthContext();
-  
+
   // Destructure the new helper from context
   const { setUnreadCounts, addRealtimeMessage } = useUnreadMessagesContext();
 
   useEffect(() => {
     // Guard clauses
-    if (!initialConversations || initialConversations.length === 0 || !user) return;
+    if (!initialConversations || initialConversations.length === 0 || !user)
+      return;
 
     const channels: ReturnType<typeof supabase.channel>[] = [];
 
@@ -26,30 +30,49 @@ export function useRealtimeConversations(initialConversations: ConversationModel
       const channel = supabase.channel(channelName);
 
       channel
-        .on("broadcast", { event: "message" }, (payload: any) => {
-          const incomingMessage = payload.payload as ChatMessage;
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "messages",
+            filter: `conversation_id=eq.${conv.id}`,
+          },
+          async (payload: any) => {
+            const newRecord = payload.new;
 
-          if (incomingMessage.conversationId === conv.id) {
-            
+            const incomingMessage: ChatMessage = {
+              id: newRecord.id,
+              conversationId: newRecord.conversation_id,
+              senderId: newRecord.sender_id,
+              username: newRecord.username,
+              senderType: newRecord.sender_type,
+              content: newRecord.content,
+              isRead: newRecord.is_read,
+              createdAt: newRecord.created_at.endsWith("Z")
+                ? newRecord.created_at
+                : `${newRecord.created_at}Z`,
+            };
+
             // 1. GLOBAL: Store the message in Context (available to Dashboard)
             addRealtimeMessage(conv.id, incomingMessage);
 
             // 2. GLOBAL: Handle Unread Counts
             const isFromCustomer = incomingMessage.senderType === "customer";
-            const isNotFromMe = incomingMessage.senderId !== user.id;
+            const isNotFromMe = incomingMessage.senderId !== user?.id;
 
             if (isFromCustomer && isNotFromMe) {
-               // NOTE: We increment blindly here because the Hook doesn't know 
-               // if the Dashboard is open or which chat is selected. 
-               // The Dashboard component will be responsible for clearing this 
-               // count immediately if the chat is open.
+              // NOTE: We increment blindly here because the Hook doesn't know
+              // if the Dashboard is open or which chat is selected.
+              // The Dashboard component will be responsible for clearing this
+              // count immediately if the chat is open.
               setUnreadCounts((prev) => ({
                 ...prev,
                 [conv.id]: (prev[conv.id] ?? 0) + 1,
               }));
             }
           }
-        })
+        )
         .subscribe();
 
       channels.push(channel);
@@ -58,5 +81,11 @@ export function useRealtimeConversations(initialConversations: ConversationModel
     return () => {
       channels.forEach((ch) => supabase.removeChannel(ch));
     };
-  }, [initialConversations, user, supabase, setUnreadCounts, addRealtimeMessage]);
+  }, [
+    initialConversations,
+    user,
+    supabase,
+    setUnreadCounts,
+    addRealtimeMessage,
+  ]);
 }

@@ -5,7 +5,6 @@ import { ChatMessageItem } from "@/components/Chat/ChatMessage";
 import { useChatScroll } from "@/hooks/useChatScroll";
 import { type ChatMessage, useRealtimeChat } from "@/hooks/useRealtimeChat";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ArrowDown, Send } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { markAsRead } from "@/services/messageService";
@@ -180,9 +179,9 @@ export const RealtimeChat = ({
             {allMessages.map((message, index) => {
               const prevMessage = index > 0 ? allMessages[index - 1] : null;
               const showHeader =
-                !prevMessage ||
-                prevMessage.sender.username !== message.sender.username;
-
+                !prevMessage || prevMessage.username !== message.username;
+              console.log("all messages:", allMessages);
+              
               return (
                 <div
                   key={message.id || index}
@@ -190,7 +189,7 @@ export const RealtimeChat = ({
                 >
                   <ChatMessageItem
                     message={message}
-                    isOwnMessage={String(message.sender.id) === String(userId)}
+                    isOwnMessage={String(message.senderId) === String(userId)}
                     showHeader={showHeader}
                   />
                 </div>
