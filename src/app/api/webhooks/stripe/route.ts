@@ -106,11 +106,16 @@ async function sendConfirmationEmail(foundOrder: any): Promise<void> {
     " " +
     foundOrder.orderItems[0].product.watch.model;
 
-  const customerEmail = foundOrder.user.email;
 
-  const totalAmount = foundOrder?.totalPriceDkk;
   const targetCurrencyCode = foundOrder.currency.code;
 
+  const subTotalAmount = foundOrder?.subTotalDkk;
+  const displaySubTotalAmount = await getLocalCurrencyString(
+    Number(subTotalAmount),
+    targetCurrencyCode as string
+  );
+
+  const totalAmount = foundOrder?.totalPriceDkk;
   const displayTotalAmount = await getLocalCurrencyString(
     Number(totalAmount),
     targetCurrencyCode as string
@@ -142,14 +147,12 @@ async function sendConfirmationEmail(foundOrder: any): Promise<void> {
     productName,
     productImageSrc,
     totalAmount: displayTotalAmount,
+    subTotalAmount: displaySubTotalAmount,
     quantity: foundOrder.orderItems[0].quantity,
     shippingCost: foundOrder.currency.code === "DKK" ? displayShippingCostDKK : displayShippingCostEUR
   };
-  console.log("æøæøæåå")
-console.log(orderDetails)
-console.log(foundOrder.currency)
-console.log(foundOrder.currency.code)
 
+  const customerEmail = foundOrder.user.email;
   const success = await sendOrderConfirmationEmail(customerEmail, orderDetails);
   if(!success) throw new Error(`(server) failed to send email confirmation for order with id: ${foundOrder.orderId}`);
 }
