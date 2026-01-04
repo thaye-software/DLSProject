@@ -28,7 +28,7 @@ export function Navbar() {
   return (
     <div className="flex justify-between items-center ">
       {/* Left side navigation */}
-      <NavigationMenu>
+      <NavigationMenu suppressHydrationWarning>
         <NavigationMenuList className="flex-wrap">
           <NavigationMenuItem className="hidden md:block">
             <NavigationMenuTrigger className="font-bold transition-colors duration-300">

@@ -16,6 +16,7 @@ import { getLocalCurrencyString } from '@/services/currencyService';
 
 import { sendOrderConfirmationEmail } from '@/app/orders/actions';
 
+import CONSTANTS from "@/lib/constants"
 
 
 export async function POST(req: NextRequest) {
@@ -105,13 +106,28 @@ async function sendConfirmationEmail(foundOrder: any): Promise<void> {
     " " +
     foundOrder.orderItems[0].product.watch.model;
 
-  const customerEmail = foundOrder.user.email;
 
-  const totalAmount = foundOrder?.totalPriceDkk;
   const targetCurrencyCode = foundOrder.currency.code;
 
+  const subTotalAmount = foundOrder?.subTotalDkk;
+  const displaySubTotalAmount = await getLocalCurrencyString(
+    Number(subTotalAmount),
+    targetCurrencyCode as string
+  );
+
+  const totalAmount = foundOrder?.totalPriceDkk;
   const displayTotalAmount = await getLocalCurrencyString(
     Number(totalAmount),
+    targetCurrencyCode as string
+  );
+
+  const displayShippingCostDKK = await getLocalCurrencyString(
+    Number(CONSTANTS.SHIPPING_PRICE_DKK * 100),
+    targetCurrencyCode as string
+  );
+
+  const displayShippingCostEUR = await getLocalCurrencyString(
+    Number(CONSTANTS.SHIPPING_PRICE_EUR * 100),
     targetCurrencyCode as string
   );
 
@@ -123,7 +139,7 @@ async function sendConfirmationEmail(foundOrder: any): Promise<void> {
   ]
     .filter(Boolean)
     .join(" ");
-
+    
   const orderDetails = {
     customerName: fullName,
     orderId: foundOrder.id,
@@ -131,9 +147,12 @@ async function sendConfirmationEmail(foundOrder: any): Promise<void> {
     productName,
     productImageSrc,
     totalAmount: displayTotalAmount,
+    subTotalAmount: displaySubTotalAmount,
     quantity: foundOrder.orderItems[0].quantity,
+    shippingCost: foundOrder.currency.code === "DKK" ? displayShippingCostDKK : displayShippingCostEUR
   };
 
+  const customerEmail = foundOrder.user.email;
   const success = await sendOrderConfirmationEmail(customerEmail, orderDetails);
   if(!success) throw new Error(`(server) failed to send email confirmation for order with id: ${foundOrder.orderId}`);
 }

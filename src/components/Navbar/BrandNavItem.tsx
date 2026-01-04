@@ -23,7 +23,7 @@ export default function BrandNavItem() {
   }, []);
 
   return (
-    <NavigationMenuItem className="hidden md:block">
+    <NavigationMenuItem className="hidden md:block" suppressHydrationWarning>
       <NavigationMenuTrigger className="font-bold">
         Brands
       </NavigationMenuTrigger>
