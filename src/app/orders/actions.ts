@@ -337,7 +337,7 @@ export async function sendOrderConfirmationEmail(
                       </tr>
                       <tr>
                         <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Shipping</td>
-                        <td style="padding: 8px 0; text-align: right; color: #10b981; font-size: 14px; font-weight: 600;">Free</td>
+                        <td style="padding: 8px 0; text-align: right; color: #6b7280; font-size: 14px; font-weight: 600;">${orderDetails.shippingCost}</td>
                       </tr>
                       <tr>
                         <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Tax</td>

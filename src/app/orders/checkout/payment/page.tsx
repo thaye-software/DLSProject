@@ -103,7 +103,7 @@ export default async function PaymentPage({
   const shippingDkkCents = constants.SHIPPING_PRICE_DKK * 100;
   const shippingEurCents = constants.SHIPPING_PRICE_EUR * 100;
 
-  let subtotalEur = await convertCurrencyReturnCents(subtotal, countryCode as string);
+  const subtotalEur = await convertCurrencyReturnCents(subtotal, countryCode as string);
   let total = null;
   if (countryCode === "DK") {
     total = subtotal + shippingDkkCents;
@@ -140,7 +140,7 @@ export default async function PaymentPage({
         }).format(constants.SHIPPING_PRICE_EUR);
 
   // Charge the buyer the gross total (product net + VAT + shipping)
-  const stripeAmountToBePaid = countryCode === "DK" ? Number(total / 100) : Number(total * 100);
+  const stripeAmountToBePaid = countryCode === "DK" ? Number(total) : Number(total * 100);
   if (!stripe) throw new Error("Stripe not available");
   const paymentIntent = await stripe.paymentIntents.create({
     amount: stripeAmountToBePaid,

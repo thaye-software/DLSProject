@@ -16,6 +16,7 @@ import { getLocalCurrencyString } from '@/services/currencyService';
 
 import { sendOrderConfirmationEmail } from '@/app/orders/actions';
 
+import CONSTANTS from "@/lib/constants"
 
 
 export async function POST(req: NextRequest) {
@@ -115,6 +116,16 @@ async function sendConfirmationEmail(foundOrder: any): Promise<void> {
     targetCurrencyCode as string
   );
 
+  const displayShippingCostDKK = await getLocalCurrencyString(
+    Number(CONSTANTS.SHIPPING_PRICE_DKK * 100),
+    targetCurrencyCode as string
+  );
+
+  const displayShippingCostEUR = await getLocalCurrencyString(
+    Number(CONSTANTS.SHIPPING_PRICE_EUR * 100),
+    targetCurrencyCode as string
+  );
+
   const customer = foundOrder.billingAddress;
   const fullName = [
     customer?.firstName,
@@ -123,7 +134,7 @@ async function sendConfirmationEmail(foundOrder: any): Promise<void> {
   ]
     .filter(Boolean)
     .join(" ");
-
+    
   const orderDetails = {
     customerName: fullName,
     orderId: foundOrder.id,
@@ -132,7 +143,12 @@ async function sendConfirmationEmail(foundOrder: any): Promise<void> {
     productImageSrc,
     totalAmount: displayTotalAmount,
     quantity: foundOrder.orderItems[0].quantity,
+    shippingCost: foundOrder.currency.code === "DKK" ? displayShippingCostDKK : displayShippingCostEUR
   };
+  console.log("æøæøæåå")
+console.log(orderDetails)
+console.log(foundOrder.currency)
+console.log(foundOrder.currency.code)
 
   const success = await sendOrderConfirmationEmail(customerEmail, orderDetails);
   if(!success) throw new Error(`(server) failed to send email confirmation for order with id: ${foundOrder.orderId}`);
