@@ -12,6 +12,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { deleteAddress } from "./addressService";
 import { deleteFavorites } from "./favoriteService";
 import { deleteOrderAddresses } from "./orderAddressService";
+import { baseUrl } from "@/lib/utils/client/utils";
 
 
 
@@ -283,9 +284,12 @@ export async function initiateEmailChange(userId: string, newEmail: string) {
     
     // This sends a confirmation email to the NEW email address
     // Once email gets confirmed the new email will get synced with public.users ie. limitecwatches users table
-    const { error } = await supabase.auth.updateUser({
-      email: newEmail
-    });
+    const { error } = await supabase.auth.updateUser(
+      { email: newEmail },
+      {
+        emailRedirectTo: `${baseUrl}/auth/confirm` // Your confirmation handler
+      }
+    );
 
     if (error) {
       console.error(`(server) failed to initiate email change for auth user: ${userId}`, error);
