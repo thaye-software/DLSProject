@@ -8,9 +8,10 @@ import { eq } from "drizzle-orm";
 export async function POST(request: NextRequest) {
 
   try {
+    console.log("Received Supabase email change confirmed webhook");
     const payload = await validateSupabaseWebhookCall(request);
 
-    const newEmail = payload.record.email;
+    const newEmail = payload.record.email_change;
     const oldEmail = payload.old_record.email;
     const userId = payload.record.id;
 
@@ -68,7 +69,7 @@ async function validateSupabaseWebhookCall(request: NextRequest) {
 
   const payload = await request.json();
   console.log("Received Supabase webhook payload:", payload);
-  if (payload.eventType !== "UPDATE" || payload.table !== "users") {
+  if (payload.type !== "UPDATE" || payload.table !== "users") {
     throw new Error(`(server) unexpected error, reciveced webhook call from supabase, even though either no UPDATE or table that triggered was not users table`)
   }
 
