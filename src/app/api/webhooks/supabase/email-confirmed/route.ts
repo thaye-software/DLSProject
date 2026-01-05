@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Webhook processing error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Internal server erroræøå", message: (error as Error).message },
       { status: 500 }
     );
   }
