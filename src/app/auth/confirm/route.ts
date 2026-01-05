@@ -21,8 +21,25 @@ export async function GET(request: NextRequest) {
       type,
       token_hash,
     })
+    
     if (!error) {
-      // redirect user to specified redirect URL or root of app
+      if (type === 'email_change') {
+        const { data: { user } } = await supabase.auth.getUser()
+        
+        if (user && user.email) {
+          try {
+            await db
+              .update(users)
+              .set({ email: user.email })
+              .where(eq(users.id, user.id))
+            
+            console.log(`Successfully synced email for user ${user.id} to ${user.email}`)
+          } catch (dbError) {
+            console.error('Failed to sync email to public.users:', dbError)
+          }
+        }
+      }
+      
       redirect(next)
     }
   }
@@ -30,22 +47,11 @@ export async function GET(request: NextRequest) {
   if (code) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
+    
     if (!error) {
       redirect(next)
     }
   }
-
-  if (type === 'email_change') {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-      
-    if (user) {
-      await db
-        .update(users)
-        .set({ email: user.email })
-        .where(eq(users.id, user.id))
-      }
-    }
 
   // redirect the user to an error page with some instructions
   redirect('/error')
