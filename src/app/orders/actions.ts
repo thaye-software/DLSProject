@@ -23,6 +23,7 @@ import { resend, originEmail } from "@/lib/resend/resend";
 
 import { CountryModel } from "@/database/types";
 
+import constants from "@/lib/constants";
 
 
 export interface customerBillingDetails {
@@ -98,9 +99,8 @@ export async function submitOrderDetails(
 
   const billingAddressCountry = await getCountryByName(formData.country);
 
-  
-  let finalPriceDkk = product.priceDkk * 1.25;
-
+  const shippingCountry = await getCountryByName(formData.country);
+  let subTotalDkkInclVat = product.priceDkk * (1 + (shippingCountry?.vatRate || 0) / 100);
   // Verify offer token if present and override price
   if (formData.offerToken) {
     const offer = await verifyOfferToken(formData.offerToken);
@@ -114,7 +114,7 @@ export async function submitOrderDetails(
         offer.productSlug === product.id)
     ) {
       // The offer price is Gross (incl. 25% VAT). Convert to Net for storage.
-      finalPriceDkk = Math.round(offer.priceDkk / 1.25);
+      subTotalDkkInclVat = Math.round(offer.priceDkk / 1.25);
     }
   }
 
@@ -130,6 +130,8 @@ export async function submitOrderDetails(
     stateProvince: formData?.stateProvince,
   };
 
+  const shippingPrice = shippingCountry?.abbreviation === "DK" ? constants.SHIPPING_PRICE_DKK.toString() : constants.SHIPPING_PRICE_EUR.toString();
+  const shippingPriceDkk = shippingCountry?.abbreviation === "DK" ? shippingPrice : String(await convertEuroToDkk(Number(shippingPrice) * 100) / 100);
   let shippingAddress: Address = {
     userId: formData.customerId,
     firstName: formData.shippingFirstName as string,
@@ -154,20 +156,18 @@ export async function submitOrderDetails(
     userId: formData.customerId,
     currencyId: billingAddressCountry?.currencyId || localeCurrency.id,
     status: "RESERVED",
-    shippingPriceDkk: formData.shippingPriceDkk,
-    subTotalDkk: String(finalPriceDkk),
-    totalPriceDkk: String(
-      finalPriceDkk + parseInt(formData.shippingPriceDkk) * 100
-    ),
+    shippingPriceDkk: shippingPriceDkk,
+    subTotalDkk: String(subTotalDkkInclVat),
+    totalPriceDkk: String((subTotalDkkInclVat + Number(shippingPriceDkk) * 100)),
 
     //todo might just refactor this to use billingaddress
     totalPriceCurrency:
       country === null
         ? String(
-            Math.round(finalPriceDkk * Number(localeCurrency.exchangeRate))
+            Math.round((subTotalDkkInclVat + Number(shippingPriceDkk)) * Number(localeCurrency.exchangeRate))
           ) // In cents
         : String(
-            Math.round(finalPriceDkk * parseInt(country.currency.exchangeRate))
+            Math.round((subTotalDkkInclVat + Number(shippingPriceDkk)) * parseFloat(country.currency.exchangeRate))
           ), // In cents
     productId: product.id,
   };
