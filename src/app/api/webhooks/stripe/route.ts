@@ -126,10 +126,10 @@ async function sendConfirmationEmail(foundOrder: any): Promise<void> {
     targetCurrencyCode as string
   );
 
-  const displayShippingCostEUR = await getLocalCurrencyString(
-    Number(CONSTANTS.SHIPPING_PRICE_EUR * 100),
-    targetCurrencyCode as string
-  );
+  const displayShippingCostEUR = new Intl.NumberFormat("en-IE", {
+    style: "currency",
+    currency: targetCurrencyCode,
+  }).format(CONSTANTS.SHIPPING_PRICE_EUR);
 
   const customer = foundOrder.billingAddress;
   const fullName = [
