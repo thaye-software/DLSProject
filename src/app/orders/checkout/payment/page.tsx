@@ -140,7 +140,7 @@ export default async function PaymentPage({
         }).format(constants.SHIPPING_PRICE_EUR);
 
   // Charge the buyer the gross total (product net + VAT + shipping)
-  const stripeAmountToBePaid = countryCode === "DK" ? Number(total) : Number(total * 100);
+  const stripeAmountToBePaid = countryCode === "DK" ? Number(total) : Number(total);
   if (!stripe) throw new Error("Stripe not available");
   const paymentIntent = await stripe.paymentIntents.create({
     amount: stripeAmountToBePaid,
