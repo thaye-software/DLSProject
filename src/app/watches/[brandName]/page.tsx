@@ -68,9 +68,15 @@ export default async function BrandWatchesPage({
       <ProductFilterSheet className="mb-10" defaultFilters={filters} appliedFilters={appliedFilters} localCurrencyCode={localCurrencyCode}/>
 
       <div className="flex justify-center">
-        <Suspense fallback={<Spinner className="w-8 h-8"/>}>
-          <WatchesGrid watches={allWatches} customerGeoLocation={countryCode}/>
-        </Suspense>
+        {allWatches && allWatches.length > 0 ? (
+          <Suspense fallback={<Spinner className="w-8 h-8"/>}>
+            <WatchesGrid watches={allWatches} customerGeoLocation={countryCode}/>
+          </Suspense>
+        ): (
+          <div className="flex justify-center items-center py-20 text-gray-500 text-lg font-medium">
+            Unfortunately there were no products found...
+          </div>
+        )}
       </div>
     </div>
   );

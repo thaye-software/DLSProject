@@ -204,7 +204,7 @@ export async function getAllProductsByBrandName(
     const allProducts: ProductModel[] = await getAllProducts();
 
     const filteredProducts = allProducts.filter(
-      (product) => product.watch?.brand.id === brand.id
+      (product) => product.watch?.brand.id === brand.id && product.stock > 0 && product.visible === true
     );
 
     return filteredProducts;
@@ -213,50 +213,6 @@ export async function getAllProductsByBrandName(
     throw new Error("Failed to fetch products from database");
   }
 }
-
-// export async function searchProducts(query: string): Promise<Product[]> {
-//   const searchStr = `%${query.trim()}%`; // SQL wildcard syntax
-
-//   try {
-//     // We use db.select() with joins to allow filtering across multiple tables (products, watches, brands)
-//     const rows = await db
-//       .select({
-//         product: products,
-//         watch: watches,
-//         brand: brands,
-//         // Note: Handling images in a flat select requires aggregation or a separate query, 
-//         // but for search results, usually just the main data is enough to start.
-//       })
-//       .from(products)
-//       .innerJoin(watches, eq(products.id, watches.productId))
-//       .innerJoin(brands, eq(watches.brandId, brands.id))
-//       .where(
-//         and(
-//           gte(products.stock, 1),
-//           eq(products.visible, true),
-//           or(
-//             ilike(products.name, searchStr),
-//             ilike(watches.reference, searchStr),
-//             ilike(brands.name, searchStr)
-//           )
-//         )
-//     );
-//     // Map the rows to Product objects
-//     const results: Product[] = rows.map((row) => ({
-//       ...row.product,
-//       watch: {
-//         ...row.watch,
-//         brand: row.brand,
-//       },
-//       productImages: [], // Images can be fetched separately if needed
-//     }));
-
-//     return results;
-//   } catch (error) {
-//     console.error("Error searching products:", error);
-//     throw new Error("Failed to search products in database");
-//   }
-// }
 
 export async function searchProducts(query: string): Promise<Product[]> {
   const lowerQuery = query.trim().toLowerCase();
