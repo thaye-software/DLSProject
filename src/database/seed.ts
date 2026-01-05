@@ -86,7 +86,8 @@ async function seed() {
     .values({
       name: "Denmark",
       abbreviation: "DK",
-      currencyId: danishCurrency.id
+      currencyId: danishCurrency.id,
+      vatRate: 25,
     })
     .returning();
     
@@ -95,7 +96,8 @@ async function seed() {
     .values({
       name: "Germany",
       abbreviation: "DE",
-      currencyId: euroCurrency.id
+      currencyId: euroCurrency.id,
+      vatRate: 18,
     })
     .returning();
 

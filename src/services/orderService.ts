@@ -12,6 +12,8 @@ import { OrderDetails } from "@/app/orders/actions";
 import { getLocalCurrencyString } from "./currencyService";
 import { OrderStatus } from "@/app/orders/type";
 
+import constants from "@/lib/constants";
+
 
 
 
@@ -110,7 +112,7 @@ export async function createOrder(
     const result = await db.transaction(async (tx) => {
 
       // If customer already has a pending order return early (it will only be pending for 30min)
-      const foundOrderId = await doesCustomerHasExistingOrder(orderDetails, newBillingAddress, newShippingAddress, tx)
+      const foundOrderId = await updateOrderIfExists(orderDetails, newBillingAddress, newShippingAddress, tx)
       if(foundOrderId) return foundOrderId;
 
       const foundProduct = await getProductById(orderDetails.productId, tx);
@@ -316,7 +318,7 @@ async function getCustomerOrder(customerId: string, productId: string, tx?: DbTr
 
 
 
-async function doesCustomerHasExistingOrder(
+async function updateOrderIfExists(
   orderDetails: OrderDetails, 
   newBillingAddress: Omit<NewOrderAddressModel, "id">,
   newShippingAddress: Omit<NewOrderAddressModel, "id"> | undefined,
@@ -340,6 +342,16 @@ async function doesCustomerHasExistingOrder(
       tx
     );
 
+    await tx.update(orders)
+      .set({
+        subTotalDkk: orderDetails.subTotalDkk,
+        totalPriceDkk: orderDetails.totalPriceDkk,
+        shippingPriceDkk: orderDetails.shippingPriceDkk,
+        shippingPriceCurrency: customerOrder.billingAddress?.country.toLocaleLowerCase() !== "denmark" ? constants.SHIPPING_PRICE_EUR.toString() : constants.SHIPPING_PRICE_DKK.toString(),
+        totalPriceCurrency: orderDetails.totalPriceCurrency,
+      })
+      .where(eq(orders.id, customerOrder.id));
+      
     return customerOrder.id;
   }
 
