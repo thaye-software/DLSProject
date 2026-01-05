@@ -6,23 +6,29 @@ import { eq } from "drizzle-orm";
 
 
 export async function POST(request: NextRequest) {
-
   try {
-    console.log("Received Supabase email change confirmed webhook");
+    console.log("Received Supabase email change webhook");
     const payload = await validateSupabaseWebhookCall(request);
 
-    const newEmail = payload.record.email_change;
     const oldEmail = payload.old_record.email;
+    const newEmail = payload.record.email; // The ACTUAL email field, not email_change
     const userId = payload.record.id;
 
+    console.log(`Email change webhook - Old: ${oldEmail}, New: ${newEmail}`);
 
-    if (newEmail === oldEmail) {
-      throw new Error(`(server) detected no changes to the email`);
+    // Only sync if the actual email field changed (not just email_change)
+    if (newEmail === oldEmail || !newEmail) {
+      console.log("Email not actually changed yet, skipping sync");
+      return NextResponse.json({
+        message: "Email change pending confirmation, not syncing yet"
+      });
     }
+
+    console.log(`Syncing confirmed email change for user ${userId}`);
 
     const updatedLimitedWatchesUser = await db
       .update(users)
-      .set({email: newEmail})
+      .set({ email: newEmail })
       .where(eq(users.id, userId))
       .returning();
 
@@ -34,16 +40,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log(`Successfully synced email to public.users for user ${userId}`);
+
     return NextResponse.json({
       message: "Email synced successfully",
       data: updatedLimitedWatchesUser
     });
 
-
   } catch (error) {
     console.error("Webhook processing error:", error);
     return NextResponse.json(
-      { error: "Internal server erroræøå", message: (error as Error).message },
+      { error: "Internal server error", message: (error as Error).message },
       { status: 500 }
     );
   }
