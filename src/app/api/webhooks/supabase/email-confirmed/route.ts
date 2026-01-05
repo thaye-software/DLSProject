@@ -67,6 +67,7 @@ async function validateSupabaseWebhookCall(request: NextRequest) {
   }
 
   const payload = await request.json();
+  console.log("Received Supabase webhook payload:", payload);
   if (payload.eventType !== "UPDATE" || payload.table !== "users") {
     throw new Error(`(server) unexpected error, reciveced webhook call from supabase, even though either no UPDATE or table that triggered was not users table`)
   }
