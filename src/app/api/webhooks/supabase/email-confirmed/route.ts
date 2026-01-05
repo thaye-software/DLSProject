@@ -58,20 +58,17 @@ async function validateSupabaseWebhookCall(request: NextRequest) {
   const webhookSecret = env == "prod" ? process.env.SUPABASE_WEBHOOK_SECRET_PROD! : env == "dev" ? process.env.SUPABASE_WEBHOOK_SECRET_DEV! : process.env.SUPABASE_WEBHOOK_SECRET_LOCAL!
   if (!webhookSecret) {
     console.error("SUPABASE_WEBHOOK_SECRET not configured");
-    return NextResponse.json(
-      { error: "Webhook not configured" },
-      { status: 500 }
-    );
+    throw new Error("SUPABASE_WEBHOOK_SECRET not configured");
   }
     
   const incomingSecret = request.headers.get("x-supabasewebhook-secret");
   if (incomingSecret !== webhookSecret) {
-    return new NextResponse("Unauthorized", { status: 401 });
+    throw new Error("Unauthorized: Invalid webhook secret. Status: 401");
   }
 
   const payload = await request.json();
   if (payload.eventType !== "UPDATE" || payload.table !== "users") {
-    throw new Error(`(server) unexpected error, reciveced webhook call from supabase, eventhough either no UPDATE or table that triggered was not users table`)
+    throw new Error(`(server) unexpected error, reciveced webhook call from supabase, even though either no UPDATE or table that triggered was not users table`)
   }
 
   return payload;
