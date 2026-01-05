@@ -30,14 +30,19 @@ export default function AccountDetails() {
 
 
     useEffect(() => {
-        const isEmailConfirmed = user?.email_confirmed_at;
-        setIsPendingEmailConfirmation(!isEmailConfirmed);
+        // Check if there's a pending email change
+        // user.new_email exists when an email change is initiated but not confirmed
+        const hasPendingEmailChange = !!user?.user_metadata?.email_change_send_at || 
+                                       !!user?.new_email;
+        setIsPendingEmailConfirmation(hasPendingEmailChange);
         
-    }, [isPendingEmailConfirmation, user])
+    }, [user])
 
   
     async function handleInfoChange(event: any) {
         event.preventDefault();
+        setIsLoading(true); // Set loading to true at the start
+        
         const formData = new FormData(event.currentTarget);
         const data = Object.fromEntries(formData.entries());
         
@@ -46,7 +51,7 @@ export default function AccountDetails() {
             const {isUsernameChanged, isEmailedChangeInitiated, userNotFound} = await changeUsernameAndEmail(data);
             
             if(userNotFound) {
-                toast.error("Unexpted error no user found, try again later");
+                toast.error("Unexpected error no user found, try again later");
                 return;
             }
             
@@ -58,18 +63,17 @@ export default function AccountDetails() {
             if(isUsernameChanged) {
                 await refreshUser()
             }
+            
             sendSuccessfulToast(isUsernameChanged as boolean, isEmailedChangeInitiated as boolean);
             setIsPendingEmailConfirmation(isEmailedChangeInitiated as boolean);
             
         } catch(error: any) {
-            console.error("unexpedted error occoured during username/email change",error);
+            console.error("unexpected error occurred during username/email change",error);
             toast.error(error.message as string);
 
         } finally {
             setIsLoading(false);
         }
-        
-
     }
 
     return(
@@ -110,7 +114,7 @@ export default function AccountDetails() {
 
               <Input defaultValue={user?.id} name="customerId" hidden/>
 
-              <Button className="mt-8 hover:curser-pointer" type="submit" disabled={isLoading}>
+              <Button className="mt-8 hover:cursor-pointer" type="submit" disabled={isLoading}>
                 {isLoading ? (
                   <div className="flex gap-2">
                     Changing...
