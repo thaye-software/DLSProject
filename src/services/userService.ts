@@ -287,7 +287,7 @@ export async function initiateEmailChange(userId: string, newEmail: string) {
     const { error } = await supabase.auth.updateUser(
       { email: newEmail },
       {
-        emailRedirectTo: `${baseUrl}/auth/confirm` // Your confirmation handler
+        emailRedirectTo: `${baseUrl}/confirm-email-change`
       }
     );
 
