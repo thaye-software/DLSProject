@@ -249,8 +249,8 @@ export async function sendOrderConfirmationEmail(
                 
                 <!-- Header -->
                 <tr>
-                  <td style="background: linear-gradient(135deg, #2a2a2a 0%, #0d0d0d 100%); padding: 40px 30px; text-align: center;">
-                    <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">Limited Watches</h1>
+                  <td style="background-color: #000; color: #fff; text-align: center; padding: 24px 0; font-size: 24px; letter-spacing: 1px;">
+                    Limited Watches
                   </td>
                 </tr>
 
@@ -258,9 +258,7 @@ export async function sendOrderConfirmationEmail(
                 <tr>
                   <td style="padding: 40px 30px 20px; text-align: center;">
                     <h2 style="margin: 0 0 10px; color: #1f2937; font-size: 24px; font-weight: 600;">Order Confirmed!</h2>
-                    <p style="margin: 0; color: #6b7280; font-size: 16px;">Thank you for your purchase, ${
-                      orderDetails.customerName
-                    }.</p>
+                    <p style="margin: 0; color: #6b7280; font-size: 16px;">Thank you for your purchase, ${orderDetails.customerName}.</p>
                   </td>
                 </tr>
 
@@ -271,17 +269,13 @@ export async function sendOrderConfirmationEmail(
                       <tr>
                         <td style="padding: 20px; background-color: #f9fafb; border-bottom: 1px solid #e5e7eb;">
                           <p style="margin: 0; color: #6b7280; font-size: 14px;">Order Number</p> 
-                          <p style="margin: 5px 0 0; color: #1f2937; font-size: 16px; font-weight: 600; font-family: monospace;">#${
-                            orderDetails.orderId
-                          }</p>
+                          <p style="margin: 5px 0 0; color: #1f2937; font-size: 16px; font-weight: 600; font-family: monospace;">#${orderDetails.orderId}</p>
                         </td>
                       </tr>
                       <tr>
                         <td style="padding: 20px; background-color: #f9fafb;">
                           <p style="margin: 0; color: #6b7280; font-size: 14px;">Order Date</p>
-                          <p style="margin: 5px 0 0; color: #1f2937; font-size: 16px;">${
-                            orderDetails.orderDate
-                          }</p>
+                          <p style="margin: 5px 0 0; color: #1f2937; font-size: 16px;">${orderDetails.orderDate}</p>
                         </td>
                       </tr>
                     </table>
@@ -298,24 +292,14 @@ export async function sendOrderConfirmationEmail(
                           <table role="presentation" style="width: 100%;">
                             <tr>
                               <td style="width: 80px; vertical-align: top;">
-                                <img src="${
-                                  orderDetails.productImageSrc
-                                }" alt="${
-        orderDetails.productName
-      }" style="width: 80px; height: 80px; object-fit: cover; border-radius: 6px; display: block;">
+                                <img src="${orderDetails.productImageSrc}" alt="${orderDetails.productName}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 6px; display: block;">
                               </td>
                               <td style="padding-left: 15px; vertical-align: top;">
-                                <p style="margin: 0 0 5px; color: #1f2937; font-size: 16px; font-weight: 600;">${
-                                  orderDetails.productName
-                                }</p>
-                                <p style="margin: 0; color: #6b7280; font-size: 14px;">Quantity: ${
-                                  orderDetails.quantity
-                                }</p>
+                                <p style="margin: 0 0 5px; color: #1f2937; font-size: 16px; font-weight: 600;">${orderDetails.productName}</p>
+                                <p style="margin: 0; color: #6b7280; font-size: 14px;">Quantity: ${orderDetails.quantity}</p>
                               </td>
                               <td style="text-align: right; vertical-align: top;">
-                                <p style="margin: 0; color: #1f2937; font-size: 18px; font-weight: 600;">${
-                                  orderDetails.totalAmount
-                                }</p>
+                                <p style="margin: 0; color: #1f2937; font-size: 18px; font-weight: 600;">${orderDetails.totalAmount}</p>
                               </td>
                             </tr>
                           </table>
@@ -331,9 +315,7 @@ export async function sendOrderConfirmationEmail(
                     <table role="presentation" style="width: 100%;">
                       <tr>
                         <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Subtotal</td>
-                        <td style="padding: 8px 0; text-align: right; color: #1f2937; font-size: 14px;">${
-                          orderDetails.subTotalAmount
-                        }</td>
+                        <td style="padding: 8px 0; text-align: right; color: #1f2937; font-size: 14px;">${orderDetails.subTotalAmount}</td>
                       </tr>
                       <tr>
                         <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Shipping</td>
@@ -348,9 +330,7 @@ export async function sendOrderConfirmationEmail(
                       </tr>
                       <tr>
                         <td style="padding: 8px 0; color: #1f2937; font-size: 18px; font-weight: 600;">Total</td>
-                        <td style="padding: 8px 0; text-align: right; color: #667eea; font-size: 20px; font-weight: 700;">${
-                          orderDetails.totalAmount
-                        }</td>
+                        <td style="padding: 8px 0; text-align: right; color: #1f2937; font-size: 20px; font-weight: 700;">${orderDetails.totalAmount}</td>
                       </tr>
                     </table>
                   </td>
@@ -359,9 +339,9 @@ export async function sendOrderConfirmationEmail(
                 <!-- Next Steps -->
                 <tr>
                   <td style="padding: 0 30px 30px;">
-                    <div style="background-color: #11131a; border-left: 4px solid #2a2f3a; border-radius: 4px; padding: 20px;">
-                      <h4 style="margin: 0 0 10px; color: #e5e7eb; font-size: 16px; font-weight: 600;">What's Next?</h4>
-                      <ul style="margin: 0; padding-left: 20px; color: #9ca3af; font-size: 14px; line-height: 1.6;">
+                    <div style="background-color: #f0f0f0; border-radius: 4px; padding: 20px;">
+                      <h4 style="margin: 0 0 10px; color: #000; font-size: 16px; font-weight: 600;">What's Next?</h4>
+                      <ul style="margin: 0; padding-left: 20px; color: #333; font-size: 14px; line-height: 1.6;">
                         <li>We're preparing your order for shipment</li>
                         <li>You'll receive a tracking number once shipped</li>
                         <li>Track your order anytime from your account</li>
@@ -373,21 +353,21 @@ export async function sendOrderConfirmationEmail(
                 <!-- CTA Button -->
                 <tr>
                   <td style="padding: 0 30px 40px; text-align: center;">
-                    <a href="https://limitedwatches.com/orders" style="display: inline-block; padding: 14px 32px; background-color: #1f2937; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 6px; transition: opacity 0.3s;">View Order Details</a>
+                    <a href="https://watches.thaulow.tech/orders" style="display: inline-block; padding: 14px 32px; background-color: #000; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 6px;">View Order Details</a>
                   </td>
                 </tr>
 
                 <!-- Footer -->
                 <tr>
-                  <td style="padding: 30px; background-color: #0e0f12; border-top: 1px solid #1f1f2e; text-align: center;">
-                    <p style="margin: 0 0 10px; color: #9ca3af; font-size: 14px;">
+                  <td style="padding: 30px; background-color: #fafafa; text-align: center;">
+                    <p style="margin: 0 0 10px; color: #999; font-size: 14px;">
                       Questions? Contact us at
-                      <a href="mailto:support@limitedwatches.com" style="color: #4f5b6b; text-decoration: none;">
+                      <a href="mailto:support@limitedwatches.com" style="color: #666; text-decoration: none;">
                         support@limitedwatches.com
                       </a>
                     </p>
                     
-                    <p style="margin: 0; color: #6b7280; font-size: 12px;">
+                    <p style="margin: 0; color: #999; font-size: 12px;">
                       © ${new Date().getFullYear()} Limited Watches. All rights reserved.
                     </p>
                   </td>
