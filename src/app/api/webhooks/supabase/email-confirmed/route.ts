@@ -7,14 +7,12 @@ import { eq } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("Received Supabase email change webhook");
+
     const payload = await validateSupabaseWebhookCall(request);
 
     const oldEmail = payload.old_record.email;
-    const newEmail = payload.record.email; // The ACTUAL email field, not email_change
+    const newEmail = payload.record.email;
     const userId = payload.record.id;
-
-    console.log(`Email change webhook - Old: ${oldEmail}, New: ${newEmail}`);
 
     // Only sync if the actual email field changed (not just email_change)
     if (newEmail === oldEmail || !newEmail) {
@@ -39,8 +37,6 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
-
-    console.log(`Successfully synced email to public.users for user ${userId}`);
 
     return NextResponse.json({
       message: "Email synced successfully",
@@ -75,7 +71,6 @@ async function validateSupabaseWebhookCall(request: NextRequest) {
   }
 
   const payload = await request.json();
-  console.log("Received Supabase webhook payload:", payload);
   if (payload.type !== "UPDATE" || payload.table !== "users") {
     throw new Error(`(server) unexpected error, reciveced webhook call from supabase, even though either no UPDATE or table that triggered was not users table`)
   }
