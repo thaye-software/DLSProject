@@ -428,7 +428,6 @@ async function softDeleteUser(userId: string, tx?: DbTransaction) {
         phone: "deleted",
         email: `deleted_${userId}@deleted.com`,
         avatarUrl: "deleted",
-        role: "deleted",
         countryId: null,
         deletedAt: new Date(),
       })
