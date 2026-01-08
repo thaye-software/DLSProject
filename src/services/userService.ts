@@ -174,7 +174,7 @@ export async function getAllUniqueCustomers() {
     where: eq(users.role, "customer"),
     with: {
       orders: {
-        where: eq(orders.status, "COMPLETED"),
+        where: eq(orders.status, "DELIVERED"),
       },
     },
   });
