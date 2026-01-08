@@ -114,7 +114,7 @@ export async function submitOrderDetails(
         offer.productSlug === product.id)
     ) {
       // The offer price is Gross (incl. 25% VAT). Convert to Net for storage.
-      subTotalDkkInclVat = Math.round(offer.priceDkk / 1.25);
+      subTotalDkkInclVat = shippingCountry?.name === "Denmark" ? Math.round(offer.priceDkk) : Math.round((offer.priceDkk / 1.25) * (1 + (shippingCountry?.vatRate || 0) / 100));
     }
   }
 
