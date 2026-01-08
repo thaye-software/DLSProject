@@ -61,19 +61,19 @@ export const ChatPanel: React.FC<{
                     {/* message preview */}
                     <div className="flex items-center min-w-0">
                       {/* sender */}
-                      {conv.messages[0].sender?.id === user?.id ? (
+                      {conv.messages[0] === undefined ? (<div></div>) : conv.messages[0]?.sender?.id === user?.id ? (
                         <span className="font-bold mr-1">You:</span>
                       ) : (
                         <span className="font-bold mr-1">
-                          {conv.messages[0].senderType.toLowerCase() === "seller" ? conv.messages[0].sender.username : "User"}
+                          {conv.messages[0]?.senderType.toLowerCase() === "seller" ? conv.messages[0]?.sender?.username : "User"}
                         </span>
                       )}
 
                       {/* content */}
                       <span
                         className={`${
-                          !conv.messages[0].isRead &&
-                          conv.messages[0].sender?.id !== user?.id
+                          !conv.messages[0]?.isRead &&
+                          conv.messages[0]?.sender?.id !== user?.id
                             ? "font-bold"
                             : ""
                         } truncate block max-w-[22ch]`}
@@ -83,13 +83,16 @@ export const ChatPanel: React.FC<{
                     </div>
 
                     {/* date */}
-                    <span className="ml-auto text-xs text-muted-foreground whitespace-nowrap">
-                      {new Date(conv.messages[0].createdAt).toLocaleDateString("en-GB", {
+                    {conv.messages[0]?.createdAt && (
+
+                      <span className="ml-auto text-xs text-muted-foreground whitespace-nowrap">
+                      {new Date(conv.messages[0]?.createdAt).toLocaleDateString("en-GB", {
                         weekday: "short",
                         day: "2-digit",
                         month: "short",
                       })}
                     </span>
+                    )}
                   </div>
                 </div>
               </Item>
