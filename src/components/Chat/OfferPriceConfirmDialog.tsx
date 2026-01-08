@@ -73,8 +73,9 @@ export function OfferPriceConfirmDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
           <AlertDialogAction
+            className="cursor-pointer"
             onClick={async () => {
               try {
                 if (!newPrice) return;
