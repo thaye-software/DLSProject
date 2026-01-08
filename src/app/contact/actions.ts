@@ -11,22 +11,22 @@ import { resend, originEmail } from "@/lib/resend/resend";
 
 export async function sendEmail(data: z.infer<typeof contactFormSchema>) {
 
-  const costumerName = data.costumerName;
-  const costumerEmail = data.costumerEmail;
-  const costumerMessage = data.costumerMessage;
+  const customerName = data.customerName;
+  const customerEmail = data.customerEmail;
+  const customerMessage = data.customerMessage;
 
   try {
 
     await resend.emails.send({
       from: originEmail,
-      to: costumerEmail, // TODO change this to point to actual email adress for reciving costumer mails.
-      subject: `New message from ${costumerName}`,
+      to: customerEmail, // TODO change this to point to actual email address for receiving customer mails.
+      subject: `New message from ${customerName}`,
       html: `
         <div style="font-family: sans-serif;">
         <h2>New Contact Message</h2>
-        <p><strong>Name:</strong> ${costumerName}</p>
-        <p><strong>Costumer email:</strong> ${costumerEmail}</p>
-        <p><strong>Message:</strong><br/>${costumerMessage}</p>
+        <p><strong>Name:</strong> ${customerName}</p>
+        <p><strong>Customer email:</strong> ${customerEmail}</p>
+        <p><strong>Message:</strong><br/>${customerMessage}</p>
         </div>
       `,
     });

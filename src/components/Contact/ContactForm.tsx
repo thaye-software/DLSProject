@@ -22,11 +22,11 @@ import { Spinner } from "../ui/spinner"
 
 
 export const contactFormSchema = z.object({
-  costumerName: z.string().nonempty("Your name is required"),
-  costumerEmail: z.email().nonempty("Your email is required"),
-  costumerPhoneNumber: z.string().optional(),
+  customerName: z.string().nonempty("Your name is required"),
+  customerEmail: z.email().nonempty("Your email is required"),
+  customerPhoneNumber: z.string().optional(),
   
-  costumerMessage: z
+  customerMessage: z
   .string()
   .min(1, "Message is required")
   .min(10, "Please write at least 10 characters")
@@ -42,10 +42,10 @@ export default function ContactForm() {
   const form = useForm<z.infer<typeof contactFormSchema>>({
     resolver: zodResolver(contactFormSchema),
     defaultValues: {
-      costumerName: "",
-      costumerEmail: "",
-      costumerPhoneNumber: "",
-      costumerMessage: ""
+      customerName: "",
+      customerEmail: "",
+      customerPhoneNumber: "",
+      customerMessage: ""
     }
   })
 
@@ -78,7 +78,7 @@ export default function ContactForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
-              name="costumerName"
+              name="customerName"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-md">Name *</FormLabel>
@@ -92,7 +92,7 @@ export default function ContactForm() {
 
             <FormField
               control={form.control}
-              name="costumerEmail"
+              name="customerEmail"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-md">Email *</FormLabel>
@@ -108,7 +108,7 @@ export default function ContactForm() {
           {/* Phone full width */}
           <FormField
             control={form.control}
-            name="costumerPhoneNumber"
+            name="customerPhoneNumber"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-md">Phone</FormLabel>
@@ -126,7 +126,7 @@ export default function ContactForm() {
           {/* Message full width */}
           <FormField
             control={form.control}
-            name="costumerMessage"
+            name="customerMessage"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-md">Message *</FormLabel>
