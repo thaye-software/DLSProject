@@ -38,12 +38,14 @@ import {
 } from "@/components/ui/table";
 
 import { ProductModel } from "@/database/types";
-import { setProductVisibility } from "@/services/productService";
+import { deleteProduct, setProductVisibility } from "@/services/productService";
+import { toast } from "sonner";
 
 export type ProductRow = ProductModel;
 
 const createColumns = (
-  onVisibleChange: (productId: string, visible: boolean) => Promise<void>
+  onVisibleChange: (productId: string, visible: boolean) => Promise<void>,
+  onDeleteProduct: (productId: string) => Promise<void>
 ): ColumnDef<ProductRow>[] => [
   {
     id: "select",
@@ -157,7 +159,6 @@ const createColumns = (
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
               onClick={() => navigator.clipboard.writeText(product.id)}
             >
@@ -172,8 +173,9 @@ const createColumns = (
                 Edit watch
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>View product</DropdownMenuItem>
-            <DropdownMenuItem>View details</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDeleteProduct(product.id)}>
+              Delete
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );
@@ -206,7 +208,15 @@ export function WatchTable({
     );
   }
 
-  const columns = createColumns(onVisibleChange);
+  async function handleDeleteProduct(productId: string) {
+    await deleteProduct(productId);
+    setData((prevData) =>
+      prevData.filter((product) => product.id !== productId)
+    );
+    toast.success("Product deleted successfully");
+  }
+
+  const columns = createColumns(onVisibleChange, handleDeleteProduct);
 
   const table = useReactTable({
     data: data,

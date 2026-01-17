@@ -372,6 +372,15 @@ export async function updateProductStock(
   }
 }
 
+export async function deleteProduct(productId: string): Promise<void> {
+  try {
+    await db.delete(products).where(eq(products.id, productId));
+  } catch (error) {
+    console.error(`(server) failed to delete product with id: ${productId}`, error);
+    throw error;
+  }
+}
+
 
 
 //------------------------------------------ helper functions ------------------------------------------
