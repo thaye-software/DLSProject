@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Upload } from "lucide-react";
+import { Upload, User } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,11 +26,12 @@ export default function ChangeAvatar() {
     
     const [isLoading, setIsLoading] = useState<boolean>(false);    
 
-    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const [avatarPreview, setAvatarPreview] = useState<string | Blob | undefined>(undefined);
     
     const { user, avatarUrl, refreshUser } = useSupabaseAuthContext();
 
-    useEffect(()=>{
+  useEffect(() => {
+      // @ts-ignore
         setAvatarPreview(avatarUrl);
     }, [avatarUrl, user])
 
@@ -102,8 +103,8 @@ export default function ChangeAvatar() {
     return(
         <div className="flex items-center gap-6">
             <Avatar className="h-24 w-24">
-                <AvatarImage src={avatarPreview || "https://github.com/shadcn.png"} />
-                <AvatarFallback>PD</AvatarFallback>
+                <AvatarImage src={avatarPreview} />
+                <AvatarFallback><User /></AvatarFallback>
             </Avatar>
 
             <div className="space-y-2">
