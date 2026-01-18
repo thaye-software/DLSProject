@@ -49,9 +49,9 @@ export async function getUserLocation() {
 
   const defaultLocation = {
     country: "Denmark",
-    countryCode: "GER",
+    countryCode: "DK",
     city: "Copenhagen",
-    currency: "EUR",
+    currency: "DKK",
   };
 
   if (isPrivateIp(ip)) {

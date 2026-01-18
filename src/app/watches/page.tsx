@@ -52,7 +52,7 @@ export default async function FilterdWatches({searchParams}: {searchParams: Sear
   const filteredProducts = await getFilteredProducts(appliedFilters)
   
   const userGeoLocationData = await getUserLocation();
-  const countryCode = userGeoLocationData.countryCode;
+  const customerGeoLocation = userGeoLocationData.countryCode;
   const localCurrencyCode = userGeoLocationData.currency;
 
   //TODO refactor the getFilterRanges, so it only gets the filters by querying the products table, and only if they are visible...
@@ -79,7 +79,7 @@ export default async function FilterdWatches({searchParams}: {searchParams: Sear
         {filteredProducts && filteredProducts.length > 0 ? (
           <Suspense fallback={<Spinner className="w-8 h-8" />}>
             {/*@ts-ignore*/}
-            <WatchesGrid watches={filteredProducts} customerGeoLocation={countryCode}/>
+            <WatchesGrid watches={filteredProducts} customerGeoLocation={customerGeoLocation}/>
           </Suspense>
         ) : (
          <div className="flex justify-center items-center py-20 text-gray-500 text-lg font-medium">

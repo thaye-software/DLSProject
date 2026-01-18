@@ -37,13 +37,14 @@ export function WatchesGrid({
             // product.priceDkk is stored in DKK cents (net); calculate subtotal (net + VAT) in cents
             const subtotalCents = calculateSubtotalCents(
               p.priceDkk,
-              vatRate ?? 25
+              vatRate
             );
-            const formatted = await getLocalCurrencyString(
+            console.log("Subtotal cents with VAT:", subtotalCents);
+            const formattedPrice = await getLocalCurrencyString(
               subtotalCents,
               customerGeoLocation
             );
-            return [p.id, formatted] as const;
+            return [p.id, formattedPrice] as const;
           })
         );
 

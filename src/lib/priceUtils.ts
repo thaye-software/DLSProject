@@ -9,7 +9,7 @@ export function calculateSubtotalCents(
   netCents: number,
   vatPercent: number
 ): number {
-  const vat = calculateVatCents(netCents, vatPercent);
+  const vat = Math.round((netCents * vatPercent) / 100);
   return netCents + vat;
 }
 

@@ -61,7 +61,6 @@ export default function ShippingAndBillingForm({
   const [customerUpdated, setCustomerUpdated] = useState(customer);
 
   const [product, setProduct] = useState<Product | null>(null);
-  const [VAT, setVAT] = useState<number>(0);
   const [formattedPrice, setFormattedPrice] = useState<string>("");
   const [formattedTax, setFormattedTax] = useState<string>("");
   const [formattedShipping, setFormattedShipping] = useState<string>("");
@@ -82,7 +81,6 @@ export default function ShippingAndBillingForm({
     const subtotalCents = calculateSubtotalCents(netCents, vatPercentLocal);
 
     // basic pieces
-    setVAT(vatCents);
     setFormattedTax(await getLocalCurrencyString(vatCents, displayCountryCode));
     setFormattedPrice(
       await getLocalCurrencyString(subtotalCents, displayCountryCode)
