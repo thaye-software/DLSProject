@@ -1,0 +1,132 @@
+"use client";
+
+import Link from "next/link"
+import Image from "next/image";
+import {ComponentProps} from "react"
+import { Minus, Plus } from "lucide-react"
+import { usePathname } from "next/navigation"
+
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+  SidebarRail,
+} from "@/components/ui/sidebar"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
+
+import ConversationsLinkContent from "./ConversationsLinkContent";
+
+
+
+const data = {
+  navMain: [
+    {
+      title: "Master data",
+      url: "#",
+      items: [
+        {
+          title: "Brands",
+          url: "/admin/masterdata/brands",
+        },
+      ],
+    },
+  ],
+}
+
+
+
+export function AdminSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
+  const pathname = usePathname() || "";
+
+  return (
+    <Sidebar {...props}>
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" asChild>
+              <Link href="/admin">
+                  <Image src="/logo.svg" alt="Logo" width={60} height={60} />
+                <div className="flex flex-col gap-0.5 leading-none">
+                  <span className="font-medium">Finite Watches | Admin</span>
+                </div>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname.startsWith("/admin/exchange-rate")}> 
+                <Link href="/admin/exchange-rate">Exchange Rate</Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname.startsWith("/admin/watches")}> 
+                <Link href="/admin/watches">Watches</Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={pathname.startsWith("/admin/conversations")}> 
+                  <Link href="/admin/conversations">
+                    <ConversationsLinkContent/>
+                  </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+
+            {/* Master Data */}
+            {data.navMain.map((item, index) => (
+              <Collapsible
+                key={item.title}
+                defaultOpen={index === 1}
+                className="group/collapsible"
+              >
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton>
+                      {item.title}{" "}
+                      <Plus className="ml-auto group-data-[state=open]/collapsible:hidden" />
+                      <Minus className="ml-auto group-data-[state=closed]/collapsible:hidden" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+
+                  {item.items?.length ? (
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        {item.items.map((item) => (
+                          <SidebarMenuSubItem key={item.title}>
+                            <SidebarMenuSubButton
+                              asChild
+                              isActive={pathname.startsWith(item.url)}
+                            >
+                              <Link href={item.url}>{item.title}</Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  ) : null}
+                </SidebarMenuItem>
+              </Collapsible>
+            ))}
+          </SidebarMenu>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarRail />
+    </Sidebar>
+  )
+}
