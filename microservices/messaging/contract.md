@@ -1,20 +1,29 @@
 # Contracts: Messaging (draft)
 
-## Event envelope (RabbitMQ)
+**Status:** Draft for team approval. Based on Architecture v3. Exact endpoints and payloads must be checked against the old monolith and existing contracts.
 
-Uses the shared event envelope defined by the other services.
+## Event envelope (all RabbitMQ messages)
+
+Messaging uses the shared CloudEvents 1.0 envelope defined in `docs/contracts/asyncapi.yaml`.
 
 ```json
 {
-  "eventId": "uuid",
+  "specversion": "1.0",
+  "id": "uuid",
+  "source": "users",
   "type": "user_deleted",
-  "version": 1,
-  "occurredAt": "ISO-8601",
-  "data": {}
+  "time": "2026-10-15T10:00:00Z",
+  "datacontenttype": "application/json",
+  "data": {
+    "user_id": "uuid",
+    "deleted_at": "2026-10-15T10:00:00Z"
+  }
 }
 ```
 
-Consumers dedupe on `eventId` (RabbitMQ delivers at least once).
+The exact `source`, `type`, and `data` fields must match the shared AsyncAPI schema.
+
+Consumers dedupe on CloudEvents `id` (RabbitMQ can deliver messages more than once).
 
 ## Messaging
 
@@ -22,113 +31,145 @@ Consumers dedupe on `eventId` (RabbitMQ delivers at least once).
 
 | Event | From | `data` |
 |---|---|---|
-| `user_deleted` | Users | `userId`, `deletedAt` |
+| `user_deleted` | Users | `user_id`, `deleted_at` (proposed fields) |
 
-On `user_deleted`, Messaging processes the deleted user's conversations and messages according to the agreed data-retention policy. Whether messages are deleted or anonymized must be decided.
+On `user_deleted`, Messaging handles the deleted user's conversations and messages according to the agreed deletion policy.
+
+RabbitMQ configuration:
+
+- Exchange: `user.events`
+- Routing key: `user_deleted`
+- Queue: `messaging.user.events`
+- Dead-letter queue: `messaging.user.events.dlq`
+
+Messages are processed idempotently using the MongoDB inbox.
 
 ### Publishes
 
 Nothing to RabbitMQ.
 
-Messaging broadcasts new messages through Supabase Realtime instead.
+New chat messages are broadcast through Supabase Realtime.
 
 ### HTTP (via gateway)
 
-- `POST /conversations` body `{productId}`. Creates a conversation between the authenticated buyer and the product's seller.
-- `GET /conversations` returns all conversations belonging to the authenticated user.
-- `GET /conversations/{id}` returns conversation details.
+Proposed endpoints:
+
+- `POST /conversations` body `{product_id}`. Creates or retrieves a conversation between a buyer and the product's seller.
+- `GET /conversations` returns the authenticated user's conversations.
 - `GET /conversations/{id}/messages?before=&limit=50` returns paginated message history.
-- `POST /conversations/{id}/messages` body `{content, clientMessageId?}`. Sends a message to the conversation.
+- `POST /conversations/{id}/messages` body `{content}`. Sends a message to another participant.
 
 Example message response:
 
 ```json
 {
-  "messageId": "uuid",
-  "conversationId": "uuid",
-  "senderId": "uuid",
+  "message_id": "uuid",
+  "conversation_id": "uuid",
+  "sender_user_id": "uuid",
   "content": "Is this watch still available?",
-  "createdAt": "ISO-8601"
+  "created_at": "2026-10-15T10:00:00Z"
 }
 ```
 
-### Authorization and validation
+Example message history response:
 
-- API Gateway verifies the user's JWT.
-- Messaging obtains the authenticated user's identity from trusted gateway authentication context, never from a client-supplied `senderId`.
-- Only conversation participants can read and send messages.
-- Users cannot start conversations with themselves.
-- Product existence and seller ownership are verified through Catalog.
-- Duplicate conversations for the same buyer, seller and product should be prevented.
-- `clientMessageId` can be used to prevent duplicate messages on retries.
-- Invalid requests return `400`, unauthorized requests `401`, and forbidden access `403`.
+```json
+{
+  "items": [
+    {
+      "message_id": "uuid",
+      "conversation_id": "uuid",
+      "sender_user_id": "uuid",
+      "content": "Is this watch still available?",
+      "created_at": "2026-10-15T10:00:00Z"
+    }
+  ],
+  "next_cursor": null
+}
+```
+
+The API Gateway verifies the Supabase JWT and forwards the authenticated user identity.
+
+Only conversation participants can retrieve messages or send new ones. The sender ID comes from the authenticated context, never from the request body.
+
+HTTP errors follow RFC 9457 `application/problem+json`.
 
 ### Outbound HTTP
 
-Catalog `GET /products/{id}` returns `{id, name, priceDkk, stock, sellerUserId, status}`.
+Catalog `GET /products/{id}` is the specified integration point.
 
-Messaging uses this to validate the product and identify the seller when creating a conversation.
+Messaging needs product information to identify the seller and associate conversations with products.
 
-**Note:** `sellerUserId` and `status` are proposed additions to the existing Catalog contract and require agreement with the Catalog team.
+Proposed required response fields:
+
+`{id, seller_user_id, name, ...}`
+
+**Note:** Confirm `seller_user_id` in the Catalog contract. Architecture v3 also requires service-to-service calls to use `/internal/*` with a service JWT; the exact internal Catalog route must be agreed.
 
 ### Supabase Realtime
 
-Messaging uses Supabase Realtime to broadcast messages to connected clients.
+Messaging uses Supabase Realtime to broadcast messages to connected users.
 
-Channel: `conversation:{conversationId}`
+Proposed channel: `conversation:{conversation_id}`
 
 Event: `message_created`
 
 ```json
 {
-  "messageId": "uuid",
-  "conversationId": "uuid",
-  "senderId": "uuid",
+  "message_id": "uuid",
+  "conversation_id": "uuid",
+  "sender_user_id": "uuid",
   "content": "Is this watch still available?",
-  "createdAt": "ISO-8601"
+  "created_at": "2026-10-15T10:00:00Z"
 }
 ```
 
-Flow:
+Message flow:
 
-1. Client sends a message through HTTP via API Gateway.
-2. Messaging validates that the sender belongs to the conversation.
-3. Message is stored in MongoDB.
+1. Frontend sends a message through API Gateway.
+2. Messaging verifies the sender belongs to the conversation.
+3. Message is persisted in MongoDB.
 4. Messaging broadcasts `message_created` through Supabase Realtime.
-5. Connected conversation participants receive the message through WebSocket.
+5. Connected participants receive the update over WebSocket.
 
-MongoDB is the source of truth. Supabase Realtime handles live delivery, not persistent message storage.
+MongoDB is the source of truth. Supabase Realtime handles live delivery.
 
-Realtime channel access must be restricted to conversation participants. Missed messages are retrieved through HTTP.
+Realtime channel access must be restricted to conversation participants. Missed messages can be retrieved through HTTP.
 
 ### MongoDB
 
-Two proposed collections:
+Proposed collections:
 
 **Conversations**
 
-`conversationId`, `productId`, `buyerUserId`, `sellerUserId`, `createdAt`, `updatedAt`
+`conversation_id`, `product_id`, `buyer_user_id`, `seller_user_id`, `created_at`, `updated_at`
 
 **Messages**
 
-`messageId`, `conversationId`, `senderId`, `content`, `createdAt`, `clientMessageId?`
+`message_id`, `conversation_id`, `sender_user_id`, `content`, `created_at`
 
-Index messages by `conversationId` and `createdAt` for efficient message-history retrieval.
+**Inbox**
+
+Processed CloudEvents IDs for idempotent event handling.
+
+Index messages by `conversation_id` and `created_at` for efficient message history retrieval.
 
 ## Open points to agree with other teams
 
-1. **Catalog seller information.** Messaging needs `sellerUserId` from Catalog to identify the recipient. The existing Catalog contract does not include this field.
+1. **Existing functionality.** Confirm how conversations and chat work in the old monolith. Only existing functionality should be migrated.
 
-2. **User deletion.** When receiving `user_deleted`, should Messaging permanently delete messages, anonymize the user, or retain conversation history for the other participant?
+2. **Catalog integration.** Confirm that Catalog exposes the seller's user ID and agree on the internal HTTP route.
 
-3. **Product availability.** Should users still be able to send messages when a product is sold, deleted, or an auction has ended? Messaging currently does not consume Catalog events.
+3. **User deletion.** Should messages be permanently deleted, anonymized, or retained when a user is deleted?
 
-4. **Realtime authorization.** Confirm how Supabase Realtime channels authenticate users and restrict subscriptions to conversation participants.
+4. **Conversation creation.** Can a buyer open multiple conversations about the same product? Can sellers initiate conversations?
 
-5. **Conversation rules.** Can users have multiple conversations about the same product? Can sellers initiate conversations, or only buyers?
+5. **Product availability.** Should conversations remain active after a product is sold or deleted?
 
-6. **Message functionality.** Decide whether messages can be edited, deleted, marked as read, or include images. These features would require additional endpoints and fields.
+6. **Realtime authorization.** How are Supabase Realtime subscriptions restricted to authorized participants?
 
-7. **Realtime delivery failures.** If MongoDB saves a message but broadcasting fails, the message remains stored. Decide whether to retry broadcasting or rely on clients fetching missed messages.
+7. **Delivery failures.** What happens when a message is stored in MongoDB but the Supabase broadcast fails? Define retry and duplicate-handling behavior.
 
-8. **API contract format.** The diagram specifies HTTP REST. Use OpenAPI for the HTTP contract unless the team agrees to switch to gRPC.
+8. **Existing contracts.** Confirm exact endpoint names, payloads, and event schemas against `docs/contracts/openapi.yaml` and `asyncapi.yaml`.
+
+All agreed contract changes must be made in `microservices/docs/contracts/` before implementation.
