@@ -1,0 +1,2578 @@
+asyncapi: "3.0.0"
+info:
+  title: "Limited Watches – event contracts"
+  version: "1.0.0"
+  description: |-
+    All asynchronous messages between the Limited Watches microservices.
+
+    - Broker: RabbitMQ. One durable **topic exchange per publishing service**; routing key = event type.
+    - Each consumer service has **one durable quorum queue per exchange** it listens to, named `<consumer>.<exchange>` (see `x-queue` on each receive operation), bound to the routing keys it needs, with a dead-letter queue `<queue>.dlq`.
+    - Envelope: CloudEvents 1.0, structured JSON mode (content type application/cloudevents+json). `id` is the idempotency key: consumers store processed ids (inbox table) and skip duplicates.
+    - Delivery is at-least-once: producers with a database write the event to an outbox table in the same DB transaction as the state change and publish with publisher confirms; consumers ack manually after processing and must be idempotent. Payment and Notif are stateless; README section 3 explains how they meet the same guarantees.
+    - See docs/contracts/README.md for the full conventions.
+defaultContentType: application/cloudevents+json
+servers:
+  rabbitmq:
+    host: "rabbitmq:5672"
+    protocol: amqp
+    protocolVersion: "0.9.1"
+    description: Internal RabbitMQ broker (not reachable from the internet)
+channels:
+  UserDeleted:
+    address: user_deleted
+    title: user.events / user_deleted
+    description: "Routing key `user_deleted` on topic exchange `user.events`."
+    messages:
+      UserDeleted:
+        "$ref": "#/components/messages/UserDeleted"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: user.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: "0.3.0"
+  ProductCreated:
+    address: product_created
+    title: catalog.events / product_created
+    description: "Routing key `product_created` on topic exchange `catalog.events`."
+    messages:
+      ProductCreated:
+        "$ref": "#/components/messages/ProductCreated"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: catalog.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: "0.3.0"
+  ProductUpdated:
+    address: product_updated
+    title: catalog.events / product_updated
+    description: "Routing key `product_updated` on topic exchange `catalog.events`."
+    messages:
+      ProductUpdated:
+        "$ref": "#/components/messages/ProductUpdated"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: catalog.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: "0.3.0"
+  ProductDeleted:
+    address: product_deleted
+    title: catalog.events / product_deleted
+    description: "Routing key `product_deleted` on topic exchange `catalog.events`."
+    messages:
+      ProductDeleted:
+        "$ref": "#/components/messages/ProductDeleted"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: catalog.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: "0.3.0"
+  ProductAvailabilityChanged:
+    address: product_availability_changed
+    title: catalog.events / product_availability_changed
+    description: "Routing key `product_availability_changed` on topic exchange `catalog.events`."
+    messages:
+      ProductAvailabilityChanged:
+        "$ref": "#/components/messages/ProductAvailabilityChanged"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: catalog.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: "0.3.0"
+  AuctionComplete:
+    address: auction_complete
+    title: auction.events / auction_complete
+    description: "Routing key `auction_complete` on topic exchange `auction.events`."
+    messages:
+      AuctionComplete:
+        "$ref": "#/components/messages/AuctionComplete"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: auction.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: "0.3.0"
+  OrderConfirmed:
+    address: order_confirmed
+    title: order.events / order_confirmed
+    description: "Routing key `order_confirmed` on topic exchange `order.events`."
+    messages:
+      OrderConfirmed:
+        "$ref": "#/components/messages/OrderConfirmed"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: order.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: "0.3.0"
+  OrderCancelled:
+    address: order_cancelled
+    title: order.events / order_cancelled
+    description: "Routing key `order_cancelled` on topic exchange `order.events`."
+    messages:
+      OrderCancelled:
+        "$ref": "#/components/messages/OrderCancelled"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: order.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: "0.3.0"
+  OrderExpired:
+    address: order_expired
+    title: order.events / order_expired
+    description: "Routing key `order_expired` on topic exchange `order.events`."
+    messages:
+      OrderExpired:
+        "$ref": "#/components/messages/OrderExpired"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: order.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: "0.3.0"
+  RefundRequested:
+    address: refund_requested
+    title: order.events / refund_requested
+    description: "Routing key `refund_requested` on topic exchange `order.events`."
+    messages:
+      RefundRequested:
+        "$ref": "#/components/messages/RefundRequested"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: order.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: "0.3.0"
+  PaymentComplete:
+    address: payment_complete
+    title: payment.events / payment_complete
+    description: "Routing key `payment_complete` on topic exchange `payment.events`."
+    messages:
+      PaymentComplete:
+        "$ref": "#/components/messages/PaymentComplete"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: payment.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: "0.3.0"
+  PaymentFailed:
+    address: payment_failed
+    title: payment.events / payment_failed
+    description: "Routing key `payment_failed` on topic exchange `payment.events`."
+    messages:
+      PaymentFailed:
+        "$ref": "#/components/messages/PaymentFailed"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: payment.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: "0.3.0"
+  PaymentRefunded:
+    address: payment_refunded
+    title: payment.events / payment_refunded
+    description: "Routing key `payment_refunded` on topic exchange `payment.events`."
+    messages:
+      PaymentRefunded:
+        "$ref": "#/components/messages/PaymentRefunded"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: payment.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: "0.3.0"
+operations:
+  usersPublishesUserDeleted:
+    action: send
+    title: Users publishes user_deleted
+    channel:
+      "$ref": "#/channels/UserDeleted"
+    messages:
+      - "$ref": "#/channels/UserDeleted/messages/UserDeleted"
+    bindings:
+      amqp:
+        deliveryMode: 2
+        mandatory: true
+        bindingVersion: "0.3.0"
+    x-producer: users
+  ordersReceivesUserDeleted:
+    action: receive
+    title: Orders consumes user_deleted
+    channel:
+      "$ref": "#/channels/UserDeleted"
+    messages:
+      - "$ref": "#/channels/UserDeleted/messages/UserDeleted"
+    bindings:
+      amqp:
+        ack: true
+        bindingVersion: "0.3.0"
+    x-consumer: orders
+    x-queue: orders.user.events
+    x-dead-letter-queue: orders.user.events.dlq
+  messagingReceivesUserDeleted:
+    action: receive
+    title: Messaging consumes user_deleted
+    channel:
+      "$ref": "#/channels/UserDeleted"
+    messages:
+      - "$ref": "#/channels/UserDeleted/messages/UserDeleted"
+    bindings:
+      amqp:
+        ack: true
+        bindingVersion: "0.3.0"
+    x-consumer: messaging
+    x-queue: messaging.user.events
+    x-dead-letter-queue: messaging.user.events.dlq
+  editorialReceivesUserDeleted:
+    action: receive
+    title: Editorial consumes user_deleted
+    channel:
+      "$ref": "#/channels/UserDeleted"
+    messages:
+      - "$ref": "#/channels/UserDeleted/messages/UserDeleted"
+    bindings:
+      amqp:
+        ack: true
+        bindingVersion: "0.3.0"
+    x-consumer: editorial
+    x-queue: editorial.user.events
+    x-dead-letter-queue: editorial.user.events.dlq
+  auctionsReceivesUserDeleted:
+    action: receive
+    title: Auctions consumes user_deleted
+    channel:
+      "$ref": "#/channels/UserDeleted"
+    messages:
+      - "$ref": "#/channels/UserDeleted/messages/UserDeleted"
+    bindings:
+      amqp:
+        ack: true
+        bindingVersion: "0.3.0"
+    x-consumer: auctions
+    x-queue: auctions.user.events
+    x-dead-letter-queue: auctions.user.events.dlq
+  catalogPublishesProductCreated:
+    action: send
+    title: Catalog publishes product_created
+    channel:
+      "$ref": "#/channels/ProductCreated"
+    messages:
+      - "$ref": "#/channels/ProductCreated/messages/ProductCreated"
+    bindings:
+      amqp:
+        deliveryMode: 2
+        mandatory: true
+        bindingVersion: "0.3.0"
+    x-producer: catalog
+  searchReceivesProductCreated:
+    action: receive
+    title: Search consumes product_created
+    channel:
+      "$ref": "#/channels/ProductCreated"
+    messages:
+      - "$ref": "#/channels/ProductCreated/messages/ProductCreated"
+    bindings:
+      amqp:
+        ack: true
+        bindingVersion: "0.3.0"
+    x-consumer: search
+    x-queue: search.catalog.events
+    x-dead-letter-queue: search.catalog.events.dlq
+  catalogPublishesProductUpdated:
+    action: send
+    title: Catalog publishes product_updated
+    channel:
+      "$ref": "#/channels/ProductUpdated"
+    messages:
+      - "$ref": "#/channels/ProductUpdated/messages/ProductUpdated"
+    bindings:
+      amqp:
+        deliveryMode: 2
+        mandatory: true
+        bindingVersion: "0.3.0"
+    x-producer: catalog
+  searchReceivesProductUpdated:
+    action: receive
+    title: Search consumes product_updated
+    channel:
+      "$ref": "#/channels/ProductUpdated"
+    messages:
+      - "$ref": "#/channels/ProductUpdated/messages/ProductUpdated"
+    bindings:
+      amqp:
+        ack: true
+        bindingVersion: "0.3.0"
+    x-consumer: search
+    x-queue: search.catalog.events
+    x-dead-letter-queue: search.catalog.events.dlq
+  catalogPublishesProductDeleted:
+    action: send
+    title: Catalog publishes product_deleted
+    channel:
+      "$ref": "#/channels/ProductDeleted"
+    messages:
+      - "$ref": "#/channels/ProductDeleted/messages/ProductDeleted"
+    bindings:
+      amqp:
+        deliveryMode: 2
+        mandatory: true
+        bindingVersion: "0.3.0"
+    x-producer: catalog
+  searchReceivesProductDeleted:
+    action: receive
+    title: Search consumes product_deleted
+    channel:
+      "$ref": "#/channels/ProductDeleted"
+    messages:
+      - "$ref": "#/channels/ProductDeleted/messages/ProductDeleted"
+    bindings:
+      amqp:
+        ack: true
+        bindingVersion: "0.3.0"
+    x-consumer: search
+    x-queue: search.catalog.events
+    x-dead-letter-queue: search.catalog.events.dlq
+  usersReceivesProductDeleted:
+    action: receive
+    title: Users consumes product_deleted
+    channel:
+      "$ref": "#/channels/ProductDeleted"
+    messages:
+      - "$ref": "#/channels/ProductDeleted/messages/ProductDeleted"
+    bindings:
+      amqp:
+        ack: true
+        bindingVersion: "0.3.0"
+    x-consumer: users
+    x-queue: users.catalog.events
+    x-dead-letter-queue: users.catalog.events.dlq
+  catalogPublishesProductAvailabilityChanged:
+    action: send
+    title: Catalog publishes product_availability_changed
+    channel:
+      "$ref": "#/channels/ProductAvailabilityChanged"
+    messages:
+      - "$ref": "#/channels/ProductAvailabilityChanged/messages/ProductAvailabilityChanged"
+    bindings:
+      amqp:
+        deliveryMode: 2
+        mandatory: true
+        bindingVersion: "0.3.0"
+    x-producer: catalog
+  searchReceivesProductAvailabilityChanged:
+    action: receive
+    title: Search consumes product_availability_changed
+    channel:
+      "$ref": "#/channels/ProductAvailabilityChanged"
+    messages:
+      - "$ref": "#/channels/ProductAvailabilityChanged/messages/ProductAvailabilityChanged"
+    bindings:
+      amqp:
+        ack: true
+        bindingVersion: "0.3.0"
+    x-consumer: search
+    x-queue: search.catalog.events
+    x-dead-letter-queue: search.catalog.events.dlq
+  auctionsPublishesAuctionComplete:
+    action: send
+    title: Auctions publishes auction_complete
+    channel:
+      "$ref": "#/channels/AuctionComplete"
+    messages:
+      - "$ref": "#/channels/AuctionComplete/messages/AuctionComplete"
+    bindings:
+      amqp:
+        deliveryMode: 2
+        mandatory: true
+        bindingVersion: "0.3.0"
+    x-producer: auctions
+  ordersReceivesAuctionComplete:
+    action: receive
+    title: Orders consumes auction_complete
+    channel:
+      "$ref": "#/channels/AuctionComplete"
+    messages:
+      - "$ref": "#/channels/AuctionComplete/messages/AuctionComplete"
+    bindings:
+      amqp:
+        ack: true
+        bindingVersion: "0.3.0"
+    x-consumer: orders
+    x-queue: orders.auction.events
+    x-dead-letter-queue: orders.auction.events.dlq
+  ordersPublishesOrderConfirmed:
+    action: send
+    title: Orders publishes order_confirmed
+    channel:
+      "$ref": "#/channels/OrderConfirmed"
+    messages:
+      - "$ref": "#/channels/OrderConfirmed/messages/OrderConfirmed"
+    bindings:
+      amqp:
+        deliveryMode: 2
+        mandatory: true
+        bindingVersion: "0.3.0"
+    x-producer: orders
+  notifReceivesOrderConfirmed:
+    action: receive
+    title: Notif / Email consumes order_confirmed
+    channel:
+      "$ref": "#/channels/OrderConfirmed"
+    messages:
+      - "$ref": "#/channels/OrderConfirmed/messages/OrderConfirmed"
+    bindings:
+      amqp:
+        ack: true
+        bindingVersion: "0.3.0"
+    x-consumer: notif
+    x-queue: notif.order.events
+    x-dead-letter-queue: notif.order.events.dlq
+  catalogReceivesOrderConfirmed:
+    action: receive
+    title: Catalog consumes order_confirmed
+    channel:
+      "$ref": "#/channels/OrderConfirmed"
+    messages:
+      - "$ref": "#/channels/OrderConfirmed/messages/OrderConfirmed"
+    bindings:
+      amqp:
+        ack: true
+        bindingVersion: "0.3.0"
+    x-consumer: catalog
+    x-queue: catalog.order.events
+    x-dead-letter-queue: catalog.order.events.dlq
+  ordersPublishesOrderCancelled:
+    action: send
+    title: Orders publishes order_cancelled
+    channel:
+      "$ref": "#/channels/OrderCancelled"
+    messages:
+      - "$ref": "#/channels/OrderCancelled/messages/OrderCancelled"
+    bindings:
+      amqp:
+        deliveryMode: 2
+        mandatory: true
+        bindingVersion: "0.3.0"
+    x-producer: orders
+  catalogReceivesOrderCancelled:
+    action: receive
+    title: Catalog consumes order_cancelled
+    channel:
+      "$ref": "#/channels/OrderCancelled"
+    messages:
+      - "$ref": "#/channels/OrderCancelled/messages/OrderCancelled"
+    bindings:
+      amqp:
+        ack: true
+        bindingVersion: "0.3.0"
+    x-consumer: catalog
+    x-queue: catalog.order.events
+    x-dead-letter-queue: catalog.order.events.dlq
+  paymentReceivesOrderCancelled:
+    action: receive
+    title: Payment consumes order_cancelled
+    channel:
+      "$ref": "#/channels/OrderCancelled"
+    messages:
+      - "$ref": "#/channels/OrderCancelled/messages/OrderCancelled"
+    bindings:
+      amqp:
+        ack: true
+        bindingVersion: "0.3.0"
+    x-consumer: payment
+    x-queue: payment.order.events
+    x-dead-letter-queue: payment.order.events.dlq
+  ordersPublishesOrderExpired:
+    action: send
+    title: Orders publishes order_expired
+    channel:
+      "$ref": "#/channels/OrderExpired"
+    messages:
+      - "$ref": "#/channels/OrderExpired/messages/OrderExpired"
+    bindings:
+      amqp:
+        deliveryMode: 2
+        mandatory: true
+        bindingVersion: "0.3.0"
+    x-producer: orders
+  catalogReceivesOrderExpired:
+    action: receive
+    title: Catalog consumes order_expired
+    channel:
+      "$ref": "#/channels/OrderExpired"
+    messages:
+      - "$ref": "#/channels/OrderExpired/messages/OrderExpired"
+    bindings:
+      amqp:
+        ack: true
+        bindingVersion: "0.3.0"
+    x-consumer: catalog
+    x-queue: catalog.order.events
+    x-dead-letter-queue: catalog.order.events.dlq
+  paymentReceivesOrderExpired:
+    action: receive
+    title: Payment consumes order_expired
+    channel:
+      "$ref": "#/channels/OrderExpired"
+    messages:
+      - "$ref": "#/channels/OrderExpired/messages/OrderExpired"
+    bindings:
+      amqp:
+        ack: true
+        bindingVersion: "0.3.0"
+    x-consumer: payment
+    x-queue: payment.order.events
+    x-dead-letter-queue: payment.order.events.dlq
+  ordersPublishesRefundRequested:
+    action: send
+    title: Orders publishes refund_requested
+    channel:
+      "$ref": "#/channels/RefundRequested"
+    messages:
+      - "$ref": "#/channels/RefundRequested/messages/RefundRequested"
+    bindings:
+      amqp:
+        deliveryMode: 2
+        mandatory: true
+        bindingVersion: "0.3.0"
+    x-producer: orders
+  paymentReceivesRefundRequested:
+    action: receive
+    title: Payment consumes refund_requested
+    channel:
+      "$ref": "#/channels/RefundRequested"
+    messages:
+      - "$ref": "#/channels/RefundRequested/messages/RefundRequested"
+    bindings:
+      amqp:
+        ack: true
+        bindingVersion: "0.3.0"
+    x-consumer: payment
+    x-queue: payment.order.events
+    x-dead-letter-queue: payment.order.events.dlq
+  paymentPublishesPaymentComplete:
+    action: send
+    title: Payment publishes payment_complete
+    channel:
+      "$ref": "#/channels/PaymentComplete"
+    messages:
+      - "$ref": "#/channels/PaymentComplete/messages/PaymentComplete"
+    bindings:
+      amqp:
+        deliveryMode: 2
+        mandatory: true
+        bindingVersion: "0.3.0"
+    x-producer: payment
+  ordersReceivesPaymentComplete:
+    action: receive
+    title: Orders consumes payment_complete
+    channel:
+      "$ref": "#/channels/PaymentComplete"
+    messages:
+      - "$ref": "#/channels/PaymentComplete/messages/PaymentComplete"
+    bindings:
+      amqp:
+        ack: true
+        bindingVersion: "0.3.0"
+    x-consumer: orders
+    x-queue: orders.payment.events
+    x-dead-letter-queue: orders.payment.events.dlq
+  paymentPublishesPaymentFailed:
+    action: send
+    title: Payment publishes payment_failed
+    channel:
+      "$ref": "#/channels/PaymentFailed"
+    messages:
+      - "$ref": "#/channels/PaymentFailed/messages/PaymentFailed"
+    bindings:
+      amqp:
+        deliveryMode: 2
+        mandatory: true
+        bindingVersion: "0.3.0"
+    x-producer: payment
+  ordersReceivesPaymentFailed:
+    action: receive
+    title: Orders consumes payment_failed
+    channel:
+      "$ref": "#/channels/PaymentFailed"
+    messages:
+      - "$ref": "#/channels/PaymentFailed/messages/PaymentFailed"
+    bindings:
+      amqp:
+        ack: true
+        bindingVersion: "0.3.0"
+    x-consumer: orders
+    x-queue: orders.payment.events
+    x-dead-letter-queue: orders.payment.events.dlq
+  paymentPublishesPaymentRefunded:
+    action: send
+    title: Payment publishes payment_refunded
+    channel:
+      "$ref": "#/channels/PaymentRefunded"
+    messages:
+      - "$ref": "#/channels/PaymentRefunded/messages/PaymentRefunded"
+    bindings:
+      amqp:
+        deliveryMode: 2
+        mandatory: true
+        bindingVersion: "0.3.0"
+    x-producer: payment
+  ordersReceivesPaymentRefunded:
+    action: receive
+    title: Orders consumes payment_refunded
+    channel:
+      "$ref": "#/channels/PaymentRefunded"
+    messages:
+      - "$ref": "#/channels/PaymentRefunded/messages/PaymentRefunded"
+    bindings:
+      amqp:
+        ack: true
+        bindingVersion: "0.3.0"
+    x-consumer: orders
+    x-queue: orders.payment.events
+    x-dead-letter-queue: orders.payment.events.dlq
+components:
+  schemas:
+    Money:
+      type: object
+      additionalProperties: false
+      properties:
+        amount_minor:
+          type: integer
+          minimum: 0
+          description: "Amount in minor units (øre / cents). 1250.00 DKK = 125000."
+        currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+          description: "ISO 4217, e.g. DKK, EUR"
+      required:
+        - amount_minor
+        - currency
+      description: "Money is always an integer in minor units plus a currency; never a float."
+    Address:
+      type: object
+      additionalProperties: false
+      properties:
+        first_name:
+          type: string
+        middle_name:
+          type:
+            - string
+            - "null"
+        last_name:
+          type: string
+        address_line_1:
+          type: string
+        address_line_2:
+          type:
+            - string
+            - "null"
+        city:
+          type: string
+        zip_code:
+          type: string
+        state_province:
+          type:
+            - string
+            - "null"
+        country_code:
+          type: string
+          pattern: "^[A-Z]{2}$"
+          description: ISO 3166-1 alpha-2
+      required:
+        - first_name
+        - middle_name
+        - last_name
+        - address_line_1
+        - address_line_2
+        - city
+        - zip_code
+        - state_province
+        - country_code
+    Availability:
+      type: string
+      enum:
+        - available
+        - reserved
+        - sold
+        - hidden
+      description: "hidden = visible is false (draft or withdrawn by an admin)"
+    ProductImage:
+      type: object
+      additionalProperties: false
+      properties:
+        image_id:
+          type: string
+          format: uuid
+        url:
+          type: string
+          format: uri
+        is_thumbnail:
+          type: boolean
+      required:
+        - image_id
+        - url
+        - is_thumbnail
+    Brand:
+      type: object
+      additionalProperties: false
+      properties:
+        brand_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+      required:
+        - brand_id
+        - name
+        - slug
+    WatchDetails:
+      type: object
+      additionalProperties: false
+      properties:
+        watch_id:
+          type: string
+          format: uuid
+        brand:
+          "$ref": "#/components/schemas/Brand"
+        model:
+          type: string
+        slug:
+          type: string
+        reference:
+          type: string
+        year:
+          type: integer
+        condition:
+          type: integer
+        size_mm:
+          type:
+            - integer
+            - "null"
+        movement:
+          type:
+            - string
+            - "null"
+        glass_type:
+          type:
+            - string
+            - "null"
+        limited:
+          type: boolean
+        box:
+          type: boolean
+        papers:
+          type: boolean
+        bracelet_type:
+          type:
+            - string
+            - "null"
+        bracelet_color:
+          type:
+            - string
+            - "null"
+        dial_color:
+          type:
+            - string
+            - "null"
+      required:
+        - watch_id
+        - brand
+        - model
+        - slug
+        - reference
+        - year
+        - condition
+        - size_mm
+        - movement
+        - glass_type
+        - limited
+        - box
+        - papers
+        - bracelet_type
+        - bracelet_color
+        - dial_color
+      description: Public watch data. serial_number and internal_id are deliberately NOT published.
+    ProductSnapshot:
+      type: object
+      additionalProperties: false
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          minimum: 1
+          description: "Aggregate version, +1 on every change. Consumers ignore an event whose version is not newer than the one they already stored."
+        product_type:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          "$ref": "#/components/schemas/Money"
+        stock:
+          type: integer
+          minimum: 0
+        visible:
+          type: boolean
+        availability:
+          "$ref": "#/components/schemas/Availability"
+        watch:
+          oneOf:
+            - "$ref": "#/components/schemas/WatchDetails"
+            - type: "null"
+        images:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ProductImage"
+        created_at:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+        updated_at:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+      required:
+        - product_id
+        - version
+        - product_type
+        - name
+        - description
+        - price
+        - stock
+        - visible
+        - availability
+        - watch
+        - images
+        - created_at
+        - updated_at
+      description: "Full state of a product (event-carried state transfer): consumers never call Catalog back."
+    ItemQuantity:
+      type: object
+      additionalProperties: false
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          minimum: 1
+      required:
+        - product_id
+        - quantity
+    OrderLine:
+      type: object
+      additionalProperties: false
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        product_name:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+        thumbnail_url:
+          type:
+            - string
+            - "null"
+          format: uri
+      required:
+        - product_id
+        - product_name
+        - quantity
+        - thumbnail_url
+      description: "Copied from Catalog at reservation time and stored on the order (order_items.product_name, thumbnail_url), so it does not change if the product is edited or deleted later. Prices are in the order totals."
+    OrderTotals:
+      type: object
+      additionalProperties: false
+      properties:
+        subtotal:
+          "$ref": "#/components/schemas/Money"
+        shipping:
+          "$ref": "#/components/schemas/Money"
+        total:
+          "$ref": "#/components/schemas/Money"
+        total_charged:
+          "$ref": "#/components/schemas/Money"
+      required:
+        - subtotal
+        - shipping
+        - total
+        - total_charged
+      description: "subtotal/shipping/total in DKK (incl. VAT); total_charged in the currency the customer pays in."
+    OrderStatus:
+      type: string
+      enum:
+        - RESERVED
+        - EXPIRED
+        - PENDING
+        - PROCESSING
+        - SHIPPED
+        - DELIVERED
+        - CANCELLED
+        - RETURNED
+        - REFUNDED
+    UserDeletedData:
+      type: object
+      additionalProperties: false
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          minimum: 1
+          description: "Aggregate version, +1 on every change. Consumers ignore an event whose version is not newer than the one they already stored."
+        deleted_at:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+      required:
+        - user_id
+        - version
+        - deleted_at
+    UserDeletedEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - specversion
+        - id
+        - source
+        - type
+        - time
+        - datacontenttype
+        - subject
+        - dataversion
+        - correlationid
+        - data
+      properties:
+        specversion:
+          const: "1.0"
+        id:
+          type: string
+          format: uuid
+          description: "Unique per event; idempotency key"
+        source:
+          const: /services/users
+        type:
+          const: user_deleted
+          description: Same value as the AMQP routing key
+        time:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+        datacontenttype:
+          const: application/json
+        subject:
+          type: string
+          format: uuid
+          description: Id of the aggregate the event is about
+        dataversion:
+          const: 1
+          description: "Schema version of `data`; breaking changes get a new event type (e.g. order_confirmed.v2)"
+        correlationid:
+          type: string
+          format: uuid
+          description: "Flow id, e.g. the order id for the checkout saga"
+        causationid:
+          type:
+            - string
+            - "null"
+          format: uuid
+          description: id of the event or request that caused this one
+        data:
+          "$ref": "#/components/schemas/UserDeletedData"
+    ProductCreatedData:
+      type: object
+      additionalProperties: false
+      properties:
+        product:
+          "$ref": "#/components/schemas/ProductSnapshot"
+        changed_by:
+          type: string
+          format: uuid
+      required:
+        - product
+        - changed_by
+    ProductCreatedEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - specversion
+        - id
+        - source
+        - type
+        - time
+        - datacontenttype
+        - subject
+        - dataversion
+        - correlationid
+        - data
+      properties:
+        specversion:
+          const: "1.0"
+        id:
+          type: string
+          format: uuid
+          description: "Unique per event; idempotency key"
+        source:
+          const: /services/catalog
+        type:
+          const: product_created
+          description: Same value as the AMQP routing key
+        time:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+        datacontenttype:
+          const: application/json
+        subject:
+          type: string
+          format: uuid
+          description: Id of the aggregate the event is about
+        dataversion:
+          const: 1
+          description: "Schema version of `data`; breaking changes get a new event type (e.g. order_confirmed.v2)"
+        correlationid:
+          type: string
+          format: uuid
+          description: "Flow id, e.g. the order id for the checkout saga"
+        causationid:
+          type:
+            - string
+            - "null"
+          format: uuid
+          description: id of the event or request that caused this one
+        data:
+          "$ref": "#/components/schemas/ProductCreatedData"
+    ProductUpdatedData:
+      type: object
+      additionalProperties: false
+      properties:
+        product:
+          "$ref": "#/components/schemas/ProductSnapshot"
+        changed_by:
+          type: string
+          format: uuid
+        changed_fields:
+          type: array
+          minItems: 1
+          items:
+            type: string
+          description: "Top-level ProductSnapshot field names, e.g. price, description"
+      required:
+        - product
+        - changed_by
+        - changed_fields
+    ProductUpdatedEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - specversion
+        - id
+        - source
+        - type
+        - time
+        - datacontenttype
+        - subject
+        - dataversion
+        - correlationid
+        - data
+      properties:
+        specversion:
+          const: "1.0"
+        id:
+          type: string
+          format: uuid
+          description: "Unique per event; idempotency key"
+        source:
+          const: /services/catalog
+        type:
+          const: product_updated
+          description: Same value as the AMQP routing key
+        time:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+        datacontenttype:
+          const: application/json
+        subject:
+          type: string
+          format: uuid
+          description: Id of the aggregate the event is about
+        dataversion:
+          const: 1
+          description: "Schema version of `data`; breaking changes get a new event type (e.g. order_confirmed.v2)"
+        correlationid:
+          type: string
+          format: uuid
+          description: "Flow id, e.g. the order id for the checkout saga"
+        causationid:
+          type:
+            - string
+            - "null"
+          format: uuid
+          description: id of the event or request that caused this one
+        data:
+          "$ref": "#/components/schemas/ProductUpdatedData"
+    ProductDeletedData:
+      type: object
+      additionalProperties: false
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          minimum: 1
+          description: "Aggregate version, +1 on every change. Consumers ignore an event whose version is not newer than the one they already stored."
+        deleted_by:
+          type: string
+          format: uuid
+        deleted_at:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+      required:
+        - product_id
+        - version
+        - deleted_by
+        - deleted_at
+    ProductDeletedEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - specversion
+        - id
+        - source
+        - type
+        - time
+        - datacontenttype
+        - subject
+        - dataversion
+        - correlationid
+        - data
+      properties:
+        specversion:
+          const: "1.0"
+        id:
+          type: string
+          format: uuid
+          description: "Unique per event; idempotency key"
+        source:
+          const: /services/catalog
+        type:
+          const: product_deleted
+          description: Same value as the AMQP routing key
+        time:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+        datacontenttype:
+          const: application/json
+        subject:
+          type: string
+          format: uuid
+          description: Id of the aggregate the event is about
+        dataversion:
+          const: 1
+          description: "Schema version of `data`; breaking changes get a new event type (e.g. order_confirmed.v2)"
+        correlationid:
+          type: string
+          format: uuid
+          description: "Flow id, e.g. the order id for the checkout saga"
+        causationid:
+          type:
+            - string
+            - "null"
+          format: uuid
+          description: id of the event or request that caused this one
+        data:
+          "$ref": "#/components/schemas/ProductDeletedData"
+    ProductAvailabilityChangedData:
+      type: object
+      additionalProperties: false
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          minimum: 1
+          description: "Aggregate version, +1 on every change. Consumers ignore an event whose version is not newer than the one they already stored."
+        availability:
+          "$ref": "#/components/schemas/Availability"
+        previous_availability:
+          "$ref": "#/components/schemas/Availability"
+        stock:
+          type: integer
+          minimum: 0
+        reason:
+          type: string
+          enum:
+            - order_reserved
+            - order_released
+            - order_confirmed
+            - admin_update
+        order_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        changed_at:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+      required:
+        - product_id
+        - version
+        - availability
+        - previous_availability
+        - stock
+        - reason
+        - order_id
+        - changed_at
+    ProductAvailabilityChangedEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - specversion
+        - id
+        - source
+        - type
+        - time
+        - datacontenttype
+        - subject
+        - dataversion
+        - correlationid
+        - data
+      properties:
+        specversion:
+          const: "1.0"
+        id:
+          type: string
+          format: uuid
+          description: "Unique per event; idempotency key"
+        source:
+          const: /services/catalog
+        type:
+          const: product_availability_changed
+          description: Same value as the AMQP routing key
+        time:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+        datacontenttype:
+          const: application/json
+        subject:
+          type: string
+          format: uuid
+          description: Id of the aggregate the event is about
+        dataversion:
+          const: 1
+          description: "Schema version of `data`; breaking changes get a new event type (e.g. order_confirmed.v2)"
+        correlationid:
+          type: string
+          format: uuid
+          description: "Flow id, e.g. the order id for the checkout saga"
+        causationid:
+          type:
+            - string
+            - "null"
+          format: uuid
+          description: id of the event or request that caused this one
+        data:
+          "$ref": "#/components/schemas/ProductAvailabilityChangedData"
+    AuctionCompleteData:
+      type: object
+      additionalProperties: false
+      properties:
+        auction_id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        watch_id:
+          type: string
+          format: uuid
+        outcome:
+          type: string
+          enum:
+            - sold
+            - no_bids
+        winner_user_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        winner_email:
+          type:
+            - string
+            - "null"
+          format: email
+          description: "Copied to the order, so the confirmation email can be sent"
+        winning_bid:
+          oneOf:
+            - "$ref": "#/components/schemas/Money"
+            - type: "null"
+        starting_price:
+          "$ref": "#/components/schemas/Money"
+        ended_at:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+      required:
+        - auction_id
+        - product_id
+        - watch_id
+        - outcome
+        - winner_user_id
+        - winner_email
+        - winning_bid
+        - starting_price
+        - ended_at
+    AuctionCompleteEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - specversion
+        - id
+        - source
+        - type
+        - time
+        - datacontenttype
+        - subject
+        - dataversion
+        - correlationid
+        - data
+      properties:
+        specversion:
+          const: "1.0"
+        id:
+          type: string
+          format: uuid
+          description: "Unique per event; idempotency key"
+        source:
+          const: /services/auctions
+        type:
+          const: auction_complete
+          description: Same value as the AMQP routing key
+        time:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+        datacontenttype:
+          const: application/json
+        subject:
+          type: string
+          format: uuid
+          description: Id of the aggregate the event is about
+        dataversion:
+          const: 1
+          description: "Schema version of `data`; breaking changes get a new event type (e.g. order_confirmed.v2)"
+        correlationid:
+          type: string
+          format: uuid
+          description: "Flow id, e.g. the order id for the checkout saga"
+        causationid:
+          type:
+            - string
+            - "null"
+          format: uuid
+          description: id of the event or request that caused this one
+        data:
+          "$ref": "#/components/schemas/AuctionCompleteData"
+    OrderConfirmedData:
+      type: object
+      additionalProperties: false
+      properties:
+        order_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        customer_email:
+          type: string
+          format: email
+          description: Stored on the order when it was created
+        status:
+          const: PENDING
+        items:
+          type: array
+          minItems: 1
+          items:
+            "$ref": "#/components/schemas/OrderLine"
+        totals:
+          "$ref": "#/components/schemas/OrderTotals"
+        billing_address:
+          "$ref": "#/components/schemas/Address"
+        delivery_address:
+          "$ref": "#/components/schemas/Address"
+        confirmed_at:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+      required:
+        - order_id
+        - user_id
+        - customer_email
+        - status
+        - items
+        - totals
+        - billing_address
+        - delivery_address
+        - confirmed_at
+    OrderConfirmedEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - specversion
+        - id
+        - source
+        - type
+        - time
+        - datacontenttype
+        - subject
+        - dataversion
+        - correlationid
+        - data
+      properties:
+        specversion:
+          const: "1.0"
+        id:
+          type: string
+          format: uuid
+          description: "Unique per event; idempotency key"
+        source:
+          const: /services/orders
+        type:
+          const: order_confirmed
+          description: Same value as the AMQP routing key
+        time:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+        datacontenttype:
+          const: application/json
+        subject:
+          type: string
+          format: uuid
+          description: Id of the aggregate the event is about
+        dataversion:
+          const: 1
+          description: "Schema version of `data`; breaking changes get a new event type (e.g. order_confirmed.v2)"
+        correlationid:
+          type: string
+          format: uuid
+          description: "Flow id, e.g. the order id for the checkout saga"
+        causationid:
+          type:
+            - string
+            - "null"
+          format: uuid
+          description: id of the event or request that caused this one
+        data:
+          "$ref": "#/components/schemas/OrderConfirmedData"
+    OrderCancelledData:
+      type: object
+      additionalProperties: false
+      properties:
+        order_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        previous_status:
+          "$ref": "#/components/schemas/OrderStatus"
+        reason:
+          type: string
+          enum:
+            - customer_request
+            - admin
+        items:
+          type: array
+          minItems: 1
+          items:
+            "$ref": "#/components/schemas/ItemQuantity"
+        was_paid:
+          type: boolean
+        cancelled_at:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+      required:
+        - order_id
+        - user_id
+        - previous_status
+        - reason
+        - items
+        - was_paid
+        - cancelled_at
+    OrderCancelledEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - specversion
+        - id
+        - source
+        - type
+        - time
+        - datacontenttype
+        - subject
+        - dataversion
+        - correlationid
+        - data
+      properties:
+        specversion:
+          const: "1.0"
+        id:
+          type: string
+          format: uuid
+          description: "Unique per event; idempotency key"
+        source:
+          const: /services/orders
+        type:
+          const: order_cancelled
+          description: Same value as the AMQP routing key
+        time:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+        datacontenttype:
+          const: application/json
+        subject:
+          type: string
+          format: uuid
+          description: Id of the aggregate the event is about
+        dataversion:
+          const: 1
+          description: "Schema version of `data`; breaking changes get a new event type (e.g. order_confirmed.v2)"
+        correlationid:
+          type: string
+          format: uuid
+          description: "Flow id, e.g. the order id for the checkout saga"
+        causationid:
+          type:
+            - string
+            - "null"
+          format: uuid
+          description: id of the event or request that caused this one
+        data:
+          "$ref": "#/components/schemas/OrderCancelledData"
+    OrderExpiredData:
+      type: object
+      additionalProperties: false
+      properties:
+        order_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        items:
+          type: array
+          minItems: 1
+          items:
+            "$ref": "#/components/schemas/ItemQuantity"
+        reserved_at:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+        expired_at:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+      required:
+        - order_id
+        - user_id
+        - items
+        - reserved_at
+        - expired_at
+    OrderExpiredEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - specversion
+        - id
+        - source
+        - type
+        - time
+        - datacontenttype
+        - subject
+        - dataversion
+        - correlationid
+        - data
+      properties:
+        specversion:
+          const: "1.0"
+        id:
+          type: string
+          format: uuid
+          description: "Unique per event; idempotency key"
+        source:
+          const: /services/orders
+        type:
+          const: order_expired
+          description: Same value as the AMQP routing key
+        time:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+        datacontenttype:
+          const: application/json
+        subject:
+          type: string
+          format: uuid
+          description: Id of the aggregate the event is about
+        dataversion:
+          const: 1
+          description: "Schema version of `data`; breaking changes get a new event type (e.g. order_confirmed.v2)"
+        correlationid:
+          type: string
+          format: uuid
+          description: "Flow id, e.g. the order id for the checkout saga"
+        causationid:
+          type:
+            - string
+            - "null"
+          format: uuid
+          description: id of the event or request that caused this one
+        data:
+          "$ref": "#/components/schemas/OrderExpiredData"
+    RefundRequestedData:
+      type: object
+      additionalProperties: false
+      properties:
+        refund_request_id:
+          type: string
+          format: uuid
+        order_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        amount:
+          "$ref": "#/components/schemas/Money"
+        reason:
+          type: string
+          enum:
+            - paid_after_expiry
+            - cancelled_after_payment
+            - admin
+        requested_at:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+      required:
+        - refund_request_id
+        - order_id
+        - user_id
+        - amount
+        - reason
+        - requested_at
+    RefundRequestedEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - specversion
+        - id
+        - source
+        - type
+        - time
+        - datacontenttype
+        - subject
+        - dataversion
+        - correlationid
+        - data
+      properties:
+        specversion:
+          const: "1.0"
+        id:
+          type: string
+          format: uuid
+          description: "Unique per event; idempotency key"
+        source:
+          const: /services/orders
+        type:
+          const: refund_requested
+          description: Same value as the AMQP routing key
+        time:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+        datacontenttype:
+          const: application/json
+        subject:
+          type: string
+          format: uuid
+          description: Id of the aggregate the event is about
+        dataversion:
+          const: 1
+          description: "Schema version of `data`; breaking changes get a new event type (e.g. order_confirmed.v2)"
+        correlationid:
+          type: string
+          format: uuid
+          description: "Flow id, e.g. the order id for the checkout saga"
+        causationid:
+          type:
+            - string
+            - "null"
+          format: uuid
+          description: id of the event or request that caused this one
+        data:
+          "$ref": "#/components/schemas/RefundRequestedData"
+    PaymentCompleteData:
+      type: object
+      additionalProperties: false
+      properties:
+        payment_intent_id:
+          type: string
+          pattern: "^pi_"
+        order_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        amount:
+          "$ref": "#/components/schemas/Money"
+        paid_at:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+      required:
+        - payment_intent_id
+        - order_id
+        - user_id
+        - amount
+        - paid_at
+    PaymentCompleteEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - specversion
+        - id
+        - source
+        - type
+        - time
+        - datacontenttype
+        - subject
+        - dataversion
+        - correlationid
+        - data
+      properties:
+        specversion:
+          const: "1.0"
+        id:
+          type: string
+          format: uuid
+          description: "Unique per event; idempotency key"
+        source:
+          const: /services/payment
+        type:
+          const: payment_complete
+          description: Same value as the AMQP routing key
+        time:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+        datacontenttype:
+          const: application/json
+        subject:
+          type: string
+          format: uuid
+          description: Id of the aggregate the event is about
+        dataversion:
+          const: 1
+          description: "Schema version of `data`; breaking changes get a new event type (e.g. order_confirmed.v2)"
+        correlationid:
+          type: string
+          format: uuid
+          description: "Flow id, e.g. the order id for the checkout saga"
+        causationid:
+          type:
+            - string
+            - "null"
+          format: uuid
+          description: id of the event or request that caused this one
+        data:
+          "$ref": "#/components/schemas/PaymentCompleteData"
+    PaymentFailedData:
+      type: object
+      additionalProperties: false
+      properties:
+        payment_intent_id:
+          type: string
+          pattern: "^pi_"
+        order_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        amount:
+          "$ref": "#/components/schemas/Money"
+        failure_code:
+          type:
+            - string
+            - "null"
+        failure_message:
+          type:
+            - string
+            - "null"
+        failed_at:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+      required:
+        - payment_intent_id
+        - order_id
+        - user_id
+        - amount
+        - failure_code
+        - failure_message
+        - failed_at
+    PaymentFailedEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - specversion
+        - id
+        - source
+        - type
+        - time
+        - datacontenttype
+        - subject
+        - dataversion
+        - correlationid
+        - data
+      properties:
+        specversion:
+          const: "1.0"
+        id:
+          type: string
+          format: uuid
+          description: "Unique per event; idempotency key"
+        source:
+          const: /services/payment
+        type:
+          const: payment_failed
+          description: Same value as the AMQP routing key
+        time:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+        datacontenttype:
+          const: application/json
+        subject:
+          type: string
+          format: uuid
+          description: Id of the aggregate the event is about
+        dataversion:
+          const: 1
+          description: "Schema version of `data`; breaking changes get a new event type (e.g. order_confirmed.v2)"
+        correlationid:
+          type: string
+          format: uuid
+          description: "Flow id, e.g. the order id for the checkout saga"
+        causationid:
+          type:
+            - string
+            - "null"
+          format: uuid
+          description: id of the event or request that caused this one
+        data:
+          "$ref": "#/components/schemas/PaymentFailedData"
+    PaymentRefundedData:
+      type: object
+      additionalProperties: false
+      properties:
+        payment_intent_id:
+          type: string
+          pattern: "^pi_"
+        order_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        refund_request_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        amount:
+          "$ref": "#/components/schemas/Money"
+        stripe_refund_id:
+          type: string
+          pattern: "^re_"
+        refunded_at:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+      required:
+        - payment_intent_id
+        - order_id
+        - user_id
+        - refund_request_id
+        - amount
+        - stripe_refund_id
+        - refunded_at
+    PaymentRefundedEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - specversion
+        - id
+        - source
+        - type
+        - time
+        - datacontenttype
+        - subject
+        - dataversion
+        - correlationid
+        - data
+      properties:
+        specversion:
+          const: "1.0"
+        id:
+          type: string
+          format: uuid
+          description: "Unique per event; idempotency key"
+        source:
+          const: /services/payment
+        type:
+          const: payment_refunded
+          description: Same value as the AMQP routing key
+        time:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+        datacontenttype:
+          const: application/json
+        subject:
+          type: string
+          format: uuid
+          description: Id of the aggregate the event is about
+        dataversion:
+          const: 1
+          description: "Schema version of `data`; breaking changes get a new event type (e.g. order_confirmed.v2)"
+        correlationid:
+          type: string
+          format: uuid
+          description: "Flow id, e.g. the order id for the checkout saga"
+        causationid:
+          type:
+            - string
+            - "null"
+          format: uuid
+          description: id of the event or request that caused this one
+        data:
+          "$ref": "#/components/schemas/PaymentRefundedData"
+  messages:
+    UserDeleted:
+      name: user_deleted
+      title: user_deleted
+      summary: "A user deleted their account (soft delete). Every consumer anonymises the personal data it holds about the user but keeps the id, so statistics (e.g. orders) stay correct."
+      contentType: application/cloudevents+json
+      payload:
+        "$ref": "#/components/schemas/UserDeletedEvent"
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: user_deleted
+          bindingVersion: "0.3.0"
+      examples:
+        - name: user_deleted
+          payload:
+            specversion: "1.0"
+            id: "0b8f6c3e-2d1a-4e5f-9a8b-7c6d5e4f3a2b"
+            source: /services/users
+            type: user_deleted
+            time: "2026-10-14T10:00:00Z"
+            datacontenttype: application/json
+            subject: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+            dataversion: 1
+            correlationid: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+            causationid: null
+            data:
+              user_id: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+              version: 7
+              deleted_at: "2026-10-14T12:00:00Z"
+    ProductCreated:
+      name: product_created
+      title: product_created
+      summary: A product was created. Search adds it to its read model.
+      contentType: application/cloudevents+json
+      payload:
+        "$ref": "#/components/schemas/ProductCreatedEvent"
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: product_created
+          bindingVersion: "0.3.0"
+      examples:
+        - name: product_created
+          payload:
+            specversion: "1.0"
+            id: "0b8f6c3e-2d1a-4e5f-9a8b-7c6d5e4f3a2b"
+            source: /services/catalog
+            type: product_created
+            time: "2026-10-14T10:00:00Z"
+            datacontenttype: application/json
+            subject: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+            dataversion: 1
+            correlationid: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+            causationid: null
+            data:
+              product:
+                product_id: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+                version: 1
+                product_type: watch
+                name: Rolex Submariner Date 126610LN
+                description: "Full set, 2021, unworn."
+                price:
+                  amount_minor: 11500000
+                  currency: DKK
+                stock: 1
+                visible: true
+                availability: available
+                watch:
+                  watch_id: c0a8f1e2-1b3c-4d5e-8f90-a1b2c3d4e5f6
+                  brand:
+                    brand_id: "5e7d9a10-3c2b-4f1e-9d8c-7b6a5f4e3d2c"
+                    name: Rolex
+                    slug: rolex
+                  model: Submariner Date
+                  slug: rolex-submariner-date-126610ln
+                  reference: "126610LN"
+                  year: 2021
+                  condition: 10
+                  size_mm: 41
+                  movement: Automatic
+                  glass_type: Sapphire
+                  limited: false
+                  box: true
+                  papers: true
+                  bracelet_type: Oyster
+                  bracelet_color: Steel
+                  dial_color: Black
+                images:
+                  - image_id: "1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f"
+                    url: "https://cdn.example.com/products/126610ln-1.jpg"
+                    is_thumbnail: true
+                created_at: "2026-09-01T10:00:00Z"
+                updated_at: "2026-09-01T10:00:00Z"
+              changed_by: "7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d"
+    ProductUpdated:
+      name: product_updated
+      title: product_updated
+      summary: "A product was edited. Carries the full new snapshot, so Search replaces its document without calling Catalog."
+      contentType: application/cloudevents+json
+      payload:
+        "$ref": "#/components/schemas/ProductUpdatedEvent"
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: product_updated
+          bindingVersion: "0.3.0"
+      examples:
+        - name: product_updated
+          payload:
+            specversion: "1.0"
+            id: "0b8f6c3e-2d1a-4e5f-9a8b-7c6d5e4f3a2b"
+            source: /services/catalog
+            type: product_updated
+            time: "2026-10-14T10:00:00Z"
+            datacontenttype: application/json
+            subject: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+            dataversion: 1
+            correlationid: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+            causationid: null
+            data:
+              product:
+                product_id: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+                version: 5
+                product_type: watch
+                name: Rolex Submariner Date 126610LN
+                description: "Full set, 2021, unworn."
+                price:
+                  amount_minor: 10900000
+                  currency: DKK
+                stock: 1
+                visible: true
+                availability: available
+                watch:
+                  watch_id: c0a8f1e2-1b3c-4d5e-8f90-a1b2c3d4e5f6
+                  brand:
+                    brand_id: "5e7d9a10-3c2b-4f1e-9d8c-7b6a5f4e3d2c"
+                    name: Rolex
+                    slug: rolex
+                  model: Submariner Date
+                  slug: rolex-submariner-date-126610ln
+                  reference: "126610LN"
+                  year: 2021
+                  condition: 10
+                  size_mm: 41
+                  movement: Automatic
+                  glass_type: Sapphire
+                  limited: false
+                  box: true
+                  papers: true
+                  bracelet_type: Oyster
+                  bracelet_color: Steel
+                  dial_color: Black
+                images:
+                  - image_id: "1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f"
+                    url: "https://cdn.example.com/products/126610ln-1.jpg"
+                    is_thumbnail: true
+                created_at: "2026-09-01T10:00:00Z"
+                updated_at: "2026-10-10T08:30:00Z"
+              changed_by: "7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d"
+              changed_fields:
+                - price
+    ProductDeleted:
+      name: product_deleted
+      title: product_deleted
+      summary: "A product was removed. Search drops it and Users removes it from everyone's favorites."
+      contentType: application/cloudevents+json
+      payload:
+        "$ref": "#/components/schemas/ProductDeletedEvent"
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: product_deleted
+          bindingVersion: "0.3.0"
+      examples:
+        - name: product_deleted
+          payload:
+            specversion: "1.0"
+            id: "0b8f6c3e-2d1a-4e5f-9a8b-7c6d5e4f3a2b"
+            source: /services/catalog
+            type: product_deleted
+            time: "2026-10-14T10:00:00Z"
+            datacontenttype: application/json
+            subject: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+            dataversion: 1
+            correlationid: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+            causationid: null
+            data:
+              product_id: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+              version: 6
+              deleted_by: "7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d"
+              deleted_at: "2026-10-14T09:00:00Z"
+    ProductAvailabilityChanged:
+      name: product_availability_changed
+      title: product_availability_changed
+      summary: "Stock/availability changed because of an order (reserve, release, sold) or an admin. Search uses it to show a watch as reserved or sold."
+      contentType: application/cloudevents+json
+      payload:
+        "$ref": "#/components/schemas/ProductAvailabilityChangedEvent"
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: product_availability_changed
+          bindingVersion: "0.3.0"
+      examples:
+        - name: product_availability_changed
+          payload:
+            specversion: "1.0"
+            id: "0b8f6c3e-2d1a-4e5f-9a8b-7c6d5e4f3a2b"
+            source: /services/catalog
+            type: product_availability_changed
+            time: "2026-10-14T10:00:00Z"
+            datacontenttype: application/json
+            subject: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+            dataversion: 1
+            correlationid: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+            causationid: null
+            data:
+              product_id: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+              version: 5
+              availability: reserved
+              previous_availability: available
+              stock: 0
+              reason: order_reserved
+              order_id: f47ac10b-58cc-4372-a567-0e02b2c3d479
+              changed_at: "2026-10-14T10:00:05Z"
+    AuctionComplete:
+      name: auction_complete
+      title: auction_complete
+      summary: "An auction ended. When outcome is sold, Orders creates a RESERVED order for the winner at the winning price and the normal payment flow follows."
+      contentType: application/cloudevents+json
+      payload:
+        "$ref": "#/components/schemas/AuctionCompleteEvent"
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: auction_complete
+          bindingVersion: "0.3.0"
+      examples:
+        - name: auction_complete
+          payload:
+            specversion: "1.0"
+            id: "0b8f6c3e-2d1a-4e5f-9a8b-7c6d5e4f3a2b"
+            source: /services/auctions
+            type: auction_complete
+            time: "2026-10-14T10:00:00Z"
+            datacontenttype: application/json
+            subject: "3f2e1d0c-9b8a-4c7d-a6e5-f4d3c2b1a090"
+            dataversion: 1
+            correlationid: "3f2e1d0c-9b8a-4c7d-a6e5-f4d3c2b1a090"
+            causationid: null
+            data:
+              auction_id: "3f2e1d0c-9b8a-4c7d-a6e5-f4d3c2b1a090"
+              product_id: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+              watch_id: c0a8f1e2-1b3c-4d5e-8f90-a1b2c3d4e5f6
+              outcome: sold
+              winner_user_id: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+              winner_email: "mette@example.com"
+              winning_bid:
+                amount_minor: 12000000
+                currency: DKK
+              starting_price:
+                amount_minor: 9000000
+                currency: DKK
+              ended_at: "2026-10-14T20:00:00Z"
+    OrderConfirmed:
+      name: order_confirmed
+      title: order_confirmed
+      summary: "Payment accepted for a RESERVED order; the order is now PENDING. Contains everything the confirmation email needs, including the recipient, so Notif needs no database and no call back. Catalog marks the products sold."
+      contentType: application/cloudevents+json
+      payload:
+        "$ref": "#/components/schemas/OrderConfirmedEvent"
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: order_confirmed
+          bindingVersion: "0.3.0"
+      examples:
+        - name: order_confirmed
+          payload:
+            specversion: "1.0"
+            id: "0b8f6c3e-2d1a-4e5f-9a8b-7c6d5e4f3a2b"
+            source: /services/orders
+            type: order_confirmed
+            time: "2026-10-14T10:00:00Z"
+            datacontenttype: application/json
+            subject: f47ac10b-58cc-4372-a567-0e02b2c3d479
+            dataversion: 1
+            correlationid: f47ac10b-58cc-4372-a567-0e02b2c3d479
+            causationid: null
+            data:
+              order_id: f47ac10b-58cc-4372-a567-0e02b2c3d479
+              user_id: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+              customer_email: "mette@example.com"
+              status: PENDING
+              items:
+                - product_id: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+                  product_name: Rolex Submariner Date 126610LN
+                  quantity: 1
+                  thumbnail_url: "https://cdn.example.com/products/126610ln-1.jpg"
+              totals:
+                subtotal:
+                  amount_minor: 11500000
+                  currency: DKK
+                shipping:
+                  amount_minor: 30000
+                  currency: DKK
+                total:
+                  amount_minor: 11530000
+                  currency: DKK
+                total_charged:
+                  amount_minor: 11530000
+                  currency: DKK
+              billing_address:
+                first_name: Mette
+                middle_name: null
+                last_name: Jensen
+                address_line_1: "Nørregade 12"
+                address_line_2: null
+                city: "København K"
+                zip_code: "1165"
+                state_province: null
+                country_code: DK
+              delivery_address:
+                first_name: Mette
+                middle_name: null
+                last_name: Jensen
+                address_line_1: "Nørregade 12"
+                address_line_2: null
+                city: "København K"
+                zip_code: "1165"
+                state_province: null
+                country_code: DK
+              confirmed_at: "2026-10-14T10:04:10Z"
+    OrderCancelled:
+      name: order_cancelled
+      title: order_cancelled
+      summary: "An order was cancelled. Catalog releases the stock, Payment cancels an open PaymentIntent. If the order was already paid, Orders also publishes refund_requested."
+      contentType: application/cloudevents+json
+      payload:
+        "$ref": "#/components/schemas/OrderCancelledEvent"
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: order_cancelled
+          bindingVersion: "0.3.0"
+      examples:
+        - name: order_cancelled
+          payload:
+            specversion: "1.0"
+            id: "0b8f6c3e-2d1a-4e5f-9a8b-7c6d5e4f3a2b"
+            source: /services/orders
+            type: order_cancelled
+            time: "2026-10-14T10:00:00Z"
+            datacontenttype: application/json
+            subject: f47ac10b-58cc-4372-a567-0e02b2c3d479
+            dataversion: 1
+            correlationid: f47ac10b-58cc-4372-a567-0e02b2c3d479
+            causationid: null
+            data:
+              order_id: f47ac10b-58cc-4372-a567-0e02b2c3d479
+              user_id: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+              previous_status: RESERVED
+              reason: customer_request
+              items:
+                - product_id: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+                  quantity: 1
+              was_paid: false
+              cancelled_at: "2026-10-14T10:10:00Z"
+    OrderExpired:
+      name: order_expired
+      title: order_expired
+      summary: "A RESERVED order was not paid within 30 minutes. Catalog releases the stock, Payment cancels the PaymentIntent so a late payment cannot succeed."
+      contentType: application/cloudevents+json
+      payload:
+        "$ref": "#/components/schemas/OrderExpiredEvent"
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: order_expired
+          bindingVersion: "0.3.0"
+      examples:
+        - name: order_expired
+          payload:
+            specversion: "1.0"
+            id: "0b8f6c3e-2d1a-4e5f-9a8b-7c6d5e4f3a2b"
+            source: /services/orders
+            type: order_expired
+            time: "2026-10-14T10:00:00Z"
+            datacontenttype: application/json
+            subject: f47ac10b-58cc-4372-a567-0e02b2c3d479
+            dataversion: 1
+            correlationid: f47ac10b-58cc-4372-a567-0e02b2c3d479
+            causationid: null
+            data:
+              order_id: f47ac10b-58cc-4372-a567-0e02b2c3d479
+              user_id: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+              items:
+                - product_id: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+                  quantity: 1
+              reserved_at: "2026-10-14T10:00:00Z"
+              expired_at: "2026-10-14T10:30:00Z"
+    RefundRequested:
+      name: refund_requested
+      title: refund_requested
+      summary: "Money must go back: a payment arrived after the order expired, or a paid order was cancelled. Payment finds the PaymentIntent in Stripe by metadata.order_id; Orders does not store it."
+      contentType: application/cloudevents+json
+      payload:
+        "$ref": "#/components/schemas/RefundRequestedEvent"
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: refund_requested
+          bindingVersion: "0.3.0"
+      examples:
+        - name: refund_requested
+          payload:
+            specversion: "1.0"
+            id: "0b8f6c3e-2d1a-4e5f-9a8b-7c6d5e4f3a2b"
+            source: /services/orders
+            type: refund_requested
+            time: "2026-10-14T10:00:00Z"
+            datacontenttype: application/json
+            subject: f47ac10b-58cc-4372-a567-0e02b2c3d479
+            dataversion: 1
+            correlationid: f47ac10b-58cc-4372-a567-0e02b2c3d479
+            causationid: null
+            data:
+              refund_request_id: d4c3b2a1-0f9e-4d8c-b7a6-5f4e3d2c1b0a
+              order_id: f47ac10b-58cc-4372-a567-0e02b2c3d479
+              user_id: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+              amount:
+                amount_minor: 11530000
+                currency: DKK
+              reason: paid_after_expiry
+              requested_at: "2026-10-14T10:31:00Z"
+    PaymentComplete:
+      name: payment_complete
+      title: payment_complete
+      summary: "Stripe confirmed the payment (payment_intent.succeeded). Orders moves RESERVED → PENDING and publishes order_confirmed, or publishes refund_requested if the order already expired."
+      contentType: application/cloudevents+json
+      payload:
+        "$ref": "#/components/schemas/PaymentCompleteEvent"
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: payment_complete
+          bindingVersion: "0.3.0"
+      examples:
+        - name: payment_complete
+          payload:
+            specversion: "1.0"
+            id: "0b8f6c3e-2d1a-4e5f-9a8b-7c6d5e4f3a2b"
+            source: /services/payment
+            type: payment_complete
+            time: "2026-10-14T10:00:00Z"
+            datacontenttype: application/json
+            subject: f47ac10b-58cc-4372-a567-0e02b2c3d479
+            dataversion: 1
+            correlationid: f47ac10b-58cc-4372-a567-0e02b2c3d479
+            causationid: null
+            data:
+              payment_intent_id: pi_3Q0abcDEF123
+              order_id: f47ac10b-58cc-4372-a567-0e02b2c3d479
+              user_id: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+              amount:
+                amount_minor: 11530000
+                currency: DKK
+              paid_at: "2026-10-14T10:04:08Z"
+    PaymentFailed:
+      name: payment_failed
+      title: payment_failed
+      summary: A payment attempt failed (payment_intent.payment_failed). The order stays RESERVED so the customer can retry until it expires.
+      contentType: application/cloudevents+json
+      payload:
+        "$ref": "#/components/schemas/PaymentFailedEvent"
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: payment_failed
+          bindingVersion: "0.3.0"
+      examples:
+        - name: payment_failed
+          payload:
+            specversion: "1.0"
+            id: "0b8f6c3e-2d1a-4e5f-9a8b-7c6d5e4f3a2b"
+            source: /services/payment
+            type: payment_failed
+            time: "2026-10-14T10:00:00Z"
+            datacontenttype: application/json
+            subject: f47ac10b-58cc-4372-a567-0e02b2c3d479
+            dataversion: 1
+            correlationid: f47ac10b-58cc-4372-a567-0e02b2c3d479
+            causationid: null
+            data:
+              payment_intent_id: pi_3Q0abcDEF123
+              order_id: f47ac10b-58cc-4372-a567-0e02b2c3d479
+              user_id: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+              amount:
+                amount_minor: 11530000
+                currency: DKK
+              failure_code: card_declined
+              failure_message: Your card was declined.
+              failed_at: "2026-10-14T10:03:00Z"
+    PaymentRefunded:
+      name: payment_refunded
+      title: payment_refunded
+      summary: "Stripe completed a refund (charge.refunded). Orders sets the order to REFUNDED. refund_request_id comes back from the Stripe refund's metadata."
+      contentType: application/cloudevents+json
+      payload:
+        "$ref": "#/components/schemas/PaymentRefundedEvent"
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: payment_refunded
+          bindingVersion: "0.3.0"
+      examples:
+        - name: payment_refunded
+          payload:
+            specversion: "1.0"
+            id: "0b8f6c3e-2d1a-4e5f-9a8b-7c6d5e4f3a2b"
+            source: /services/payment
+            type: payment_refunded
+            time: "2026-10-14T10:00:00Z"
+            datacontenttype: application/json
+            subject: f47ac10b-58cc-4372-a567-0e02b2c3d479
+            dataversion: 1
+            correlationid: f47ac10b-58cc-4372-a567-0e02b2c3d479
+            causationid: null
+            data:
+              payment_intent_id: pi_3Q0abcDEF123
+              order_id: f47ac10b-58cc-4372-a567-0e02b2c3d479
+              user_id: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+              refund_request_id: d4c3b2a1-0f9e-4d8c-b7a6-5f4e3d2c1b0a
+              amount:
+                amount_minor: 11530000
+                currency: DKK
+              stripe_refund_id: re_3Q0xyz789
+              refunded_at: "2026-10-14T10:32:30Z"
