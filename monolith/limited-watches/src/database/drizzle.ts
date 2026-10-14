@@ -1,7 +1,7 @@
 import "../../envConfig.ts";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import * as schema from "./schema";
+import * as schema from "./schema.ts";
 
 // Prefer a dedicated test DB if available. Otherwise fall back to APP_ENV logic.
 const connectionString =
