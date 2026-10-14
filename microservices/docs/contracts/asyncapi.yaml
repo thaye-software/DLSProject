@@ -103,6 +103,23 @@ channels:
           autoDelete: false
           vhost: /
         bindingVersion: "0.3.0"
+  BrandUpdated:
+    address: brand_updated
+    title: catalog.events / brand_updated
+    description: "Routing key `brand_updated` on topic exchange `catalog.events`."
+    messages:
+      BrandUpdated:
+        "$ref": "#/components/messages/BrandUpdated"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: catalog.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: "0.3.0"
   AuctionComplete:
     address: auction_complete
     title: auction.events / auction_complete
@@ -161,6 +178,23 @@ channels:
     messages:
       OrderExpired:
         "$ref": "#/components/messages/OrderExpired"
+    bindings:
+      amqp:
+        is: routingKey
+        exchange:
+          name: order.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+        bindingVersion: "0.3.0"
+  OrderStatusChanged:
+    address: order_status_changed
+    title: order.events / order_status_changed
+    description: "Routing key `order_status_changed` on topic exchange `order.events`."
+    messages:
+      OrderStatusChanged:
+        "$ref": "#/components/messages/OrderStatusChanged"
     bindings:
       amqp:
         is: routingKey
@@ -267,6 +301,20 @@ operations:
     x-consumer: orders
     x-queue: orders.user.events
     x-dead-letter-queue: orders.user.events.dlq
+  catalogReceivesUserDeleted:
+    action: receive
+    title: Catalog consumes user_deleted
+    channel:
+      "$ref": "#/channels/UserDeleted"
+    messages:
+      - "$ref": "#/channels/UserDeleted/messages/UserDeleted"
+    bindings:
+      amqp:
+        ack: true
+        bindingVersion: "0.3.0"
+    x-consumer: catalog
+    x-queue: catalog.user.events
+    x-dead-letter-queue: catalog.user.events.dlq
   messagingReceivesUserDeleted:
     action: receive
     title: Messaging consumes user_deleted
@@ -390,20 +438,6 @@ operations:
     x-consumer: search
     x-queue: search.catalog.events
     x-dead-letter-queue: search.catalog.events.dlq
-  usersReceivesProductDeleted:
-    action: receive
-    title: Users consumes product_deleted
-    channel:
-      "$ref": "#/channels/ProductDeleted"
-    messages:
-      - "$ref": "#/channels/ProductDeleted/messages/ProductDeleted"
-    bindings:
-      amqp:
-        ack: true
-        bindingVersion: "0.3.0"
-    x-consumer: users
-    x-queue: users.catalog.events
-    x-dead-letter-queue: users.catalog.events.dlq
   catalogPublishesProductAvailabilityChanged:
     action: send
     title: Catalog publishes product_availability_changed
@@ -424,6 +458,33 @@ operations:
       "$ref": "#/channels/ProductAvailabilityChanged"
     messages:
       - "$ref": "#/channels/ProductAvailabilityChanged/messages/ProductAvailabilityChanged"
+    bindings:
+      amqp:
+        ack: true
+        bindingVersion: "0.3.0"
+    x-consumer: search
+    x-queue: search.catalog.events
+    x-dead-letter-queue: search.catalog.events.dlq
+  catalogPublishesBrandUpdated:
+    action: send
+    title: Catalog publishes brand_updated
+    channel:
+      "$ref": "#/channels/BrandUpdated"
+    messages:
+      - "$ref": "#/channels/BrandUpdated/messages/BrandUpdated"
+    bindings:
+      amqp:
+        deliveryMode: 2
+        mandatory: true
+        bindingVersion: "0.3.0"
+    x-producer: catalog
+  searchReceivesBrandUpdated:
+    action: receive
+    title: Search consumes brand_updated
+    channel:
+      "$ref": "#/channels/BrandUpdated"
+    messages:
+      - "$ref": "#/channels/BrandUpdated/messages/BrandUpdated"
     bindings:
       amqp:
         ack: true
@@ -581,6 +642,33 @@ operations:
     x-consumer: payment
     x-queue: payment.order.events
     x-dead-letter-queue: payment.order.events.dlq
+  ordersPublishesOrderStatusChanged:
+    action: send
+    title: Orders publishes order_status_changed
+    channel:
+      "$ref": "#/channels/OrderStatusChanged"
+    messages:
+      - "$ref": "#/channels/OrderStatusChanged/messages/OrderStatusChanged"
+    bindings:
+      amqp:
+        deliveryMode: 2
+        mandatory: true
+        bindingVersion: "0.3.0"
+    x-producer: orders
+  catalogReceivesOrderStatusChanged:
+    action: receive
+    title: Catalog consumes order_status_changed
+    channel:
+      "$ref": "#/channels/OrderStatusChanged"
+    messages:
+      - "$ref": "#/channels/OrderStatusChanged/messages/OrderStatusChanged"
+    bindings:
+      amqp:
+        ack: true
+        bindingVersion: "0.3.0"
+    x-consumer: catalog
+    x-queue: catalog.order.events
+    x-dead-letter-queue: catalog.order.events.dlq
   ordersPublishesRefundRequested:
     action: send
     title: Orders publishes refund_requested
@@ -1347,6 +1435,79 @@ components:
           description: id of the event or request that caused this one
         data:
           "$ref": "#/components/schemas/ProductAvailabilityChangedData"
+    BrandUpdatedData:
+      type: object
+      additionalProperties: false
+      properties:
+        brand:
+          "$ref": "#/components/schemas/Brand"
+        version:
+          type: integer
+          minimum: 1
+          description: "Aggregate version, +1 on every change. Consumers ignore an event whose version is not newer than the one they already stored."
+        changed_by:
+          type: string
+          format: uuid
+        changed_at:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+      required:
+        - brand
+        - version
+        - changed_by
+        - changed_at
+    BrandUpdatedEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - specversion
+        - id
+        - source
+        - type
+        - time
+        - datacontenttype
+        - subject
+        - dataversion
+        - correlationid
+        - data
+      properties:
+        specversion:
+          const: "1.0"
+        id:
+          type: string
+          format: uuid
+          description: "Unique per event; idempotency key"
+        source:
+          const: /services/catalog
+        type:
+          const: brand_updated
+          description: Same value as the AMQP routing key
+        time:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+        datacontenttype:
+          const: application/json
+        subject:
+          type: string
+          format: uuid
+          description: Id of the aggregate the event is about
+        dataversion:
+          const: 1
+          description: "Schema version of `data`; breaking changes get a new event type (e.g. order_confirmed.v2)"
+        correlationid:
+          type: string
+          format: uuid
+          description: "Flow id, e.g. the order id for the checkout saga"
+        causationid:
+          type:
+            - string
+            - "null"
+          format: uuid
+          description: id of the event or request that caused this one
+        data:
+          "$ref": "#/components/schemas/BrandUpdatedData"
     AuctionCompleteData:
       type: object
       additionalProperties: false
@@ -1706,6 +1867,91 @@ components:
           description: id of the event or request that caused this one
         data:
           "$ref": "#/components/schemas/OrderExpiredData"
+    OrderStatusChangedData:
+      type: object
+      additionalProperties: false
+      properties:
+        order_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        previous_status:
+          "$ref": "#/components/schemas/OrderStatus"
+        status:
+          "$ref": "#/components/schemas/OrderStatus"
+        items:
+          type: array
+          minItems: 1
+          items:
+            "$ref": "#/components/schemas/ItemQuantity"
+        changed_by:
+          type: string
+          format: uuid
+        changed_at:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+      required:
+        - order_id
+        - user_id
+        - previous_status
+        - status
+        - items
+        - changed_by
+        - changed_at
+    OrderStatusChangedEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - specversion
+        - id
+        - source
+        - type
+        - time
+        - datacontenttype
+        - subject
+        - dataversion
+        - correlationid
+        - data
+      properties:
+        specversion:
+          const: "1.0"
+        id:
+          type: string
+          format: uuid
+          description: "Unique per event; idempotency key"
+        source:
+          const: /services/orders
+        type:
+          const: order_status_changed
+          description: Same value as the AMQP routing key
+        time:
+          type: string
+          format: date-time
+          description: "ISO 8601, UTC"
+        datacontenttype:
+          const: application/json
+        subject:
+          type: string
+          format: uuid
+          description: Id of the aggregate the event is about
+        dataversion:
+          const: 1
+          description: "Schema version of `data`; breaking changes get a new event type (e.g. order_confirmed.v2)"
+        correlationid:
+          type: string
+          format: uuid
+          description: "Flow id, e.g. the order id for the checkout saga"
+        causationid:
+          type:
+            - string
+            - "null"
+          format: uuid
+          description: id of the event or request that caused this one
+        data:
+          "$ref": "#/components/schemas/OrderStatusChangedData"
     RefundRequestedData:
       type: object
       additionalProperties: false
@@ -2041,7 +2287,7 @@ components:
     UserDeleted:
       name: user_deleted
       title: user_deleted
-      summary: "A user deleted their account (soft delete). Every consumer anonymises the personal data it holds about the user but keeps the id, so statistics (e.g. orders) stay correct."
+      summary: "A user deleted their account (soft delete). Every consumer anonymises the personal data it holds about the user but keeps the id, so statistics (e.g. orders) stay correct. Catalog deletes the user's favorites, as the monolith does."
       contentType: application/cloudevents+json
       payload:
         "$ref": "#/components/schemas/UserDeletedEvent"
@@ -2202,7 +2448,7 @@ components:
     ProductDeleted:
       name: product_deleted
       title: product_deleted
-      summary: "A product was removed. Search drops it and Users removes it from everyone's favorites."
+      summary: "A product was removed. Search drops it. Favorites are in Catalog's own database, so they are deleted with the product."
       contentType: application/cloudevents+json
       payload:
         "$ref": "#/components/schemas/ProductDeletedEvent"
@@ -2263,6 +2509,39 @@ components:
               reason: order_reserved
               order_id: f47ac10b-58cc-4372-a567-0e02b2c3d479
               changed_at: "2026-10-14T10:00:05Z"
+    BrandUpdated:
+      name: brand_updated
+      title: brand_updated
+      summary: "An admin edited a brand. Search updates the brand name and slug on every listing with that brand_id (the monolith joined brands live, so a rename showed everywhere at once)."
+      contentType: application/cloudevents+json
+      payload:
+        "$ref": "#/components/schemas/BrandUpdatedEvent"
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: brand_updated
+          bindingVersion: "0.3.0"
+      examples:
+        - name: brand_updated
+          payload:
+            specversion: "1.0"
+            id: "0b8f6c3e-2d1a-4e5f-9a8b-7c6d5e4f3a2b"
+            source: /services/catalog
+            type: brand_updated
+            time: "2026-10-14T10:00:00Z"
+            datacontenttype: application/json
+            subject: "5e7d9a10-3c2b-4f1e-9d8c-7b6a5f4e3d2c"
+            dataversion: 1
+            correlationid: "5e7d9a10-3c2b-4f1e-9d8c-7b6a5f4e3d2c"
+            causationid: null
+            data:
+              brand:
+                brand_id: "5e7d9a10-3c2b-4f1e-9d8c-7b6a5f4e3d2c"
+                name: Rolex
+                slug: rolex
+              version: 2
+              changed_by: "7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d"
+              changed_at: "2026-10-14T09:30:00Z"
     AuctionComplete:
       name: auction_complete
       title: auction_complete
@@ -2439,6 +2718,41 @@ components:
                   quantity: 1
               reserved_at: "2026-10-14T10:00:00Z"
               expired_at: "2026-10-14T10:30:00Z"
+    OrderStatusChanged:
+      name: order_status_changed
+      title: order_status_changed
+      summary: "An admin changed an order's status in the dashboard (a change to CANCELLED publishes order_cancelled instead). Catalog applies the monolith's stock rule: from an active status (PENDING, PROCESSING, SHIPPED, DELIVERED) to an inactive one (RETURNED, REFUNDED) puts the stock back; from an inactive status back to an active one takes it again."
+      contentType: application/cloudevents+json
+      payload:
+        "$ref": "#/components/schemas/OrderStatusChangedEvent"
+      bindings:
+        amqp:
+          contentEncoding: utf-8
+          messageType: order_status_changed
+          bindingVersion: "0.3.0"
+      examples:
+        - name: order_status_changed
+          payload:
+            specversion: "1.0"
+            id: "0b8f6c3e-2d1a-4e5f-9a8b-7c6d5e4f3a2b"
+            source: /services/orders
+            type: order_status_changed
+            time: "2026-10-14T10:00:00Z"
+            datacontenttype: application/json
+            subject: f47ac10b-58cc-4372-a567-0e02b2c3d479
+            dataversion: 1
+            correlationid: f47ac10b-58cc-4372-a567-0e02b2c3d479
+            causationid: null
+            data:
+              order_id: f47ac10b-58cc-4372-a567-0e02b2c3d479
+              user_id: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+              previous_status: DELIVERED
+              status: RETURNED
+              items:
+                - product_id: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+                  quantity: 1
+              changed_by: "7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d"
+              changed_at: "2026-10-20T14:00:00Z"
     RefundRequested:
       name: refund_requested
       title: refund_requested

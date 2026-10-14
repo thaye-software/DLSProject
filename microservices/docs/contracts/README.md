@@ -74,13 +74,13 @@ Every message body is a CloudEvent. The AMQP content type is `application/cloude
 | Queue | Bound routing keys |
 |---|---|
 | `orders.user.events` | user_deleted |
+| `catalog.user.events` | user_deleted |
 | `messaging.user.events` | user_deleted |
 | `editorial.user.events` | user_deleted |
 | `auctions.user.events` | user_deleted |
-| `search.catalog.events` | product_created, product_updated, product_deleted, product_availability_changed |
-| `users.catalog.events` | product_deleted |
+| `search.catalog.events` | product_created, product_updated, product_deleted, product_availability_changed, brand_updated |
 | `orders.auction.events` | auction_complete |
-| `catalog.order.events` | order_confirmed, order_cancelled, order_expired |
+| `catalog.order.events` | order_confirmed, order_cancelled, order_expired, order_status_changed |
 | `payment.order.events` | order_cancelled, order_expired, refund_requested |
 | `notif.order.events` | order_confirmed |
 | `orders.payment.events` | payment_complete, payment_failed, payment_refunded |
@@ -97,7 +97,7 @@ Every message body is a CloudEvent. The AMQP content type is `application/cloude
   - The CloudEvent `id` of a Payment event is a UUIDv5 of the Stripe event id. A retried webhook therefore produces the same `id`, and Orders' inbox skips it.
   - Payment's own handlers are idempotent through Stripe: cancelling a PaymentIntent that is already cancelled changes nothing, and a refund uses `refund_request_id` as the Stripe idempotency key. Payment finds an order's PaymentIntent with Stripe's search on `metadata.order_id`, both to cancel it and to refund it, so Orders never stores Stripe ids.
   - Notif sends through Resend with the CloudEvent `id` as Resend's idempotency key, so a redelivered `order_confirmed` doesn't send a second email.
-- **Ordering.** RabbitMQ keeps order per queue, but retries and multiple consumer instances can reorder messages. User and product events therefore carry an aggregate `version`. A consumer only applies an update whose version is newer than the one it stored, e.g. Search ignores `product_updated` v5 if it already has v6.
+- **Ordering.** RabbitMQ keeps order per queue, but retries and multiple consumer instances can reorder messages. User, product and brand events therefore carry an aggregate `version`. A consumer only applies an update whose version is newer than the one it stored, e.g. Search ignores `product_updated` v5 if it already has v6.
 - **Consistency.** The Search read model is eventually consistent, typically within seconds. An admin editing a product reads from Catalog, not from Search, so they always see their own change.
 
 ---
@@ -106,15 +106,17 @@ Every message body is a CloudEvent. The AMQP content type is `application/cloude
 
 | Event | Exchange | Producer | Consumers: what they do |
 |---|---|---|---|
-| `user_deleted` | user.events | Users | **Orders, Messaging, Editorial, Auctions** anonymise personal data and keep the id |
+| `user_deleted` | user.events | Users | **Orders, Messaging, Editorial, Auctions** anonymise personal data and keep the id. **Catalog** deletes the user's favorites |
 | `product_created` | catalog.events | Catalog | **Search** inserts into the read model |
 | `product_updated` | catalog.events | Catalog | **Search** replaces the document |
-| `product_deleted` | catalog.events | Catalog | **Search** removes it. **Users** removes it from favorites |
+| `product_deleted` | catalog.events | Catalog | **Search** removes it. Favorites are deleted with the product inside Catalog |
 | `product_availability_changed` | catalog.events | Catalog | **Search** shows it as available, reserved or sold |
+| `brand_updated` | catalog.events | Catalog | **Search** updates the brand name and slug on every listing with that `brand_id` |
 | `auction_complete` | auction.events | Auctions | **Orders** creates a RESERVED order for the winner |
 | `order_confirmed` | order.events | Orders | **Notif** sends the confirmation email (all data, including the recipient, is in the event). **Catalog** marks the products sold |
 | `order_cancelled` | order.events | Orders | **Catalog** releases stock. **Payment** cancels an open PaymentIntent |
 | `order_expired` | order.events | Orders | **Catalog** releases stock. **Payment** cancels the PaymentIntent |
+| `order_status_changed` | order.events | Orders | **Catalog** puts the stock back when an admin moves an order from an active status (PENDING, PROCESSING, SHIPPED, DELIVERED) to RETURNED or REFUNDED, and takes it again when an order goes back to an active status |
 | `refund_requested` | order.events | Orders | **Payment** refunds through Stripe |
 | `payment_complete` | payment.events | Payment | **Orders** RESERVED → PENDING plus `order_confirmed`, or `refund_requested` if the order already expired |
 | `payment_failed` | payment.events | Payment | **Orders** records the attempt (order stays RESERVED, so the customer can retry) |
@@ -145,8 +147,11 @@ How identity and auth work across the gateway:
 
 - **Gateway → services:** the gateway verifies the Supabase JWT (cached signing keys) and forwards `X-User-Id`, `X-User-Role`, `X-User-Email` and `traceparent`. Services accept these headers only from the gateway.
 
-**Data Orders copies.** In the monolith, the order pages and the confirmation email joined `order_items` to the product, watch, brand and image tables, and `orders` to `users`. After the split those tables are in Catalog and Users. So Orders keeps three copied columns: `orders.customer_email` (from `X-User-Email` when the order is created), plus `order_items.product_name` and `order_items.thumbnail_url` (from Catalog's reservation response). Order pages and `order_confirmed` are then served from Orders' own database, with no calls to other services, and the copy shows the product as it was when it was bought.
 - **Service → service:** calls go to `/internal/*` paths with a service JWT (client credentials). The gateway does not route `/internal/*`.
+
+**Data Orders copies.** In the monolith, the order pages and the confirmation email joined `order_items` to the product, watch, brand and image tables, and `orders` to `users`. After the split those tables are in Catalog and Users. So Orders keeps three copied columns: `orders.customer_email` (from `X-User-Email` when the order is created), plus `order_items.product_name` and `order_items.thumbnail_url` (from Catalog's reservation response). Order pages and `order_confirmed` are then served from Orders' own database, with no calls to other services, and the copy shows the product as it was when it was bought.
+
+**Favorites live in Catalog.** The monolith's watchlist query joins `favorites` to products, watches, brands and images and hides watches that are out of stock. Keeping `favorites` in Catalog leaves that a local query, as the teammates' catalogue contract proposed. Catalog deletes a user's favorites on `user_deleted` (the monolith deletes them when an account is deleted), and a deleted product's favorites go with it.
 
 ---
 
@@ -187,16 +192,18 @@ sequenceDiagram
 **Compensation paths:**
 - **No payment within 30 min.** Orders → `order_expired`. Catalog releases the stock (`product_availability_changed` → available) and Payment cancels the PaymentIntent.
 - **Payment arrives after expiry.** Orders receives `payment_complete` for an EXPIRED order and publishes `refund_requested`. Payment refunds through Stripe, then publishes `payment_refunded`, and Orders sets the order to REFUNDED.
+- **Admin changes an order's status.** As in the monolith's `changeOrderStatus`: CANCELLED publishes `order_cancelled`; any other change publishes `order_status_changed`, and Catalog adds or removes the stock. If the watch was sold again before an order is reactivated, Catalog cannot take it, and the message goes to the dead-letter queue for an admin (the monolith rolled the status change back instead).
 - **Orders crashes after reserving.** Orders calls `DELETE /internal/reservations/{order_id}`. As a safety net, Catalog itself releases any reservation still active 5 min after its `expires_at`.
 
 ---
 
 ## 7. Diagrams
 
-- [`../contracts.drawio`](../contracts.drawio) shows every contract as a "service ⇄ contract ⇄ service" tile: 8 API contracts and 5 event contracts (one per exchange), plus the shared rules. Generated by `docs/generate_contracts_diagram.py`.
-- [`../architecture.drawio`](../architecture.drawio) uses the same exchanges, events, producers and consumers as `asyncapi.yaml`. Generated by `docs/generate_architecture.py`.
+- [`../contracts.drawio`](../contracts.drawio): one card per event with its `data` fields, coloured by producer, with the consumers as coloured chips, plus a publishes/consumes matrix.
+- [`../architecturev3.drawio`](../architecturev3.drawio): services, datastores, the gateway and the exchanges, with the same producers and consumers as `asyncapi.yaml`.
+- [`../microservice-erd.drawio`](../microservice-erd.drawio) and [`../monolith-erd.drawio`](../monolith-erd.drawio): every table, after and before the split.
 
-When a contract changes, update the YAML here first, then the data in both generators, and regenerate both diagrams.
+When a contract changes, update the YAML here first, then the diagrams.
 
 ## 8. Open decisions
 
