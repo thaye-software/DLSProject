@@ -4,7 +4,7 @@ import { connect, type Channel, type ChannelModel } from "amqplib";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { connectToBroker, type BrokerConnection } from "../../src/adapters/rabbitmq/connection.js";
-import { handleEvent, startConsumer, type EventHandler } from "../../src/adapters/rabbitmq/consumer.js";
+import { handleEvent, startConsumer, type Consumer, type EventHandler } from "../../src/adapters/rabbitmq/consumer.js";
 import { assertConsumerTopology } from "../../src/adapters/rabbitmq/topology.js";
 
 const ORDER_EVENTS = "order.events";
@@ -57,11 +57,15 @@ function orderHandler(handle: (data: { order_id: string }) => Promise<void>): Ev
 }
 
 async function consume(handlers: Record<string, EventHandler>): Promise<string> {
+  return (await consumeWithConsumer(handlers)).queue;
+}
+
+async function consumeWithConsumer(handlers: Record<string, EventHandler>): Promise<{ queue: string; consumer: Consumer }> {
   const queue = `notif.test.${randomUUID()}`;
   consumerConnection = await connectToBroker(container.getAmqpUrl());
   await assertConsumerTopology(consumerConnection.channel, { exchange: ORDER_EVENTS, queue, routingKeys: ["order_confirmed"] });
-  await startConsumer(consumerConnection.channel, { queue, handlers, retryDelaysMs: FAST_RETRIES });
-  return queue;
+  const consumer = await startConsumer(consumerConnection.channel, { queue, handlers, retryDelaysMs: FAST_RETRIES });
+  return { queue, consumer };
 }
 
 async function closeConsumerSoUnackedMessagesReturn(): Promise<void> {
@@ -166,6 +170,17 @@ describe("startConsumer", () => {
     publish(routingKey, body);
 
     await vi.waitFor(async () => expect(await messageCount(`${queue}.dlq`)).toBe(1));
+    expect(handle).not.toHaveBeenCalled();
+  });
+
+  it("leaves new events in the queue once stopped", async () => {
+    const handle = vi.fn(async () => undefined);
+    const { queue, consumer } = await consumeWithConsumer({ order_confirmed: orderHandler(handle) });
+
+    await consumer.stop();
+    publish("order_confirmed", orderConfirmed());
+
+    await vi.waitFor(async () => expect(await messageCount(queue)).toBe(1));
     expect(handle).not.toHaveBeenCalled();
   });
 
