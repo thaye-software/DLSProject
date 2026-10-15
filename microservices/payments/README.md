@@ -72,7 +72,7 @@ src/
 Every consumer is safe whatever order its messages arrive in relative to the Stripe webhooks:
 
 - `order_cancelled` / `order_expired`: no PaymentIntent found, already `canceled`, already `succeeded`, or Stripe refuses to cancel → ack and do nothing. A succeeded payment is refunded only when Orders asks with `refund_requested`.
-- `refund_requested`: refunds with `refund_request_id` as Stripe idempotency key. If the PaymentIntent has not succeeded yet the handler fails and retries (1, 2, 4, 8, 8 s), then goes to the DLQ.
+- `refund_requested`: refunds the event's `amount` with `refund_request_id` as Stripe idempotency key and refund metadata, so a redelivery returns the same refund. If the PaymentIntent has not succeeded yet, or Stripe Search does not find it yet, the handler fails and retries (1, 2, 4, 8, 8 s), then goes to the DLQ. An `amount_minor` of 0 goes to the DLQ at once. `payment_refunded` comes from the `charge.refunded` webhook, which reads `refund_request_id` back from the refund.
 
 ## Known limitations
 
