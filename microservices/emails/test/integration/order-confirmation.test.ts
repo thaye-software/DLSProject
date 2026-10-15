@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { RabbitMQContainer, type StartedRabbitMQContainer } from "@testcontainers/rabbitmq";
+import type { StartedRabbitMQContainer } from "@testcontainers/rabbitmq";
+import { startRabbitMq } from "../support/rabbitmq.js";
 import { connect, type ChannelModel } from "amqplib";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { connectToBroker } from "../../src/adapters/rabbitmq/connection.js";
@@ -18,7 +19,7 @@ let container: StartedRabbitMQContainer;
 let publisherConnection: ChannelModel;
 
 beforeAll(async () => {
-  container = await new RabbitMQContainer("rabbitmq:4-alpine").start();
+  container = await startRabbitMq();
   publisherConnection = await connect(container.getAmqpUrl());
 });
 

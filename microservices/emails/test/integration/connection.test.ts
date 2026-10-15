@@ -1,4 +1,5 @@
-import { RabbitMQContainer, type StartedRabbitMQContainer } from "@testcontainers/rabbitmq";
+import type { StartedRabbitMQContainer } from "@testcontainers/rabbitmq";
+import { startRabbitMq } from "../support/rabbitmq.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { connectToBroker, type BrokerConnection } from "../../src/adapters/rabbitmq/connection.js";
 
@@ -6,7 +7,7 @@ let container: StartedRabbitMQContainer;
 let connection: BrokerConnection | undefined;
 
 beforeEach(async () => {
-  container = await new RabbitMQContainer("rabbitmq:4-alpine").start();
+  container = await startRabbitMq();
 });
 
 afterEach(async () => {

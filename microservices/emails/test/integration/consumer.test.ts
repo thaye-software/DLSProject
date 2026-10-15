@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { RabbitMQContainer, type StartedRabbitMQContainer } from "@testcontainers/rabbitmq";
+import type { StartedRabbitMQContainer } from "@testcontainers/rabbitmq";
+import { startRabbitMq } from "../support/rabbitmq.js";
 import { connect, type Channel, type ChannelModel } from "amqplib";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
@@ -9,6 +10,7 @@ import { assertConsumerTopology } from "../../src/adapters/rabbitmq/topology.js"
 
 const ORDER_EVENTS = "order.events";
 const FAST_RETRIES = [5, 5, 5, 5, 5];
+const BROKER_WAIT = { timeout: 10_000 };
 
 let container: StartedRabbitMQContainer;
 let publisherConnection: ChannelModel;
@@ -16,7 +18,7 @@ let publisher: Channel;
 let consumerConnection: BrokerConnection | undefined;
 
 beforeAll(async () => {
-  container = await new RabbitMQContainer("rabbitmq:4-management-alpine").start();
+  container = await startRabbitMq("rabbitmq:4-management-alpine");
   publisherConnection = await connect(container.getAmqpUrl());
   publisher = await publisherConnection.createChannel();
 });
@@ -112,7 +114,7 @@ describe("startConsumer", () => {
 
     publish("order_confirmed", orderConfirmed());
 
-    await vi.waitFor(() => expect(handle).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(handle).toHaveBeenCalledOnce(), BROKER_WAIT);
     expect(handle).toHaveBeenCalledWith({ order_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479" }, expect.objectContaining({ type: "order_confirmed" }));
     await closeConsumerSoUnackedMessagesReturn();
     expect(await messageCount(queue)).toBe(0);
@@ -126,7 +128,7 @@ describe("startConsumer", () => {
     publish("order_cancelled", orderConfirmed({ type: "order_cancelled" }));
     publish("order_confirmed", orderConfirmed());
 
-    await vi.waitFor(() => expect(handle).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(handle).toHaveBeenCalledOnce(), BROKER_WAIT);
     expect(handle).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ type: "order_confirmed" }));
   });
 
@@ -140,7 +142,7 @@ describe("startConsumer", () => {
 
     publish("order_confirmed", orderConfirmed());
 
-    await vi.waitFor(() => expect(handle).toHaveBeenCalledTimes(3));
+    await vi.waitFor(() => expect(handle).toHaveBeenCalledTimes(3), BROKER_WAIT);
     await closeConsumerSoUnackedMessagesReturn();
     expect(await messageCount(queue)).toBe(0);
     expect(await messageCount(`${queue}.dlq`)).toBe(0);
@@ -153,7 +155,7 @@ describe("startConsumer", () => {
 
     publish("order_confirmed", event);
 
-    await vi.waitFor(async () => expect(await messageCount(`${queue}.dlq`)).toBe(1));
+    await vi.waitFor(async () => expect(await messageCount(`${queue}.dlq`)).toBe(1), BROKER_WAIT);
     expect(handle).toHaveBeenCalledTimes(6);
     const deadLetter = await publisher.get(`${queue}.dlq`, { noAck: true });
     expect(deadLetter && JSON.parse(deadLetter.content.toString()).id).toBe(event.id);
@@ -169,7 +171,7 @@ describe("startConsumer", () => {
 
     publish(routingKey, body);
 
-    await vi.waitFor(async () => expect(await messageCount(`${queue}.dlq`)).toBe(1));
+    await vi.waitFor(async () => expect(await messageCount(`${queue}.dlq`)).toBe(1), BROKER_WAIT);
     expect(handle).not.toHaveBeenCalled();
   });
 
@@ -180,7 +182,7 @@ describe("startConsumer", () => {
     await consumer.stop();
     publish("order_confirmed", orderConfirmed());
 
-    await vi.waitFor(async () => expect(await messageCount(queue)).toBe(1));
+    await vi.waitFor(async () => expect(await messageCount(queue)).toBe(1), BROKER_WAIT);
     expect(handle).not.toHaveBeenCalled();
   });
 
@@ -190,7 +192,7 @@ describe("startConsumer", () => {
 
     publisher.sendToQueue(queue, Buffer.from(JSON.stringify(orderConfirmed({ type: "order_expired" }))));
 
-    await vi.waitFor(async () => expect(await messageCount(`${queue}.dlq`)).toBe(1));
+    await vi.waitFor(async () => expect(await messageCount(`${queue}.dlq`)).toBe(1), BROKER_WAIT);
     expect(handle).not.toHaveBeenCalled();
   });
 });
