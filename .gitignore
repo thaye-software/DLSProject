@@ -49,3 +49,8 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+.scratch/
+docs/agents/
+CLAUDE.local.md
+.claude/settings.local.json

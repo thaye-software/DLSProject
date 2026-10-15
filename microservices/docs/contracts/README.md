@@ -147,7 +147,9 @@ How identity and auth work across the gateway:
 
 - **Gateway → services:** the gateway verifies the Supabase JWT (cached signing keys) and forwards `X-User-Id`, `X-User-Role`, `X-User-Email` and `traceparent`. Services accept these headers only from the gateway.
 
-- **Service → service:** calls go to `/internal/*` paths with a service JWT (client credentials). The gateway does not route `/internal/*`.
+- **Service → service:** calls go to `/internal/*` paths with a service JWT. The gateway does not route `/internal/*`.
+
+- **Service JWT:** there is no token issuer, so the caller signs its own token and sends it as `Authorization: Bearer <jwt>`. HS256 with a secret shared by the two services (env var `INTERNAL_JWT_SECRET`), claims `iss` = calling service (`payment`), `aud` = called service (`orders`), `iat`, and `exp` at most 60 s later. The called service checks the signature, `aud`, `exp`, and that `iss` is a caller it expects, and answers `401` problem+json otherwise. First use: Payment → Orders `GET /internal/orders/{order_id}/payment-details`.
 
 **Data Orders copies.** In the monolith, the order pages and the confirmation email joined `order_items` to the product, watch, brand and image tables, and `orders` to `users`. After the split those tables are in Catalog and Users. So Orders keeps three copied columns: `orders.customer_email` (from `X-User-Email` when the order is created), plus `order_items.product_name` and `order_items.thumbnail_url` (from Catalog's reservation response). Order pages and `order_confirmed` are then served from Orders' own database, with no calls to other services, and the copy shows the product as it was when it was bought.
 
