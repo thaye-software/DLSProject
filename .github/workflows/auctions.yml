@@ -1,0 +1,30 @@
+name: auctions
+
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - "microservices/auctions/**"
+      - ".github/workflows/auctions.yml"
+  pull_request:
+    paths:
+      - "microservices/auctions/**"
+      - ".github/workflows/auctions.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up toolchain
+        run: echo "::warning title=auctions::Language and test framework not chosen yet"
+
+      - name: Install dependencies
+        run: echo "TODO install dependencies"
+
+      - name: Unit tests
+        run: echo "TODO run unit tests"
+
+      - name: Integration tests
+        run: echo "TODO run integration tests"

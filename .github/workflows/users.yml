@@ -1,0 +1,30 @@
+name: users
+
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - "microservices/users/**"
+      - ".github/workflows/users.yml"
+  pull_request:
+    paths:
+      - "microservices/users/**"
+      - ".github/workflows/users.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up toolchain
+        run: echo "::warning title=users::Language and test framework not chosen yet"
+
+      - name: Install dependencies
+        run: echo "TODO install dependencies"
+
+      - name: Unit tests
+        run: echo "TODO run unit tests"
+
+      - name: Integration tests
+        run: echo "TODO run integration tests"

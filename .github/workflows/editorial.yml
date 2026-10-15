@@ -1,0 +1,30 @@
+name: editorial
+
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - "microservices/editorial/**"
+      - ".github/workflows/editorial.yml"
+  pull_request:
+    paths:
+      - "microservices/editorial/**"
+      - ".github/workflows/editorial.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up toolchain
+        run: echo "::warning title=editorial::Language and test framework not chosen yet"
+
+      - name: Install dependencies
+        run: echo "TODO install dependencies"
+
+      - name: Unit tests
+        run: echo "TODO run unit tests"
+
+      - name: Integration tests
+        run: echo "TODO run integration tests"
