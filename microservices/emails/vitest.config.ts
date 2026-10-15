@@ -4,6 +4,7 @@ const containerStartupMs = 120_000;
 
 export default defineConfig({
   test: {
+    env: { TZ: "UTC" },
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],

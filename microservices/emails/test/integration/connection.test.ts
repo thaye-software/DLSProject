@@ -44,6 +44,24 @@ describe("connectToBroker", () => {
     expect(onUnexpectedClose).not.toHaveBeenCalled();
   });
 
+  // Found by the order confirmation integration test (Notif issue 04): an email was sent, yet its event was redelivered.
+  it("regression: an ack sent right before a deliberate close is lost", async () => {
+    connection = await connectToBroker(container.getAmqpUrl());
+    const queue = "regression.ack-before-close";
+    await connection.channel.assertQueue(queue, { durable: true, arguments: { "x-queue-type": "quorum" } });
+    connection.channel.sendToQueue(queue, Buffer.from("event"), { persistent: true });
+    await vi.waitFor(async () => expect((await connection!.channel.checkQueue(queue)).messageCount).toBe(1));
+
+    const message = await connection.channel.get(queue, { noAck: false });
+    connection.channel.ack(message as Exclude<typeof message, false>);
+    await connection.close();
+
+    const inspector = await connectToBroker(container.getAmqpUrl());
+    const { messageCount } = await inspector.channel.checkQueue(queue);
+    await inspector.close();
+    expect(messageCount).toBe(0);
+  });
+
   it("rejects when no broker is listening", async () => {
     const url = container.getAmqpUrl();
     await container.stop();
