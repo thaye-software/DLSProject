@@ -1,7 +1,7 @@
-import { connect, type Channel } from "amqplib";
+import { connect, type ConfirmChannel } from "amqplib";
 
 export type BrokerConnection = {
-  channel: Channel;
+  channel: ConfirmChannel;
   isOpen: () => boolean;
   onUnexpectedClose: (listener: (error?: Error) => void) => void;
   close: () => Promise<void>;
@@ -9,7 +9,7 @@ export type BrokerConnection = {
 
 export async function connectToBroker(url: string): Promise<BrokerConnection> {
   const connection = await connect(url);
-  const channel = await connection.createChannel();
+  const channel = await connection.createConfirmChannel();
 
   let open = true;
   let closingDeliberately = false;
