@@ -47,6 +47,25 @@ describe.skipIf(!isTestModeKey)("StripePaymentProvider (Stripe test mode)", () =
     expect(second.clientSecret).toBe(first.clientSecret);
   });
 
+  describe("cancelIntent", () => {
+    it("cancels an open PaymentIntent, and reports a second cancel as not cancellable", async () => {
+      const provider = new StripePaymentProvider(secretKey!);
+      const intent = await provider.createIntent({ orderId: randomUUID(), userId: randomUUID(), amount: { amount_minor: 30000, currency: "DKK" } });
+
+      expect(await provider.cancelIntent(intent.paymentIntentId)).toBe("cancelled");
+      expect((await new Stripe(secretKey!).paymentIntents.retrieve(intent.paymentIntentId)).status).toBe("canceled");
+      expect(await provider.cancelIntent(intent.paymentIntentId)).toBe("not_cancellable");
+    });
+
+    it("throws for a PaymentIntent Stripe does not know", async () => {
+      await expect(new StripePaymentProvider(secretKey!).cancelIntent("pi_does_not_exist")).rejects.toThrow();
+    });
+  });
+
+  it("findIntentByOrderId finds nothing for an order that has no PaymentIntent", async () => {
+    expect(await new StripePaymentProvider(secretKey!).findIntentByOrderId(randomUUID())).toBeNull();
+  });
+
   describe("latestRefund", () => {
     async function paidCharge(metadata: Record<string, string>): Promise<{ paymentIntentId: string; chargeId: string }> {
       const intent = await new Stripe(secretKey!).paymentIntents.create({

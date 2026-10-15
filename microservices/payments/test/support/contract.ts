@@ -3,7 +3,7 @@ import { Ajv } from "ajv";
 import addFormats from "ajv-formats";
 import { parse } from "yaml";
 
-const asyncApi = parse(readFileSync(new URL("../../../docs/contracts/asyncapi.yaml", import.meta.url), "utf8"));
+export const asyncApi = parse(readFileSync(new URL("../../../docs/contracts/asyncapi.yaml", import.meta.url), "utf8"));
 
 const ajv = new Ajv({ strict: false, allErrors: true });
 addFormats.default(ajv);
