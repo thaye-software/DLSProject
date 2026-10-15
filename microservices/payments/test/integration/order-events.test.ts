@@ -76,4 +76,40 @@ describe("Payment's order.events consumer", () => {
     expect(await messageCount(QUEUE)).toBe(0);
     expect(await messageCount(`${QUEUE}.dlq`)).toBe(0);
   });
+
+  function refundRequested(orderId: string, refundRequestId: string) {
+    return {
+      refund_request_id: refundRequestId,
+      order_id: orderId,
+      user_id: randomUUID(),
+      amount: { amount_minor: 11530000, currency: "DKK" },
+      reason: "paid_after_expiry",
+      requested_at: "2026-10-14T10:31:00Z",
+    };
+  }
+
+  it("refunds a paid order on refund_requested and acks the event", async () => {
+    const orderId = await openIntentFor();
+    payments.intents.get(orderId)!.status = "succeeded";
+    const refundRequestId = randomUUID();
+
+    publish("refund_requested", refundRequested(orderId, refundRequestId));
+
+    await vi.waitFor(() => expect(payments.refunds.get(refundRequestId)).toBeDefined(), BROKER_WAIT);
+    await broker.close();
+    expect(await messageCount(QUEUE)).toBe(0);
+    expect(await messageCount(`${QUEUE}.dlq`)).toBe(0);
+  });
+
+  it("dead-letters a refund_requested for an order that was never paid, for an admin to look at", async () => {
+    const orderId = await openIntentFor();
+    const refundRequestId = randomUUID();
+
+    publish("refund_requested", refundRequested(orderId, refundRequestId));
+
+    await vi.waitFor(async () => expect(await messageCount(`${QUEUE}.dlq`)).toBe(1), BROKER_WAIT);
+    const deadLetter = await publisher.get(`${QUEUE}.dlq`, { noAck: true });
+    expect(deadLetter && JSON.parse(deadLetter.content.toString()).data.refund_request_id).toBe(refundRequestId);
+    expect(payments.refunds.has(refundRequestId)).toBe(false);
+  });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildPaymentEvent, type PaymentEventData, type PaymentEventType } from "../../src/domain/payment-event.js";
-import { orderReferenceSchema } from "../../src/adapters/rabbitmq/order-events.js";
+import { orderReferenceSchema, refundRequestedDataSchema } from "../../src/adapters/rabbitmq/order-events.js";
 import { asyncApi, contractSchema } from "../support/contract.js";
 import { ORDER_ID, paymentCompleteData, paymentFailedData, paymentRefundedData } from "../fixtures/payment-events.js";
 
@@ -23,9 +23,13 @@ describe("payment.events contract", () => {
 });
 
 describe("order.events contract", () => {
-  it.each(["OrderCancelled", "OrderExpired"])("Payment accepts the example %s published in the contract", (message) => {
+  it.each([
+    { message: "OrderCancelled", schema: orderReferenceSchema },
+    { message: "OrderExpired", schema: orderReferenceSchema },
+    { message: "RefundRequested", schema: refundRequestedDataSchema },
+  ])("Payment accepts the example $message published in the contract", ({ message, schema }) => {
     const example = asyncApi.components.messages[message].examples[0].payload;
 
-    expect(orderReferenceSchema.safeParse(example.data).success).toBe(true);
+    expect(schema.safeParse(example.data).success).toBe(true);
   });
 });
