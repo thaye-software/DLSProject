@@ -5,6 +5,7 @@ import { createApp, type AppDependencies } from "../../src/adapters/http/app.js"
 
 const defaultDependencies: AppDependencies = {
   isBrokerConnected: () => true,
+  createPaymentSession: async () => ({ outcome: "not_found" }),
 };
 
 let server: Server | undefined;
