@@ -22,7 +22,16 @@ export type RefundedPayment = {
   refundedAt: Date;
 };
 
+export type FoundPaymentIntent = {
+  id: string;
+  status: string;
+};
+
+export type CancelIntentResult = "cancelled" | "not_cancellable";
+
 export interface PaymentProvider {
   createIntent(intent: NewPaymentIntent): Promise<CreatedPaymentIntent>;
+  findIntentByOrderId(orderId: string): Promise<FoundPaymentIntent | null>;
+  cancelIntent(paymentIntentId: string): Promise<CancelIntentResult>;
   latestRefund(chargeId: string): Promise<RefundedPayment | null>;
 }

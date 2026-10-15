@@ -13,7 +13,7 @@ Contracts: `../docs/contracts/openapi.yaml` (`POST /payments`, `POST /webhooks/s
 | HTTP in | `GET /health` | `200` when the RabbitMQ channel is open. |
 | HTTP out | Orders `GET /internal/orders/{order_id}/payment-details` | Service JWT, see `docs/contracts/README.md` §5. |
 | Publishes | `payment_complete`, `payment_failed`, `payment_refunded` on `payment.events` | CloudEvent `id` = UUIDv5 of the Stripe event id. |
-| RabbitMQ in | `order_cancelled`, `order_expired`, `refund_requested` on `order.events` | Queue `payment.order.events`, dead letters to `payment.order.events.dlq`. |
+| RabbitMQ in | `order_cancelled`, `order_expired`, `refund_requested` on `order.events` | Queue `payment.order.events`, dead letters to `payment.order.events.dlq`. Each handled event logs its outcome (`no_intent`, `already_canceled`, `already_paid`, `cancelled`, `not_cancellable`). |
 
 ## Configuration
 
@@ -76,5 +76,5 @@ Every consumer is safe whatever order its messages arrive in relative to the Str
 
 ## Known limitations
 
-- **Stripe Search lags by up to about a minute.** An `order_cancelled` that arrives seconds after `POST /payments` may not find the PaymentIntent, which then stays open. If the customer pays it anyway, Orders receives `payment_complete` for a cancelled order and sends `refund_requested`, so the money goes back.
+- **Stripe Search lags by up to about a minute.** An `order_cancelled` that arrives seconds after `POST /payments` may not find the PaymentIntent, which then stays open. While it catches up, Search can also return a PaymentIntent and then miss it on the next query (seen in test mode: settled after about 45 s). If the customer pays it anyway, Orders receives `payment_complete` for a cancelled order and sends `refund_requested`, so the money goes back.
 - Prices are DKK only. Payment still passes the `currency` from Orders to Stripe instead of hardcoding it.

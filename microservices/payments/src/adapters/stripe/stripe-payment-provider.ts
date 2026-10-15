@@ -1,7 +1,9 @@
 import Stripe from "stripe";
 import { z } from "zod";
 import type {
+  CancelIntentResult,
   CreatedPaymentIntent,
+  FoundPaymentIntent,
   NewPaymentIntent,
   PaymentProvider,
   RefundedPayment,
@@ -9,6 +11,7 @@ import type {
 import { orderOwnerFrom, toOrderMetadata } from "./order-metadata.js";
 
 const refundRequestIdSchema = z.uuid();
+const orderIdSchema = z.uuid();
 
 export class StripePaymentProvider implements PaymentProvider {
   private readonly stripe: Stripe;
@@ -34,6 +37,25 @@ export class StripePaymentProvider implements PaymentProvider {
       clientSecret: intent.client_secret,
       amount: { amount_minor: intent.amount, currency: intent.currency.toUpperCase() },
     };
+  }
+
+  async findIntentByOrderId(orderId: string): Promise<FoundPaymentIntent | null> {
+    const {
+      data: [intent],
+    } = await this.stripe.paymentIntents.search({ query: `metadata['order_id']:'${orderIdSchema.parse(orderId)}'`, limit: 1 });
+    return intent ? { id: intent.id, status: intent.status } : null;
+  }
+
+  async cancelIntent(paymentIntentId: string): Promise<CancelIntentResult> {
+    try {
+      await this.stripe.paymentIntents.cancel(paymentIntentId);
+      return "cancelled";
+    } catch (error) {
+      if (error instanceof Stripe.errors.StripeInvalidRequestError && error.code === "payment_intent_unexpected_state") {
+        return "not_cancellable";
+      }
+      throw error;
+    }
   }
 
   async latestRefund(chargeId: string): Promise<RefundedPayment | null> {
