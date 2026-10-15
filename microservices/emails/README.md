@@ -36,7 +36,7 @@ npm test             # Vitest; integration tests start RabbitMQ with testcontain
 The whole cluster runs from `microservices/docker-compose.yml`:
 
 ```bash
-docker compose up --build rabbitmq notif payment
+docker compose up --build rabbitmq notif
 ```
 
 | Service | Port | |
