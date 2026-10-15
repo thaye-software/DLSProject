@@ -40,6 +40,9 @@ export async function connectToBroker(url: string): Promise<BrokerConnection> {
     },
     close: async () => {
       closingDeliberately = true;
+      // amqplib can send the connection close before frames still queued on a channel, dropping a just-sent ack.
+      // Closing the channel first flushes them, because RabbitMQ handles a channel's frames in order.
+      if (open) await channel.close();
       await connection.close();
     },
   };
