@@ -10,6 +10,25 @@ services:
       timeout: 5s
       retries: 12
 
+  payment:
+    build: ./payments
+    env_file:
+      - path: ./payments/.env
+        required: false
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    ports:
+      - "3006:3006"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3006/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
   notif:
     build: ./emails
     env_file:
