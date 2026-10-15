@@ -3,7 +3,9 @@ import { z } from "zod";
 import type {
   CancelIntentResult,
   CreatedPaymentIntent,
+  CreatedRefund,
   FoundPaymentIntent,
+  NewRefund,
   NewPaymentIntent,
   PaymentProvider,
   RefundedPayment,
@@ -56,6 +58,18 @@ export class StripePaymentProvider implements PaymentProvider {
       }
       throw error;
     }
+  }
+
+  async refund({ paymentIntentId, amount, refundRequestId }: NewRefund): Promise<CreatedRefund> {
+    const refund = await this.stripe.refunds.create(
+      {
+        payment_intent: paymentIntentId,
+        amount: amount.amount_minor,
+        metadata: { refund_request_id: refundRequestId },
+      },
+      { idempotencyKey: refundRequestId },
+    );
+    return { refundId: refund.id };
   }
 
   async latestRefund(chargeId: string): Promise<RefundedPayment | null> {
