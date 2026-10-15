@@ -7,7 +7,9 @@ const broker = await connectToBroker(config.rabbitmqUrl);
 
 // Reconnecting is left to the container runtime: compose restarts the service when it exits.
 broker.onUnexpectedClose((error) => {
-  console.error("RabbitMQ connection lost, exiting", error);
+  console.error(
+    error ? `RabbitMQ connection lost, exiting: ${error.message}` : "RabbitMQ closed the connection, exiting",
+  );
   process.exit(1);
 });
 
