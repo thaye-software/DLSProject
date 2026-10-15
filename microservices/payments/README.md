@@ -41,7 +41,7 @@ stripe listen --forward-to localhost:3006/webhooks/stripe   # real webhooks loca
 `STRIPE_WEBHOOK_SECRET` must be the secret `stripe listen` prints (`stripe listen --print-secret`). `stripe trigger` only reaches RabbitMQ when the PaymentIntent carries order metadata:
 
 ```bash
-stripe trigger payment_intent.succeeded --add "payment_intent:metadata[order_id]=<order uuid>" --add "payment_intent:metadata[user_id]=<user uuid>"
+stripe trigger payment_intent.succeeded --add "payment_intent:currency=dkk" --add "payment_intent:metadata[order_id]=<order uuid>" --add "payment_intent:metadata[user_id]=<user uuid>"
 ```
 
 The whole cluster runs from `microservices/docker-compose.yml`:
