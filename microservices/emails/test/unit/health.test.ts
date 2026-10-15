@@ -1,23 +1,10 @@
-import type { Server } from "node:http";
-import type { AddressInfo } from "node:net";
-import { afterEach, describe, expect, it } from "vitest";
-import { createApp } from "../../src/adapters/http/app.js";
-
-let server: Server | undefined;
+import { describe, expect, it } from "vitest";
+import { serve } from "../support/serve.js";
 
 async function getHealth(isBrokerConnected: boolean): Promise<Response> {
-  const app = createApp({ isBrokerConnected: () => isBrokerConnected });
-  server = app.listen(0);
-  await new Promise((resolve) => server!.once("listening", resolve));
-  const { port } = server.address() as AddressInfo;
-  return fetch(`http://127.0.0.1:${port}/health`);
+  const baseUrl = await serve({ isBrokerConnected: () => isBrokerConnected });
+  return fetch(`${baseUrl}/health`);
 }
-
-afterEach(async () => {
-  const running = server;
-  server = undefined;
-  if (running) await new Promise((resolve) => running.close(resolve));
-});
 
 describe("GET /health", () => {
   it("answers 200 when the broker channel is open", async () => {
