@@ -12,6 +12,17 @@ export type CreatedPaymentIntent = {
   amount: Money;
 };
 
+export type RefundedPayment = {
+  paymentIntentId: string;
+  orderId: string;
+  userId: string;
+  refundId: string;
+  refundRequestId: string | null;
+  amount: Money;
+  refundedAt: Date;
+};
+
 export interface PaymentProvider {
   createIntent(intent: NewPaymentIntent): Promise<CreatedPaymentIntent>;
+  latestRefund(chargeId: string): Promise<RefundedPayment | null>;
 }

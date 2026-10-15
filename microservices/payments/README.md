@@ -9,7 +9,7 @@ Contracts: `../docs/contracts/openapi.yaml` (`POST /payments`, `POST /webhooks/s
 | Direction | What | Notes |
 |---|---|---|
 | HTTP in | `POST /payments` | Public via gateway, trusts `X-User-Id`. Creates or returns the order's PaymentIntent (idempotency key = order id). `404` if the order is missing or belongs to someone else, `409` if it is not RESERVED. |
-| HTTP in | `POST /webhooks/stripe` | Public, `Stripe-Signature` verified. Answers `200` only after RabbitMQ confirms the publish, otherwise `500` so Stripe retries. |
+| HTTP in | `POST /webhooks/stripe` | Public, `Stripe-Signature` verified. Answers `200` only after RabbitMQ confirms the publish, otherwise `500` so Stripe retries. Events for PaymentIntents without `order_id`/`user_id` metadata (not created by Payment) get `200` and are ignored. Not served when `PAYMENT_PROVIDER=fake`. |
 | HTTP in | `GET /health` | `200` when the RabbitMQ channel is open. |
 | HTTP out | Orders `GET /internal/orders/{order_id}/payment-details` | Service JWT, see `docs/contracts/README.md` §5. |
 | Publishes | `payment_complete`, `payment_failed`, `payment_refunded` on `payment.events` | CloudEvent `id` = UUIDv5 of the Stripe event id. |
@@ -36,6 +36,12 @@ npm install
 npm run dev          # tsx watch, needs RabbitMQ on RABBITMQ_URL
 npm test             # Vitest; integration tests use Stripe test mode and RabbitMQ via testcontainers
 stripe listen --forward-to localhost:3006/webhooks/stripe   # real webhooks locally
+```
+
+`STRIPE_WEBHOOK_SECRET` must be the secret `stripe listen` prints (`stripe listen --print-secret`). `stripe trigger` only reaches RabbitMQ when the PaymentIntent carries order metadata:
+
+```bash
+stripe trigger payment_intent.succeeded --add "payment_intent:metadata[order_id]=<order uuid>" --add "payment_intent:metadata[user_id]=<user uuid>"
 ```
 
 The whole cluster runs from `microservices/docker-compose.yml`:

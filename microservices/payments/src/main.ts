@@ -1,9 +1,12 @@
 import { FakePaymentProvider } from "./adapters/fake-payment-provider.js";
 import { createApp } from "./adapters/http/app.js";
+import { createStripeWebhookHandler } from "./adapters/http/stripe-webhook.js";
 import { HttpOrdersClient } from "./adapters/orders/http-orders-client.js";
 import { connectToBroker } from "./adapters/rabbitmq/connection.js";
+import { createEventPublisher } from "./adapters/rabbitmq/publisher.js";
 import { StripePaymentProvider } from "./adapters/stripe/stripe-payment-provider.js";
 import { createPaymentSession } from "./application/create-payment-session.js";
+import { handlePaymentWebhook } from "./application/handle-payment-webhook.js";
 import type { PaymentProvider } from "./application/ports/payment-provider.js";
 import { loadConfig } from "./config.js";
 
@@ -18,6 +21,7 @@ broker.onUnexpectedClose((error) => {
   process.exit(1);
 });
 
+const publisher = await createEventPublisher(broker.channel);
 const orders = new HttpOrdersClient({ baseUrl: config.ordersUrl, jwtSecret: config.internalJwtSecret });
 const payments: PaymentProvider =
   config.paymentProvider.kind === "stripe"
@@ -27,6 +31,14 @@ const payments: PaymentProvider =
 const app = createApp({
   isBrokerConnected: broker.isOpen,
   createPaymentSession: (request) => createPaymentSession(request, { orders, payments, now: () => new Date() }),
+  stripeWebhook:
+    config.paymentProvider.kind === "stripe"
+      ? createStripeWebhookHandler({
+          webhookSecret: config.paymentProvider.webhookSecret,
+          payments,
+          handlePaymentWebhook: (webhook) => handlePaymentWebhook(webhook, { publisher }),
+        })
+      : undefined,
 });
 const server = app.listen(config.port, () => {
   console.log(`payment listening on port ${config.port} (payment provider: ${config.paymentProvider.kind})`);

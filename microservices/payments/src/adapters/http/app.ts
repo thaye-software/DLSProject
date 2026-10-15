@@ -1,4 +1,4 @@
-import express, { type ErrorRequestHandler, type Express, type Response } from "express";
+import express, { type ErrorRequestHandler, type Express, type RequestHandler, type Response } from "express";
 import { z } from "zod";
 import type { CreatePaymentSessionResult } from "../../application/create-payment-session.js";
 import { sendProblem } from "./problem.js";
@@ -6,12 +6,13 @@ import { sendProblem } from "./problem.js";
 export type AppDependencies = {
   isBrokerConnected: () => boolean;
   createPaymentSession: (request: { orderId: string; userId: string }) => Promise<CreatePaymentSessionResult>;
+  stripeWebhook?: RequestHandler;
 };
 
 const createPaymentRequestSchema = z.strictObject({ order_id: z.uuid() });
 const userIdSchema = z.uuid();
 
-export function createApp({ isBrokerConnected, createPaymentSession }: AppDependencies): Express {
+export function createApp({ isBrokerConnected, createPaymentSession, stripeWebhook }: AppDependencies): Express {
   const app = express();
   app.disable("x-powered-by");
 
@@ -86,6 +87,10 @@ export function createApp({ isBrokerConnected, createPaymentSession }: AppDepend
         return;
     }
   });
+
+  if (stripeWebhook) {
+    app.post("/webhooks/stripe", express.raw({ type: "application/json" }), stripeWebhook);
+  }
 
   app.use(invalidJsonHandler);
 
