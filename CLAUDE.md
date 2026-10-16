@@ -1,6 +1,6 @@
 # DLS Project
 
-`limited-watches/` is the old project. `microservices/` is the new microservice version, built to the architecture below. Event payloads (CloudEvents envelope, shared types, order statuses) for Orders and Search: `microservices/CONTRACTS.md`, taken from the team's Event contracts sheet.
+`monolith/limited-watches/` is the old project. `microservices/` is the new microservice version, built to the architecture below. Per-service database tables (ERD) and event payloads (CloudEvents envelope, shared types, order statuses) for Orders and Search: `microservices/orders/contract.md` and `microservices/search/contract.md`, taken from the team's Event contracts sheet.
 
 ## Architecture v3 (target)
 

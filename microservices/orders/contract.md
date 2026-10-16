@@ -1,6 +1,6 @@
-# Contracts: Orders and Search (from the team's Event contracts sheet, Architecture v3)
+# Contract: Orders
 
-15 events on 5 RabbitMQ topic exchanges. Notation: `?` may be null, `[]` list, `a|b` allowed values, `pi_…` / `re_…` Stripe ids. Money is `{amount_minor: int, currency: ISO 4217}`.
+15 events on 5 RabbitMQ topic exchanges, from the team's Event contracts sheet (Architecture v3). Authoritative machine-readable versions: `docs/contracts/asyncapi.yaml` and `docs/contracts/openapi.yaml`. Notation: `?` may be null, `[]` list, `a|b` allowed values, `pi_…` / `re_…` Stripe ids. Money is `{amount_minor: int, currency: ISO 4217}`.
 
 ## Envelope (CloudEvents, every message)
 
@@ -20,7 +20,7 @@
 
 Queue per consumer: `<consumer>.<exchange>`, with a dead-letter queue `.dlq`.
 
-## Orders
+## Orders (events and HTTP)
 
 ### Consumes
 
@@ -66,35 +66,20 @@ DELIVERED --> RETURNED
 - Outbound to Catalog: reserve stock. Also ipapi.co geo-IP.
 - Inbound from Payment: Payment calls Orders. Endpoint to define.
 
-## Search
+## Data model (PostgreSQL)
 
-### Consumes from `catalog.events`
+- `orders`: `id`, `REF user_id`, `status varchar`, `shipping_price_dkk`, `sub_total_dkk`, `total_price_dkk`, `FK delivery_address_id`, `FK billing_address_id`, `created_at`, `customer_email` (new)
+- `order_items`: `id`, `FK order_id`, `REF product_id`, `quantity`, `product_name` (new), `thumbnail_url` (new)
+- `order_addresses`: `id`, `first_name`, `middle_name`, `last_name`, `address_line_1`, `address_line_2`, `city`, `zip_code`, `state_province`, `country`
+- `countries` (from Localization): `id`, `name`, `abbreviation`, `vat_rate`. Currencies were dropped from the ERD (DKK only).
 
-| Event | Subject | `data` | Search does |
-|---|---|---|---|
-| `product_created` | `product.product_id` | `product: ProductSnapshot`, `changed_by` | insert listing |
-| `product_updated` | `product.product_id` | `product: ProductSnapshot`, `changed_by`, `changed_fields: string[]` | replace listing |
-| `product_deleted` | `product_id` | `product_id`, `version`, `deleted_by`, `deleted_at` | remove listing |
-| `product_availability_changed` | `product_id` | `product_id`, `version`, `availability`, `previous_availability`, `stock`, `reason` (`order_reserved`\|`order_released`\|`order_confirmed`\|`admin_update`), `order_id?`, `changed_at` | show available / reserved / sold |
-| `brand_updated` | `brand.brand_id` | `brand: Brand`, `version`, `changed_by`, `changed_at` | update brand on its listings |
+### Gaps between the ERD and the events
 
-Snapshots are full, so handlers are idempotent upserts. Use `version` to ignore stale or out-of-order events.
-
-### Types
-
-- `ProductSnapshot`: `product_id`, `version`, `product_type`, `name`, `description`, `price: Money`, `stock`, `visible: bool`, `availability`, `watch: WatchDetails?`, `images: ProductImage[]`, `created_at`, `updated_at`
-- `WatchDetails`: `watch_id`, `brand: Brand`, `model`, `slug`, `reference`, `year`, `condition`, `size_mm?`, `movement?`, `glass_type?`, `limited: bool`, `box: bool`, `papers: bool`, `bracelet_type?`, `bracelet_color?`, `dial_color?`
-- `Brand`: `brand_id`, `name`, `slug`
-- `ProductImage`: `image_id`, `url`, `is_thumbnail`
-- `Availability`: `available | reserved | sold | hidden`
-
-### Publishes
-
-Nothing.
-
-### HTTP (via gateway; proposed, not on the sheet)
-
-`GET /search?q=&type=&brand=&minPrice=&maxPrice=&availability=&page=1&pageSize=20`, returning `{items, page, pageSize, total}` built from the Mongo read model. Redis caches results by query string, invalidated on any `catalog.events` message (TTL as a safety net).
+1. **Order has no unit price.** `order_items` has no price column and `OrderLine` carries none either, so line prices can't be shown after the product price changes. Add a price snapshot, or confirm line prices aren't needed.
+2. **No reservation expiry.** `orders` has no `reserved_at` or `expires_at`, which `order_expired` and the `RESERVED` timeout need.
+3. **No payment link.** No `payment_intent_id` or refund table, though `payment_*` and `refund_requested` events carry `payment_intent_id` and `refund_request_id`. `refund_requested` needs `paid_after_expiry` handled.
+4. **Money mapping.** The ERD is DKK only, so every `Money` is `currency: "DKK"` and `OrderTotals.total_charged` equals `total`. The events still carry a currency field and `total_charged`, so either keep them as constants or drop them from the sheet. Decimal DKK in the tables vs `amount_minor` (øre) in events needs a conversion rule.
+5. **Order status** is `varchar`: add a check constraint for the nine `OrderStatus` values.
 
 ## Open points
 
@@ -103,4 +88,3 @@ Nothing.
 3. **Auctions with `no_bids`:** `winner_user_id` is null, so Orders must ignore those events.
 4. **Auction orders:** the items and address come from where? The event has no address, so does the winner still have to supply it before paying?
 5. **Who triggers `PROCESSING`, `SHIPPED`, `DELIVERED`, `RETURNED`:** assumed admin through `PATCH /orders/{id}/status`, each publishing `order_status_changed`.
-6. **Search needs brand names from `brand_updated`:** products carry the brand inside `WatchDetails`, so a brand rename means re-denormalising many listings.
