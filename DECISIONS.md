@@ -6,7 +6,7 @@ Things that are proposed or unclear and still need a team decision. When one is 
 
 ### 1. What if a refund fails or is requested twice?
 There is no event for a failed refund: if Stripe rejects it (for example the charge is too old), the order says `REFUNDED` but the money hasn't moved, and nobody is told. Add a `refund_failed` event on `payment.events` (Orders then notifies an admin or flags the order), or accept it as a manual case for now.
-A second `refund_requested` for an order (for example CANCELLED after payment, then an admin sets REFUNDED) must not refund twice. Payment already uses `refund_request_id` as Stripe's idempotency key, but each request has its own id. Decide whether Orders skips `refund_requested` when the order already has a refund pending or done.
+A second `refund_requested` for the same order must not refund twice. The admin path can no longer do it (a CANCELLED order cannot be set to REFUNDED), but two separate `payment_complete` events for an EXPIRED or CANCELLED order would each request one. Payment uses `refund_request_id` as Stripe's idempotency key, and each request has its own id. Decide whether Orders remembers that a refund is pending or done and skips further requests, or whether Payment checks Stripe for an existing refund first.
 
 ### 2. Auction orders: address and payment
 `auction_complete` creates a `RESERVED` order for the winner, but carries no address. Does the winner fill in billing and delivery addresses before paying (an order with no address until then)? Does the 30 min expiry apply to auction wins, or a longer window? Is the price `winning_bid` taken as-is, without a Catalog reservation?

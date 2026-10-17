@@ -1,11 +1,20 @@
 import express, { type ErrorRequestHandler, type Express, type Request, type Response } from "express";
 import { z } from "zod";
+import type { AdminTargetStatus, CancelRejection, StatusChangeRejection } from "../../application/change-order.js";
 import type { CreateOrderRequest, CreateOrderResult } from "../../application/create-order.js";
 import type { PaymentDetailsResult } from "../../application/get-payment-details.js";
+import type { CommandResult } from "../../application/ports/order-command-store.js";
 import type { OrderPage } from "../../application/ports/order-repository.js";
 import type { ListOrdersRequest, Viewer } from "../../application/read-orders.js";
 import type { Order } from "../../domain/order.js";
-import { createOrderRequestSchema, listOrdersQuerySchema, orderJson, paymentDetailsJson, toAddress } from "./order-json.js";
+import {
+  createOrderRequestSchema,
+  listOrdersQuerySchema,
+  orderJson,
+  paymentDetailsJson,
+  toAddress,
+  updateOrderStatusRequestSchema,
+} from "./order-json.js";
 import { sendProblem } from "./problem.js";
 import { requireServiceJwt } from "./service-auth.js";
 
@@ -16,6 +25,8 @@ export type AppDependencies = {
   getOrder: (orderId: string, viewer: Viewer) => Promise<Order | null>;
   listOrders: (request: ListOrdersRequest) => Promise<OrderPage>;
   getPaymentDetails: (orderId: string) => Promise<PaymentDetailsResult>;
+  cancelOrder: (orderId: string, viewer: Viewer) => Promise<CommandResult<CancelRejection>>;
+  changeOrderStatus: (orderId: string, status: AdminTargetStatus, admin: Viewer) => Promise<CommandResult<StatusChangeRejection>>;
   internalJwtSecret: string;
 };
 
@@ -45,6 +56,8 @@ export function createApp({
   getOrder,
   listOrders,
   getPaymentDetails,
+  cancelOrder,
+  changeOrderStatus,
   internalJwtSecret,
 }: AppDependencies): Express {
   const app = express();
@@ -177,6 +190,71 @@ export function createApp({
     response.json(orderJson(order));
   });
 
+  app.post("/orders/:order_id/cancel", async (request, response) => {
+    const instance = request.path;
+    const viewer = viewerFrom(request);
+    if (!viewer) {
+      sendUnauthorized(response, instance, "The request has no valid X-User-Id from the gateway.");
+      return;
+    }
+
+    const orderId = orderIdSchema.safeParse(request.params.order_id);
+    const result: CommandResult<CancelRejection> = orderId.success ? await cancelOrder(orderId.data, viewer) : { kind: "not_found" };
+
+    if (result.kind === "done") {
+      response.json(orderJson(result.order));
+    } else if (result.kind === "not_found" || result.reason === "not_found") {
+      sendNotFound(response, instance);
+    } else {
+      sendProblem(response, {
+        code: "order_not_cancellable",
+        title: "Order can no longer be cancelled",
+        status: 409,
+        detail: "Only an unpaid (RESERVED) order can be cancelled; ask the shop to cancel a paid order.",
+        instance,
+      });
+    }
+  });
+
+  app.patch("/orders/:order_id/status", express.json(), async (request, response) => {
+    const instance = request.path;
+    const viewer = viewerFrom(request);
+    if (!viewer) {
+      sendUnauthorized(response, instance, "The request has no valid X-User-Id from the gateway.");
+      return;
+    }
+    if (!viewer.isAdmin) {
+      sendProblem(response, { code: "forbidden", title: "Admin role required", status: 403, detail: "Admin role required.", instance });
+      return;
+    }
+
+    const orderId = orderIdSchema.safeParse(request.params.order_id);
+    if (!orderId.success) {
+      sendNotFound(response, instance);
+      return;
+    }
+    const body = updateOrderStatusRequestSchema.safeParse(request.body);
+    if (!body.success) {
+      sendValidationProblem(response, instance, describeIssues(body.error));
+      return;
+    }
+
+    const result = await changeOrderStatus(orderId.data, body.data.status, viewer);
+    if (result.kind === "done") {
+      response.json(orderJson(result.order));
+    } else if (result.kind === "not_found") {
+      sendNotFound(response, instance);
+    } else {
+      sendProblem(response, {
+        code: "invalid_status_transition",
+        title: "Invalid status change",
+        status: 409,
+        detail: `An order cannot be moved to ${body.data.status} from its current status.`,
+        instance,
+      });
+    }
+  });
+
   app.get(
     "/internal/orders/:order_id/payment-details",
     requireServiceJwt({ secret: internalJwtSecret, audience: "orders", issuers: INTERNAL_CALLERS }),
@@ -215,6 +293,10 @@ function describeIssues(error: z.ZodError): string {
   return error.issues
     .map((issue) => (issue.path.length ? `${issue.path.join(".")}: ${issue.message}` : issue.message))
     .join("; ");
+}
+
+function sendNotFound(response: Response, instance: string): void {
+  sendProblem(response, { code: "not_found", title: "Order not found", status: 404, detail: "Order not found.", instance });
 }
 
 function sendValidationProblem(response: Response, instance: string, detail: string): void {

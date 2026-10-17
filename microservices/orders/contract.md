@@ -57,8 +57,8 @@ RESERVED --payment_complete--> PENDING --admin--> PROCESSING --admin--> SHIPPED 
 RESERVED --timeout--> EXPIRED (order_expired)
 EXPIRED + payment_complete --> refund_requested(paid_after_expiry)
 RESERVED --customer cancel--> CANCELLED (order_cancelled, reason customer_request; nothing to refund)
-PENDING/PROCESSING/SHIPPED/DELIVERED/RETURNED --admin cancel--> CANCELLED (+ refund_requested, reason cancelled_after_payment) --payment_refunded--> REFUNDED
-same paid statuses --admin REFUNDED--> REFUNDED + order_status_changed + refund_requested(admin); the later payment_refunded is a no-op
+PENDING/PROCESSING/SHIPPED/DELIVERED --admin cancel--> CANCELLED (+ refund_requested, reason cancelled_after_payment) --payment_refunded--> REFUNDED
+PENDING/PROCESSING/SHIPPED/DELIVERED/RETURNED --admin REFUNDED--> REFUNDED + order_status_changed + refund_requested(admin); the later payment_refunded is a no-op
 ```
 
 ### HTTP

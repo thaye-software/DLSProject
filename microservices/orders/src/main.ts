@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { HttpCatalogClient } from "./adapters/catalog/http-catalog-client.js";
 import { PrismaExpiryStore } from "./adapters/db/prisma-expiry-store.js";
+import { PrismaOrderCommandStore } from "./adapters/db/prisma-order-command-store.js";
 import { PrismaOrderEventStore } from "./adapters/db/prisma-order-event-store.js";
 import { PrismaOrderRepository } from "./adapters/db/prisma-order-repository.js";
 import { createDatabase, isDatabaseReachable } from "./adapters/db/prisma.js";
@@ -12,6 +13,7 @@ import { startConsumer } from "./adapters/rabbitmq/consumer.js";
 import { createPaymentEventHandlers, PAYMENT_EVENTS_EXCHANGE, PAYMENT_EVENTS_QUEUE } from "./adapters/rabbitmq/payment-events.js";
 import { createEventPublisher } from "./adapters/rabbitmq/publisher.js";
 import { assertConsumerTopology } from "./adapters/rabbitmq/topology.js";
+import { cancelOrder, changeOrderStatus } from "./application/change-order.js";
 import { createOrder } from "./application/create-order.js";
 import { expireDueOrders } from "./application/expire-orders.js";
 import { getPaymentDetails } from "./application/get-payment-details.js";
@@ -33,6 +35,7 @@ broker.onUnexpectedClose((error) => {
 const catalog = new HttpCatalogClient({ baseUrl: config.catalogUrl, jwtSecret: config.internalJwtSecret });
 const orders = new PrismaOrderRepository(database);
 const now = () => new Date();
+const changes = { store: new PrismaOrderCommandStore(database), now, newId: randomUUID };
 
 const outboxRelay = startOutboxRelay({ database, publisher: await createEventPublisher(broker.channel) });
 
@@ -63,6 +66,8 @@ const app = createApp({
   getOrder: (orderId, viewer) => getOrder(orderId, viewer, orders),
   listOrders: (request) => listOrders(request, orders),
   getPaymentDetails: (orderId) => getPaymentDetails(orderId, { orders, now }),
+  cancelOrder: (orderId, viewer) => cancelOrder(orderId, viewer, changes),
+  changeOrderStatus: (orderId, status, admin) => changeOrderStatus(orderId, status, admin, changes),
   internalJwtSecret: config.internalJwtSecret,
 });
 const server = app.listen(config.port, () => {

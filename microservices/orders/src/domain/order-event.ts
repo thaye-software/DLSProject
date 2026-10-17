@@ -34,6 +34,15 @@ export type OrderEventData = {
     reason: "paid_after_expiry" | "cancelled_after_payment" | "admin";
     requested_at: string;
   };
+  order_cancelled: {
+    order_id: string;
+    user_id: string;
+    previous_status: OrderStatus;
+    reason: "customer_request" | "admin";
+    items: { product_id: string; quantity: number }[];
+    was_paid: boolean;
+    cancelled_at: string;
+  };
   order_expired: {
     order_id: string;
     user_id: string;

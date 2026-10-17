@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ADMIN_TARGET_STATUSES } from "../../application/change-order.js";
 import type { PaymentDetails } from "../../application/get-payment-details.js";
 import { addressData, dkk } from "../../domain/order-event.js";
 import { ORDER_STATUSES, type Address, type Order } from "../../domain/order.js";
@@ -39,6 +40,9 @@ export const listOrdersQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   page_size: z.coerce.number().int().min(1).max(100).default(20),
 });
+
+// Body of PATCH /orders/{order_id}/status (UpdateOrderStatusRequest).
+export const updateOrderStatusRequestSchema = z.strictObject({ status: z.enum(ADMIN_TARGET_STATUSES) });
 
 export function toAddress(json: z.infer<typeof addressSchema>): Address {
   return {

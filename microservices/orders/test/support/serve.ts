@@ -14,6 +14,8 @@ const defaultDependencies: AppDependencies = {
   getOrder: async () => null,
   listOrders: async () => ({ orders: [], total: 0 }),
   getPaymentDetails: async () => ({ outcome: "not_found" }),
+  cancelOrder: async () => ({ kind: "not_found" }),
+  changeOrderStatus: async () => ({ kind: "not_found" }),
   internalJwtSecret: INTERNAL_JWT_SECRET,
 };
 
