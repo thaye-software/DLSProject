@@ -26,7 +26,6 @@ export const orderConfirmedEvent = {
       subtotal: { amount_minor: 11500000, currency: "DKK" },
       shipping: { amount_minor: 30000, currency: "DKK" },
       total: { amount_minor: 11530000, currency: "DKK" },
-      total_charged: { amount_minor: 11530000, currency: "DKK" },
     },
     billing_address: {
       first_name: "Mette",

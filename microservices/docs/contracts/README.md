@@ -134,6 +134,9 @@ Notif only sends the emails the monolith sends today: the order confirmation (fr
 |---|---|---|---|
 | Create order | `POST /orders` (`Idempotency-Key`) | Orders | Public, via gateway, user JWT |
 | Get order | `GET /orders/{order_id}` | Orders | Public, via gateway, user JWT |
+| List orders | `GET /orders` | Orders | Public, via gateway, user JWT (own orders; admin: all) |
+| Cancel order | `POST /orders/{order_id}/cancel` | Orders | Public, via gateway, user JWT (owner) |
+| Change order status | `PATCH /orders/{order_id}/status` | Orders | Public, via gateway, user JWT (admin) |
 | Reserve stock | `POST /internal/reservations` (`Idempotency-Key` = order id) | Catalog | Internal, service JWT |
 | Roll back a reservation | `DELETE /internal/reservations/{order_id}` | Catalog | Internal, service JWT |
 | Start payment | `POST /payments` | Payment | Public, via gateway, user JWT |
@@ -142,6 +145,7 @@ Notif only sends the emails the monolith sends today: the order confirmation (fr
 | Email confirmed | `POST /webhooks/supabase/email-confirmed` (`x-supabasewebhook-secret`) | Users | Public, shared secret |
 | Product summary | `GET /products/{product_id}` | Catalog | Public, and internal for Messaging, Editorial and Auctions |
 | Contact form | `POST /contact` | Notif | Public, via gateway, no login (as in the monolith) |
+| Search products | `GET /search` | Search | Public, via gateway, no login |
 
 How identity and auth work across the gateway:
 
@@ -209,5 +213,4 @@ When a contract changes, update the YAML here first, then the diagrams.
 
 ## 8. Open decisions
 
-- **Auctions vs. normal sales:** a watch on auction should not be sellable through checkout at the same time. Either Auctions reserves it in Catalog when the auction starts, or Catalog marks it `hidden`. That needs one more contract once decided.
-- **Auctions database:** the architecture diagram still says "DB". The monolith keeps `auctions` in PostgreSQL, so PostgreSQL is the no-change choice.
+Tracked in [`DECISIONS.md`](../../../DECISIONS.md) in the repo root.

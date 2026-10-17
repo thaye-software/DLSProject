@@ -14,6 +14,7 @@ tags:
   - name: Catalog
   - name: Users
   - name: Notif
+  - name: Search
 paths:
   /orders:
     servers:
@@ -93,9 +94,6 @@ paths:
                   total:
                     amount_minor: 11530000
                     currency: DKK
-                  total_charged:
-                    amount_minor: 11530000
-                    currency: DKK
                 billing_address:
                   first_name: Mette
                   middle_name: null
@@ -164,6 +162,117 @@ paths:
                 status: 422
                 detail: Invalid request.
                 instance: /orders
+    get:
+      tags:
+        - Orders
+      operationId: listOrders
+      summary: List orders (a customer gets their own, an admin gets all)
+      description: "Replaces the monolith's admin order dashboard (getAllPendingOrders). Newest first."
+      security:
+        - userJwt: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: "Only orders in these statuses. Repeat the parameter for several (?status=PENDING&status=PROCESSING)."
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              "$ref": "#/components/schemas/OrderStatus"
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: page_size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: One page of orders
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/OrderPage"
+              example:
+                items:
+                  - order_id: f47ac10b-58cc-4372-a567-0e02b2c3d479
+                    user_id: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+                    customer_email: "mette@example.com"
+                    status: PENDING
+                    items:
+                      - product_id: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+                        product_name: Rolex Submariner Date 126610LN
+                        quantity: 1
+                        thumbnail_url: "https://cdn.example.com/products/126610ln-1.jpg"
+                    totals:
+                      subtotal:
+                        amount_minor: 11500000
+                        currency: DKK
+                      shipping:
+                        amount_minor: 30000
+                        currency: DKK
+                      total:
+                        amount_minor: 11530000
+                        currency: DKK
+                    billing_address:
+                      first_name: Mette
+                      middle_name: null
+                      last_name: Jensen
+                      address_line_1: "Nørregade 12"
+                      address_line_2: null
+                      city: "København K"
+                      zip_code: "1165"
+                      state_province: null
+                      country_code: DK
+                    delivery_address:
+                      first_name: Mette
+                      middle_name: null
+                      last_name: Jensen
+                      address_line_1: "Nørregade 12"
+                      address_line_2: null
+                      city: "København K"
+                      zip_code: "1165"
+                      state_province: null
+                      country_code: DK
+                    created_at: "2026-10-14T10:00:00Z"
+                    expires_at: null
+                page: 1
+                page_size: 20
+                total: 1
+        "401":
+          description: Missing or invalid JWT
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+              example:
+                type: "https://limitedwatches.dk/problems/unauthorized"
+                title: Missing or invalid JWT
+                status: 401
+                detail: Missing or invalid JWT.
+                instance: /orders
+        "422":
+          description: Invalid request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+              example:
+                type: "https://limitedwatches.dk/problems/validation_error"
+                title: Invalid request
+                status: 422
+                detail: Invalid request.
+                instance: /orders
   "/orders/{order_id}":
     servers:
       - url: "https://api.limitedwatches.dk"
@@ -209,9 +318,6 @@ paths:
                   total:
                     amount_minor: 11530000
                     currency: DKK
-                  total_charged:
-                    amount_minor: 11530000
-                    currency: DKK
                 billing_address:
                   first_name: Mette
                   middle_name: null
@@ -246,6 +352,246 @@ paths:
                 status: 404
                 detail: Order not found.
                 instance: /orders
+  "/orders/{order_id}/cancel":
+    servers:
+      - url: "https://api.limitedwatches.dk"
+        description: "Public, via API Gateway → orders"
+    post:
+      tags:
+        - Orders
+      operationId: cancelOrder
+      summary: Cancel an order (owner)
+      description: "The customer cancels their own order while it is RESERVED or PENDING. Sets CANCELLED and publishes order_cancelled (reason customer_request); if it was paid (PENDING) also refund_requested (reason cancelled_after_payment). Idempotent: cancelling a CANCELLED order returns it unchanged. Admins cancel through PATCH /orders/{order_id}/status."
+      security:
+        - userJwt: []
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: The cancelled order
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Order"
+              example:
+                order_id: f47ac10b-58cc-4372-a567-0e02b2c3d479
+                user_id: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+                customer_email: "mette@example.com"
+                status: CANCELLED
+                items:
+                  - product_id: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+                    product_name: Rolex Submariner Date 126610LN
+                    quantity: 1
+                    thumbnail_url: "https://cdn.example.com/products/126610ln-1.jpg"
+                totals:
+                  subtotal:
+                    amount_minor: 11500000
+                    currency: DKK
+                  shipping:
+                    amount_minor: 30000
+                    currency: DKK
+                  total:
+                    amount_minor: 11530000
+                    currency: DKK
+                billing_address:
+                  first_name: Mette
+                  middle_name: null
+                  last_name: Jensen
+                  address_line_1: "Nørregade 12"
+                  address_line_2: null
+                  city: "København K"
+                  zip_code: "1165"
+                  state_province: null
+                  country_code: DK
+                delivery_address:
+                  first_name: Mette
+                  middle_name: null
+                  last_name: Jensen
+                  address_line_1: "Nørregade 12"
+                  address_line_2: null
+                  city: "København K"
+                  zip_code: "1165"
+                  state_province: null
+                  country_code: DK
+                created_at: "2026-10-14T10:00:00Z"
+                expires_at: null
+        "401":
+          description: Missing or invalid JWT
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+              example:
+                type: "https://limitedwatches.dk/problems/unauthorized"
+                title: Missing or invalid JWT
+                status: 401
+                detail: Missing or invalid JWT.
+                instance: /orders/f47ac10b-58cc-4372-a567-0e02b2c3d479/cancel
+        "404":
+          description: Order not found, or not owned by the caller
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+              example:
+                type: "https://limitedwatches.dk/problems/not_found"
+                title: Order not found
+                status: 404
+                detail: Order not found.
+                instance: /orders/f47ac10b-58cc-4372-a567-0e02b2c3d479/cancel
+        "409":
+          description: Order is past PENDING (or EXPIRED / REFUNDED)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+              example:
+                type: "https://limitedwatches.dk/problems/order_not_cancellable"
+                title: Order can no longer be cancelled
+                status: 409
+                detail: Order can no longer be cancelled.
+                instance: /orders/f47ac10b-58cc-4372-a567-0e02b2c3d479/cancel
+  "/orders/{order_id}/status":
+    servers:
+      - url: "https://api.limitedwatches.dk"
+        description: "Public, via API Gateway → orders"
+    patch:
+      tags:
+        - Orders
+      operationId: updateOrderStatus
+      summary: Change an order's status (admin)
+      description: "Replaces the monolith's changeOrderStatus. CANCELLED publishes order_cancelled (reason admin); any other change publishes order_status_changed, and Catalog puts back or takes the stock. RESERVED and EXPIRED are set only by the system. Setting the current status again is a no-op."
+      security:
+        - userJwt: []
+      parameters:
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UpdateOrderStatusRequest"
+            example:
+              status: SHIPPED
+      responses:
+        "200":
+          description: The updated order
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Order"
+              example:
+                order_id: f47ac10b-58cc-4372-a567-0e02b2c3d479
+                user_id: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+                customer_email: "mette@example.com"
+                status: SHIPPED
+                items:
+                  - product_id: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+                    product_name: Rolex Submariner Date 126610LN
+                    quantity: 1
+                    thumbnail_url: "https://cdn.example.com/products/126610ln-1.jpg"
+                totals:
+                  subtotal:
+                    amount_minor: 11500000
+                    currency: DKK
+                  shipping:
+                    amount_minor: 30000
+                    currency: DKK
+                  total:
+                    amount_minor: 11530000
+                    currency: DKK
+                billing_address:
+                  first_name: Mette
+                  middle_name: null
+                  last_name: Jensen
+                  address_line_1: "Nørregade 12"
+                  address_line_2: null
+                  city: "København K"
+                  zip_code: "1165"
+                  state_province: null
+                  country_code: DK
+                delivery_address:
+                  first_name: Mette
+                  middle_name: null
+                  last_name: Jensen
+                  address_line_1: "Nørregade 12"
+                  address_line_2: null
+                  city: "København K"
+                  zip_code: "1165"
+                  state_province: null
+                  country_code: DK
+                created_at: "2026-10-14T10:00:00Z"
+                expires_at: null
+        "401":
+          description: Missing or invalid JWT
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+              example:
+                type: "https://limitedwatches.dk/problems/unauthorized"
+                title: Missing or invalid JWT
+                status: 401
+                detail: Missing or invalid JWT.
+                instance: /orders/f47ac10b-58cc-4372-a567-0e02b2c3d479/status
+        "403":
+          description: Admin role required
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+              example:
+                type: "https://limitedwatches.dk/problems/forbidden"
+                title: Admin role required
+                status: 403
+                detail: Admin role required.
+                instance: /orders/f47ac10b-58cc-4372-a567-0e02b2c3d479/status
+        "404":
+          description: Order not found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+              example:
+                type: "https://limitedwatches.dk/problems/not_found"
+                title: Order not found
+                status: 404
+                detail: Order not found.
+                instance: /orders/f47ac10b-58cc-4372-a567-0e02b2c3d479/status
+        "409":
+          description: The order is RESERVED or EXPIRED, so an admin cannot change it
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+              example:
+                type: "https://limitedwatches.dk/problems/invalid_status_transition"
+                title: Invalid status change
+                status: 409
+                detail: Invalid status change.
+                instance: /orders/f47ac10b-58cc-4372-a567-0e02b2c3d479/status
+        "422":
+          description: Invalid request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+              example:
+                type: "https://limitedwatches.dk/problems/validation_error"
+                title: Invalid request
+                status: 422
+                detail: Invalid request.
+                instance: /orders/f47ac10b-58cc-4372-a567-0e02b2c3d479/status
   /payments:
     servers:
       - url: "https://api.limitedwatches.dk"
@@ -642,6 +988,118 @@ paths:
                 status: 409
                 detail: Order is not payable (not RESERVED or expired).
                 instance: /orders
+  /search:
+    servers:
+      - url: "https://api.limitedwatches.dk"
+        description: "Public, via API Gateway → search"
+    get:
+      tags:
+        - Search
+      operationId: searchProducts
+      summary: Search the product listings
+      description: "Served from Search's MongoDB read model (cached in Redis), which is eventually consistent with Catalog. Replaces the monolith's searchProducts: q matches name, brand name and reference, case-insensitive. Hidden products are never returned."
+      security:
+        - {}
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: "Free text; empty or missing returns every listing that matches the filters"
+          schema:
+            type: string
+            maxLength: 200
+        - name: brand
+          in: query
+          required: false
+          description: Brand slug
+          schema:
+            type: string
+        - name: availability
+          in: query
+          required: false
+          description: "Repeat for several. Default available only (the monolith hides out-of-stock products)."
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - available
+                - reserved
+                - sold
+            default:
+              - available
+        - name: min_price
+          in: query
+          required: false
+          description: "DKK in minor units (øre), inclusive"
+          schema:
+            type: integer
+            minimum: 0
+        - name: max_price
+          in: query
+          required: false
+          description: "DKK in minor units (øre), inclusive"
+          schema:
+            type: integer
+            minimum: 0
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: page_size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        "200":
+          description: One page of listings, best match first
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/SearchResults"
+              example:
+                items:
+                  - product_id: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+                    name: Rolex Submariner Date 126610LN
+                    slug: rolex-submariner-date-126610ln
+                    brand_id: "5e0c7a1b-3f2d-4c6e-9b8a-1d2e3f4a5b6c"
+                    brand_name: Rolex
+                    brand_slug: rolex
+                    model: Submariner Date
+                    reference: 126610LN
+                    year: 2023
+                    size_mm: 41
+                    condition: 1
+                    limited: false
+                    price:
+                      amount_minor: 11500000
+                      currency: DKK
+                    availability: available
+                    thumbnail_url: "https://cdn.example.com/products/126610ln-1.jpg"
+                page: 1
+                page_size: 20
+                total: 1
+        "422":
+          description: Invalid request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+              example:
+                type: "https://limitedwatches.dk/problems/validation_error"
+                title: Invalid request
+                status: 422
+                detail: Invalid request.
+                instance: /search
 components:
   schemas:
     Money:
@@ -754,14 +1212,11 @@ components:
           "$ref": "#/components/schemas/Money"
         total:
           "$ref": "#/components/schemas/Money"
-        total_charged:
-          "$ref": "#/components/schemas/Money"
       required:
         - subtotal
         - shipping
         - total
-        - total_charged
-      description: "subtotal/shipping/total in DKK (incl. VAT); total_charged in the currency the customer pays in."
+      description: "subtotal/shipping/total in DKK (incl. VAT)."
     OrderStatus:
       type: string
       enum:
@@ -1045,6 +1500,141 @@ components:
         - availability
         - thumbnail_url
       description: "Small read model for other services (Messaging, Editorial, Auctions)."
+    OrderPage:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Order"
+        page:
+          type: integer
+          minimum: 1
+        page_size:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+      required:
+        - items
+        - page
+        - page_size
+        - total
+    UpdateOrderStatusRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          enum:
+            - PENDING
+            - PROCESSING
+            - SHIPPED
+            - DELIVERED
+            - CANCELLED
+            - RETURNED
+            - REFUNDED
+          description: "Any OrderStatus except RESERVED and EXPIRED, which only the system sets"
+      required:
+        - status
+    ProductListing:
+      type: object
+      additionalProperties: false
+      description: "A document in Search's product_listings read model, built from catalog.events."
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        brand_id:
+          type:
+            - string
+            - "null"
+          format: uuid
+        brand_name:
+          type:
+            - string
+            - "null"
+        brand_slug:
+          type:
+            - string
+            - "null"
+        model:
+          type:
+            - string
+            - "null"
+        reference:
+          type:
+            - string
+            - "null"
+        year:
+          type:
+            - integer
+            - "null"
+        size_mm:
+          type:
+            - integer
+            - "null"
+        condition:
+          type:
+            - integer
+            - "null"
+        limited:
+          type:
+            - boolean
+            - "null"
+        price:
+          "$ref": "#/components/schemas/Money"
+        availability:
+          "$ref": "#/components/schemas/Availability"
+        thumbnail_url:
+          type:
+            - string
+            - "null"
+          format: uri
+      required:
+        - product_id
+        - name
+        - slug
+        - brand_id
+        - brand_name
+        - brand_slug
+        - model
+        - reference
+        - year
+        - size_mm
+        - condition
+        - limited
+        - price
+        - availability
+        - thumbnail_url
+    SearchResults:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ProductListing"
+        page:
+          type: integer
+          minimum: 1
+        page_size:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+      required:
+        - items
+        - page
+        - page_size
+        - total
     StripeEvent:
       type: object
       description: "Stripe Event object (owned by Stripe, see https://docs.stripe.com/api/events/object)"

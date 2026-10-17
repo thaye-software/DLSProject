@@ -1044,14 +1044,11 @@ components:
           "$ref": "#/components/schemas/Money"
         total:
           "$ref": "#/components/schemas/Money"
-        total_charged:
-          "$ref": "#/components/schemas/Money"
       required:
         - subtotal
         - shipping
         - total
-        - total_charged
-      description: "subtotal/shipping/total in DKK (incl. VAT); total_charged in the currency the customer pays in."
+      description: "subtotal/shipping/total in DKK (incl. VAT)."
     OrderStatus:
       type: string
       enum:
@@ -2624,9 +2621,6 @@ components:
                   amount_minor: 30000
                   currency: DKK
                 total:
-                  amount_minor: 11530000
-                  currency: DKK
-                total_charged:
                   amount_minor: 11530000
                   currency: DKK
               billing_address:

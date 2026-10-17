@@ -47,7 +47,7 @@ Queue per consumer: `<consumer>.<exchange>`, with a dead-letter queue `.dlq`.
 - `OrderStatus`: `RESERVED | EXPIRED | PENDING | PROCESSING | SHIPPED | DELIVERED | CANCELLED | RETURNED | REFUNDED`
 - `OrderLine`: `product_id`, `product_name`, `quantity`, `thumbnail_url?`
 - `ItemQuantity`: `product_id`, `quantity`
-- `OrderTotals`: `subtotal`, `shipping`, `total`, `total_charged` (all `Money`)
+- `OrderTotals`: `subtotal`, `shipping`, `total` (all `Money`)
 - `Address`: `first_name`, `middle_name?`, `last_name`, `address_line_1`, `address_line_2?`, `city`, `zip_code`, `state_province?`, `country_code` (ISO 3166-1)
 
 ### State machine (inferred from the events; the sheet gives the statuses, not the transitions)
@@ -62,29 +62,13 @@ DELIVERED --> RETURNED
 
 ### HTTP
 
-- Via gateway: `GET /orders`, `GET /orders/{id}`, `POST /orders`, `POST /orders/{id}/cancel`, `PATCH /orders/{id}/status` (admin). Proposed, not on the sheet.
-- Outbound to Catalog: reserve stock. Also ipapi.co geo-IP.
-- Inbound from Payment: Payment calls Orders. Endpoint to define.
+See `docs/contracts/openapi.yaml`: `POST /orders`, `GET /orders`, `GET /orders/{order_id}`, `POST /orders/{order_id}/cancel`, `PATCH /orders/{order_id}/status` (admin), and internal `GET /internal/orders/{order_id}/payment-details` (Payment). Outbound: Catalog `POST /internal/reservations` and `DELETE /internal/reservations/{order_id}`; ipapi.co geo-IP.
 
 ## Data model (PostgreSQL)
 
-- `orders`: `id`, `REF user_id`, `status varchar`, `shipping_price_dkk`, `sub_total_dkk`, `total_price_dkk`, `FK delivery_address_id`, `FK billing_address_id`, `created_at`, `customer_email` (new)
-- `order_items`: `id`, `FK order_id`, `REF product_id`, `quantity`, `product_name` (new), `thumbnail_url` (new)
+- `orders`: `id`, `REF user_id`, `status varchar`, `shipping_price_dkk`, `sub_total_dkk`, `total_price_dkk`, `FK delivery_address_id`, `FK billing_address_id`, `created_at`, `customer_email` (new), `expires_at` (new), `idempotency_key` (new)
+- `order_items`: `id`, `FK order_id`, `REF product_id`, `quantity`, `product_name` (new), `thumbnail_url` (new), `unit_price_dkk` (new), `vat_rate_percent` (new)
 - `order_addresses`: `id`, `first_name`, `middle_name`, `last_name`, `address_line_1`, `address_line_2`, `city`, `zip_code`, `state_province`, `country`
 - `countries` (from Localization): `id`, `name`, `abbreviation`, `vat_rate`. Currencies were dropped from the ERD (DKK only).
 
-### Gaps between the ERD and the events
-
-1. **Order has no unit price.** `order_items` has no price column and `OrderLine` carries none either, so line prices can't be shown after the product price changes. Add a price snapshot, or confirm line prices aren't needed.
-2. **No reservation expiry.** `orders` has no `reserved_at` or `expires_at`, which `order_expired` and the `RESERVED` timeout need.
-3. **No payment link.** No `payment_intent_id` or refund table, though `payment_*` and `refund_requested` events carry `payment_intent_id` and `refund_request_id`. `refund_requested` needs `paid_after_expiry` handled.
-4. **Money mapping.** The ERD is DKK only, so every `Money` is `currency: "DKK"` and `OrderTotals.total_charged` equals `total`. The events still carry a currency field and `total_charged`, so either keep them as constants or drop them from the sheet. Decimal DKK in the tables vs `amount_minor` (øre) in events needs a conversion rule.
-5. **Order status** is `varchar`: add a check constraint for the nine `OrderStatus` values.
-
-## Open points
-
-1. **Payment → Orders HTTP call:** what does Payment need (amount and status before creating the PaymentIntent?)? Define the endpoint.
-2. **Reservation TTL:** how long does a `RESERVED` order live before `order_expired`?
-3. **Auctions with `no_bids`:** `winner_user_id` is null, so Orders must ignore those events.
-4. **Auction orders:** the items and address come from where? The event has no address, so does the winner still have to supply it before paying?
-5. **Who triggers `PROCESSING`, `SHIPPED`, `DELIVERED`, `RETURNED`:** assumed admin through `PATCH /orders/{id}/status`, each publishing `order_status_changed`.
+Proposed outbox and inbox tables and other open questions: see `DECISIONS.md` in the repo root.

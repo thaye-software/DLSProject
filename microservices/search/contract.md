@@ -46,15 +46,14 @@ Snapshots are full, so handlers are idempotent upserts. Use `version` to ignore 
 
 Nothing.
 
-### HTTP (via gateway; proposed, not on the sheet)
+### HTTP
 
-`GET /search?q=&type=&brand=&minPrice=&maxPrice=&availability=&page=1&pageSize=20`, returning `{items, page, pageSize, total}` built from the Mongo read model. Redis caches results by query string, invalidated on any `catalog.events` message (TTL as a safety net).
+See `docs/contracts/openapi.yaml`: public `GET /search` (`q`, `brand`, `availability`, `min_price`, `max_price` in øre, `page`, `page_size`), returning `SearchResults` of `ProductListing`. Redis caches results by query string, invalidated on any `catalog.events` message (TTL as a safety net).
 
 ## Data model (MongoDB + Redis)
 
-`product_listings` (new), keyed by `REF product_id`: `name`, `slug`, `REF brand_id`, `brand_name`, `brand_slug`, `model`, `reference`, `year`, `size`, `condition`, `limited`, `price_dkk`, `availability`, `thumbnail_url`, `version`, `updated_at`.
+`product_listings` (new), keyed by `REF product_id`: `name`, `slug`, `REF brand_id`, `brand_name`, `brand_slug`, `model`, `reference`, `year`, `size_mm`, `condition`, `limited`, `price_dkk`, `availability`, `thumbnail_url`, `version`, `updated_at`.
 
 ## Open points
 
-1. **Brand renames:** products carry the brand inside `WatchDetails`, so a `brand_updated` means re-denormalising many listings.
-2. **Search listing vs events:** the listing has no `stock`, `description` or `images`, `condition` is an int where `WatchDetails.condition` is a string, and `size` vs `size_mm`. Keep only what search needs and normalise on ingest.
+See `DECISIONS.md` in the repo root.
