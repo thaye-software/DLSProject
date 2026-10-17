@@ -361,7 +361,7 @@ paths:
         - Orders
       operationId: cancelOrder
       summary: Cancel an order (owner)
-      description: "The customer cancels their own order while it is RESERVED or PENDING. Sets CANCELLED and publishes order_cancelled (reason customer_request); if it was paid (PENDING) also refund_requested (reason cancelled_after_payment). Idempotent: cancelling a CANCELLED order returns it unchanged. Admins cancel through PATCH /orders/{order_id}/status."
+      description: "The customer cancels their own order, only while it is RESERVED (not yet paid). Sets CANCELLED and publishes order_cancelled (reason customer_request, was_paid false); Catalog releases the stock and Payment cancels the open PaymentIntent. Idempotent: cancelling a CANCELLED order returns it unchanged. Once the order is paid (PENDING or later) only an admin can cancel it, through PATCH /orders/{order_id}/status."
       security:
         - userJwt: []
       parameters:
@@ -445,7 +445,7 @@ paths:
                 detail: Order not found.
                 instance: /orders/f47ac10b-58cc-4372-a567-0e02b2c3d479/cancel
         "409":
-          description: Order is past PENDING (or EXPIRED / REFUNDED)
+          description: Order is not RESERVED (already paid, expired, or past cancelling)
           content:
             application/problem+json:
               schema:
@@ -465,7 +465,7 @@ paths:
         - Orders
       operationId: updateOrderStatus
       summary: Change an order's status (admin)
-      description: "Replaces the monolith's changeOrderStatus. CANCELLED publishes order_cancelled (reason admin); any other change publishes order_status_changed, and Catalog puts back or takes the stock. RESERVED and EXPIRED are set only by the system. Setting the current status again is a no-op."
+      description: "Replaces the monolith's changeOrderStatus. CANCELLED publishes order_cancelled (reason admin), and refund_requested (reason cancelled_after_payment) if the order was paid; any other change publishes order_status_changed, and Catalog puts the stock back when the order leaves an active status. REFUNDED also publishes refund_requested (reason admin, full order total), so Payment refunds the money through Stripe; payment_refunded later confirms it and changes nothing. Allowed changes (forward only): PENDING → PROCESSING → SHIPPED → DELIVERED, DELIVERED → RETURNED, and CANCELLED or REFUNDED from any paid status (PENDING, PROCESSING, SHIPPED, DELIVERED, RETURNED); anything else is 409 invalid_status_transition. RESERVED, EXPIRED and PENDING are set only by the system. Setting the current status again is a no-op."
       security:
         - userJwt: []
       parameters:
@@ -569,7 +569,7 @@ paths:
                 detail: Order not found.
                 instance: /orders/f47ac10b-58cc-4372-a567-0e02b2c3d479/status
         "409":
-          description: The order is RESERVED or EXPIRED, so an admin cannot change it
+          description: Not an allowed change from the order's current status (forward only; RESERVED and EXPIRED orders cannot be changed)
           content:
             application/problem+json:
               schema:
@@ -1523,14 +1523,13 @@ components:
         status:
           type: string
           enum:
-            - PENDING
             - PROCESSING
             - SHIPPED
             - DELIVERED
             - CANCELLED
             - RETURNED
             - REFUNDED
-          description: "Any OrderStatus except RESERVED and EXPIRED, which only the system sets"
+          description: "RESERVED, EXPIRED and PENDING are set only by the system. Which changes are allowed from the current status is listed on the operation."
       required:
         - status
     ProductListing:

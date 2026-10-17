@@ -15,7 +15,7 @@
 - Messaging: MongoDB. Broadcasts via Supabase Realtime. Calls Catalog over HTTP.
 - Catalog: PostgreSQL. Supabase Storage (product images), Cloud AI provider. Callee of HTTP from Editorial, Messaging, Auctions and Orders.
 - Auctions: own DB. Calls Catalog over HTTP.
-- Orders: PostgreSQL. ipapi.co (geo-IP). Calls Catalog over HTTP to reserve stock. Payment calls Orders over HTTP.
+- Orders: PostgreSQL. Calls Catalog over HTTP to reserve stock. Payment calls Orders over HTTP.
 - Payment: stateless, no DB. Stripe (create intent out, webhook in).
 - Notif / Email: stateless, no DB. Resend (email).
 

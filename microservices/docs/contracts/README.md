@@ -117,11 +117,11 @@ Every message body is a CloudEvent. The AMQP content type is `application/cloude
 | `order_confirmed` | order.events | Orders | **Notif** sends the confirmation email (all data, including the recipient, is in the event). **Catalog** marks the products sold |
 | `order_cancelled` | order.events | Orders | **Catalog** releases stock. **Payment** cancels an open PaymentIntent |
 | `order_expired` | order.events | Orders | **Catalog** releases stock. **Payment** cancels the PaymentIntent |
-| `order_status_changed` | order.events | Orders | **Catalog** puts the stock back when an admin moves an order from an active status (PENDING, PROCESSING, SHIPPED, DELIVERED) to RETURNED or REFUNDED, and takes it again when an order goes back to an active status |
+| `order_status_changed` | order.events | Orders | **Catalog** puts the stock back when an admin moves an order from an active status (PENDING, PROCESSING, SHIPPED, DELIVERED) to RETURNED or REFUNDED. Changes only go forward, so an order never becomes active again |
 | `refund_requested` | order.events | Orders | **Payment** refunds through Stripe |
 | `payment_complete` | payment.events | Payment | **Orders** RESERVED → PENDING plus `order_confirmed`, or `refund_requested` if the order already expired |
 | `payment_failed` | payment.events | Payment | **Orders** records the attempt (order stays RESERVED, so the customer can retry) |
-| `payment_refunded` | payment.events | Payment | **Orders** sets the order to REFUNDED |
+| `payment_refunded` | payment.events | Payment | **Orders** sets the order to REFUNDED (a no-op if an admin already set it) |
 
 The full payload schema and an example of each event are in `asyncapi.yaml` under `components/schemas/<Event>Data` and `components/messages`.
 
@@ -136,7 +136,7 @@ Notif only sends the emails the monolith sends today: the order confirmation (fr
 | Create order | `POST /orders` (`Idempotency-Key`) | Orders | Public, via gateway, user JWT |
 | Get order | `GET /orders/{order_id}` | Orders | Public, via gateway, user JWT |
 | List orders | `GET /orders` | Orders | Public, via gateway, user JWT (own orders; admin: all) |
-| Cancel order | `POST /orders/{order_id}/cancel` | Orders | Public, via gateway, user JWT (owner) |
+| Cancel order | `POST /orders/{order_id}/cancel` | Orders | Public, via gateway, user JWT (owner, only while RESERVED) |
 | Change order status | `PATCH /orders/{order_id}/status` | Orders | Public, via gateway, user JWT (admin) |
 | Reserve stock | `POST /internal/reservations` (`Idempotency-Key` = order id) | Catalog | Internal, service JWT |
 | Roll back a reservation | `DELETE /internal/reservations/{order_id}` | Catalog | Internal, service JWT |
@@ -199,7 +199,7 @@ sequenceDiagram
 **Compensation paths:**
 - **No payment within 30 min.** Orders → `order_expired`. Catalog releases the stock (`product_availability_changed` → available) and Payment cancels the PaymentIntent.
 - **Payment arrives after expiry.** Orders receives `payment_complete` for an EXPIRED order and publishes `refund_requested`. Payment refunds through Stripe, then publishes `payment_refunded`, and Orders sets the order to REFUNDED.
-- **Admin changes an order's status.** As in the monolith's `changeOrderStatus`: CANCELLED publishes `order_cancelled`; any other change publishes `order_status_changed`, and Catalog adds or removes the stock. If the watch was sold again before an order is reactivated, Catalog cannot take it, and the message goes to the dead-letter queue for an admin (the monolith rolled the status change back instead).
+- **Admin changes an order's status.** Unlike the monolith's `changeOrderStatus`, which allowed any change, statuses only go forward: PENDING → PROCESSING → SHIPPED → DELIVERED → RETURNED, plus CANCELLED or REFUNDED from any paid status. CANCELLED publishes `order_cancelled`; any other change publishes `order_status_changed`, and Catalog puts the stock back when the order leaves an active status. Setting REFUNDED also publishes `refund_requested` (reason `admin`), so Payment refunds the money through Stripe; the later `payment_refunded` changes nothing.
 - **Orders crashes after reserving.** Orders calls `DELETE /internal/reservations/{order_id}`. As a safety net, Catalog itself releases any reservation still active 5 min after its `expires_at`.
 
 ---

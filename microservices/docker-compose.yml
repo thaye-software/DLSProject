@@ -10,6 +10,44 @@ services:
       timeout: 5s
       retries: 12
 
+  orders-db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: orders
+      POSTGRES_PASSWORD: orders
+      POSTGRES_DB: orders
+    ports:
+      - "5433:5432"
+    volumes:
+      - orders-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "orders", "-d", "orders"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  orders:
+    build: ./orders
+    env_file:
+      - path: ./orders/.env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://orders:orders@orders-db:5432/orders
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    ports:
+      - "3000:3000"
+    depends_on:
+      orders-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
   payment:
     build: ./payments
     env_file:
@@ -17,6 +55,7 @@ services:
         required: false
     environment:
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      ORDERS_URL: http://orders:3000
     ports:
       - "3006:3006"
     depends_on:
@@ -47,3 +86,6 @@ services:
       interval: 10s
       timeout: 3s
       retries: 3
+
+volumes:
+  orders-db-data:

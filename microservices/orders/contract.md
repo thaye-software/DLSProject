@@ -30,7 +30,7 @@ Queue per consumer: `<consumer>.<exchange>`, with a dead-letter queue `.dlq`.
 | `payment_complete` | Payment | `order_id` | `payment_intent_id`, `order_id`, `user_id`, `amount: Money`, `paid_at` | `RESERVED` → `PENDING`, or request a refund if already expired |
 | `payment_failed` | Payment | `order_id` | `payment_intent_id`, `order_id`, `user_id`, `amount: Money`, `failure_code?`, `failure_message?`, `failed_at` | record the attempt, order stays `RESERVED` |
 | `payment_refunded` | Payment | `order_id` | `payment_intent_id`, `order_id`, `user_id`, `refund_request_id?`, `amount: Money`, `stripe_refund_id`, `refunded_at` | set order `REFUNDED` |
-| `user_deleted` | Users | `user_id` | `user_id`, `version`, `deleted_at` | anonymise personal data |
+| `user_deleted` | Users | `user_id` | `user_id`, `version`, `deleted_at` | anonymise: `orders.customer_email`, and in `order_addresses` the names and street (`first_name`, `middle_name`, `last_name`, `address_line_1`, `address_line_2`). `user_id`, `city`, `zip_code`, `state_province` and `country` stay (for statistics). |
 
 ### Publishes on `order.events`
 
@@ -39,7 +39,7 @@ Queue per consumer: `<consumer>.<exchange>`, with a dead-letter queue `.dlq`.
 | `order_confirmed` | `order_id` | `order_id`, `user_id`, `customer_email`, `status` (`"PENDING"`), `items: OrderLine[]`, `totals: OrderTotals`, `billing_address: Address`, `delivery_address: Address`, `confirmed_at` | Notif (confirmation email), Catalog (mark products sold) |
 | `order_cancelled` | `order_id` | `order_id`, `user_id`, `previous_status`, `reason` (`customer_request`\|`admin`), `items: ItemQuantity[]`, `was_paid: bool`, `cancelled_at` | Catalog (release stock), Payment (cancel open PaymentIntent) |
 | `order_expired` | `order_id` | `order_id`, `user_id`, `items: ItemQuantity[]`, `reserved_at`, `expired_at` | Catalog (release stock), Payment (cancel PaymentIntent) |
-| `order_status_changed` | `order_id` | `order_id`, `user_id`, `previous_status`, `status`, `items: ItemQuantity[]`, `changed_by`, `changed_at` | Catalog (put stock back or take it again) |
+| `order_status_changed` | `order_id` | `order_id`, `user_id`, `previous_status`, `status`, `items: ItemQuantity[]`, `changed_by`, `changed_at` | Catalog (put stock back when the order leaves an active status) |
 | `refund_requested` | `order_id` | `refund_request_id`, `order_id`, `user_id`, `amount: Money`, `reason` (`paid_after_expiry`\|`cancelled_after_payment`\|`admin`), `requested_at` | Payment (refund through Stripe) |
 
 ### Types
@@ -50,19 +50,20 @@ Queue per consumer: `<consumer>.<exchange>`, with a dead-letter queue `.dlq`.
 - `OrderTotals`: `subtotal`, `shipping`, `total` (all `Money`)
 - `Address`: `first_name`, `middle_name?`, `last_name`, `address_line_1`, `address_line_2?`, `city`, `zip_code`, `state_province?`, `country_code` (ISO 3166-1)
 
-### State machine (inferred from the events; the sheet gives the statuses, not the transitions)
+### State machine (forward only; anything else is 409 `invalid_status_transition`)
 
 ```
-RESERVED --payment_complete--> PENDING --admin--> PROCESSING --> SHIPPED --> DELIVERED
+RESERVED --payment_complete--> PENDING --admin--> PROCESSING --admin--> SHIPPED --admin--> DELIVERED --admin--> RETURNED
 RESERVED --timeout--> EXPIRED (order_expired)
 EXPIRED + payment_complete --> refund_requested(paid_after_expiry)
-PENDING/PROCESSING --cancel--> CANCELLED (+ refund_requested if was_paid) --payment_refunded--> REFUNDED
-DELIVERED --> RETURNED
+RESERVED --customer cancel--> CANCELLED (order_cancelled, reason customer_request; nothing to refund)
+PENDING/PROCESSING/SHIPPED/DELIVERED/RETURNED --admin cancel--> CANCELLED (+ refund_requested, reason cancelled_after_payment) --payment_refunded--> REFUNDED
+same paid statuses --admin REFUNDED--> REFUNDED + order_status_changed + refund_requested(admin); the later payment_refunded is a no-op
 ```
 
 ### HTTP
 
-See `docs/contracts/openapi.yaml`: `POST /orders`, `GET /orders`, `GET /orders/{order_id}`, `POST /orders/{order_id}/cancel`, `PATCH /orders/{order_id}/status` (admin), and internal `GET /internal/orders/{order_id}/payment-details` (Payment). Outbound: Catalog `POST /internal/reservations` and `DELETE /internal/reservations/{order_id}`; ipapi.co geo-IP.
+See `docs/contracts/openapi.yaml`: `POST /orders`, `GET /orders`, `GET /orders/{order_id}`, `POST /orders/{order_id}/cancel`, `PATCH /orders/{order_id}/status` (admin), and internal `GET /internal/orders/{order_id}/payment-details` (Payment). Outbound: Catalog `POST /internal/reservations` and `DELETE /internal/reservations/{order_id}`
 
 ## Data model (PostgreSQL)
 

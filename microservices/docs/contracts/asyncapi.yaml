@@ -2715,7 +2715,7 @@ components:
     OrderStatusChanged:
       name: order_status_changed
       title: order_status_changed
-      summary: "An admin changed an order's status in the dashboard (a change to CANCELLED publishes order_cancelled instead). Catalog applies the monolith's stock rule: from an active status (PENDING, PROCESSING, SHIPPED, DELIVERED) to an inactive one (RETURNED, REFUNDED) puts the stock back; from an inactive status back to an active one takes it again."
+      summary: "An admin changed an order's status in the dashboard (a change to CANCELLED publishes order_cancelled instead). Catalog puts the stock back when the order moves from an active status (PENDING, PROCESSING, SHIPPED, DELIVERED) to an inactive one (RETURNED, REFUNDED). Status changes only go forward, so an order never becomes active again."
       contentType: application/cloudevents+json
       payload:
         "$ref": "#/components/schemas/OrderStatusChangedEvent"
@@ -2750,7 +2750,7 @@ components:
     RefundRequested:
       name: refund_requested
       title: refund_requested
-      summary: "Money must go back: a payment arrived after the order expired, or a paid order was cancelled. Payment finds the PaymentIntent in Stripe by metadata.order_id; Orders does not store it."
+      summary: "Money must go back: a payment arrived after the order expired, a paid order was cancelled, or an admin set an order to REFUNDED. Payment finds the PaymentIntent in Stripe by metadata.order_id; Orders does not store it."
       contentType: application/cloudevents+json
       payload:
         "$ref": "#/components/schemas/RefundRequestedEvent"
