@@ -8,15 +8,8 @@ Things that are proposed or unclear and still need a team decision. When one is 
 `PATCH /orders/{order_id}/status` with `REFUNDED` currently publishes only `order_status_changed`, as the monolith did. To actually refund the money, Orders would also publish `refund_requested` (reason `admin`, which the enum already has).
 **Recommendation:** publish `refund_requested`, and set `REFUNDED` only when `payment_refunded` arrives. Otherwise the status says refunded while the money isn't.
 
-### 2. Outbox, inbox and status check for the Orders ERD
-Proposed for the Orders ERD:
-
-| Table | Columns | Why |
-|---|---|---|
-| `outbox` (new) | `id uuid PK`, `type varchar`, `payload jsonb`, `created_at timestamp`, `published_at timestamp NULL` | Transactional outbox (contracts README §3). |
-| `processed_events` (new) | `event_id uuid PK`, `type varchar`, `processed_at timestamp` | Idempotent inbox (contracts README §3). |
-
-Plus a check constraint on `orders.status` for the nine `OrderStatus` values.
+### 2. Status check constraint on `orders.status`
+Add a check constraint for the nine `OrderStatus` values, as the monolith had (`orders_status_check`). Not shown in the ERD.
 
 ### 3. When can a customer cancel?
 `POST /orders/{order_id}/cancel` allows `RESERVED` and `PENDING` (paid, not yet processing). A cancel while `PENDING` triggers a refund. Confirm that window, or limit it to `RESERVED` (unpaid) only.
@@ -35,20 +28,17 @@ The v3 diagram and `CLAUDE.md` have Orders calling ipapi.co. In the monolith tha
 
 ## Search
 
-### 8. Indexes and inbox for `product_listings`
+### 8. Indexes for Search
 - Add a text index on `name`, `brand_name` and `reference` for `q`, and an index on `brand_id` for `brand_updated`.
-- Add a `processed_events` collection: `_id` = event id, `processed_at` with a TTL index.
+- Add a TTL index on `processed_events.processed_at` (the collection itself is in the ERD).
 
 ## Cross-team
 
-### 9. Outbox and inbox tables in the other services' ERDs
-The contracts README requires an `outbox` for every service that publishes and has a database (Users, Catalog, Auctions, Orders), and a `processed_events` inbox for every consumer with a database (Orders, Catalog, Search, Messaging, Editorial, Auctions). Only Orders and Search are proposed above.
-
-### 10. `messaging/contract.md` envelope
+### 9. `messaging/contract.md` envelope
 It shows `"source": "users"` and leaves out `subject`, `dataversion`, `correlationid` and `causationid`. That doesn't match the CloudEvents envelope in `asyncapi.yaml` (`source: /services/<publisher>`).
 
-### 11. Auctions vs. normal sales
+### 10. Auctions vs. normal sales
 A watch on auction should not be sellable through checkout at the same time. Either Auctions reserves it in Catalog when the auction starts, or Catalog marks it `hidden`. Needs one more contract once decided. (Moved from the contracts README.)
 
-### 12. Auctions database
+### 11. Auctions database
 The architecture diagram says "DB". The monolith keeps `auctions` in PostgreSQL, so PostgreSQL is the no-change choice. (Moved from the contracts README.)

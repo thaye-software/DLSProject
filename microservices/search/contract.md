@@ -54,6 +54,8 @@ See `docs/contracts/openapi.yaml`: public `GET /search` (`q`, `brand`, `availabi
 
 `product_listings` (new), keyed by `REF product_id`: `name`, `slug`, `REF brand_id`, `brand_name`, `brand_slug`, `model`, `reference`, `year`, `size_mm`, `condition`, `limited`, `price_dkk`, `availability`, `thumbnail_url`, `version`, `updated_at`.
 
+`processed_events` (`event_id`, `type`, `processed_at`, with a TTL index): the idempotent inbox from the contracts README §3. Search publishes nothing, so it has no outbox.
+
 ## Open points
 
 See `DECISIONS.md` in the repo root.

@@ -69,6 +69,7 @@ See `docs/contracts/openapi.yaml`: `POST /orders`, `GET /orders`, `GET /orders/{
 - `orders`: `id`, `REF user_id`, `status varchar`, `shipping_price_dkk`, `sub_total_dkk`, `total_price_dkk`, `FK delivery_address_id`, `FK billing_address_id`, `created_at`, `customer_email` (new), `expires_at` (new), `idempotency_key` (new)
 - `order_items`: `id`, `FK order_id`, `REF product_id`, `quantity`, `product_name` (new), `thumbnail_url` (new), `unit_price_dkk` (new)
 - `order_addresses`: `id`, `first_name`, `middle_name`, `last_name`, `address_line_1`, `address_line_2`, `city`, `zip_code`, `state_province`, `country`
+- `outbox` (`id`, `type`, `payload jsonb`, `created_at`, `published_at`) and `processed_events` (`event_id`, `type`, `processed_at`): the transactional outbox and idempotent inbox from the contracts README §3.
 - No `countries` table: countries are ISO 3166-1 alpha-2 codes (`order_addresses.country`, `users.country_code`). VAT is not calculated, so prices are final.
 
 Proposed outbox and inbox tables and other open questions: see `DECISIONS.md` in the repo root.
