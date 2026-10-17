@@ -18,8 +18,9 @@ To browse them: paste `asyncapi.yaml` into [AsyncAPI Studio](https://studio.asyn
 |---|---|
 | Ids | UUID v4 strings. A service only creates ids for its own aggregates. |
 | Time | ISO 8601 in UTC, e.g. `2026-10-14T10:00:00Z`. |
+| VAT | Not calculated anywhere: every price is final, as listed. |
 | Money | `{ "amount_minor": 11500000, "currency": "DKK" }`: an integer in minor units (øre / cents) plus an ISO 4217 code. Never floats. The monolith already stores cents. |
-| Countries | ISO 3166-1 alpha-2 (`DK`). |
+| Countries | ISO 3166-1 alpha-2 (`DK`), stored as a plain code (`users.country_code`); there is no countries table. |
 | Field names | `snake_case` in all payloads. |
 | Unknown fields | Schemas use `additionalProperties: false` so the contract is exact. Consumers should still **ignore** fields they don't know, so adding a field is a non-breaking change. |
 | Versioning | Adding an optional field: same event type, bump the spec `version`. Removing or renaming a field, or changing its meaning: publish a **new event type** (`order_confirmed.v2`) alongside the old one until all consumers have moved. |

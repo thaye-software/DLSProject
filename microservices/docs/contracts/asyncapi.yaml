@@ -1048,7 +1048,7 @@ components:
         - subtotal
         - shipping
         - total
-      description: "subtotal/shipping/total in DKK (incl. VAT)."
+      description: "subtotal/shipping/total in DKK. Prices are final: no VAT is calculated."
     OrderStatus:
       type: string
       enum:

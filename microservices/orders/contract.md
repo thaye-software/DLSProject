@@ -67,8 +67,8 @@ See `docs/contracts/openapi.yaml`: `POST /orders`, `GET /orders`, `GET /orders/{
 ## Data model (PostgreSQL)
 
 - `orders`: `id`, `REF user_id`, `status varchar`, `shipping_price_dkk`, `sub_total_dkk`, `total_price_dkk`, `FK delivery_address_id`, `FK billing_address_id`, `created_at`, `customer_email` (new), `expires_at` (new), `idempotency_key` (new)
-- `order_items`: `id`, `FK order_id`, `REF product_id`, `quantity`, `product_name` (new), `thumbnail_url` (new), `unit_price_dkk` (new), `vat_rate_percent` (new)
+- `order_items`: `id`, `FK order_id`, `REF product_id`, `quantity`, `product_name` (new), `thumbnail_url` (new), `unit_price_dkk` (new)
 - `order_addresses`: `id`, `first_name`, `middle_name`, `last_name`, `address_line_1`, `address_line_2`, `city`, `zip_code`, `state_province`, `country`
-- `countries` (from Localization): `id`, `name`, `abbreviation`, `vat_rate`. Currencies were dropped from the ERD (DKK only).
+- No `countries` table: countries are ISO 3166-1 alpha-2 codes (`order_addresses.country`, `users.country_code`). VAT is not calculated, so prices are final.
 
 Proposed outbox and inbox tables and other open questions: see `DECISIONS.md` in the repo root.

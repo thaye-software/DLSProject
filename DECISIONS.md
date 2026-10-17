@@ -30,22 +30,25 @@ The contracts say every service "anonymises what it holds and keeps the id". For
 ### 6. `offer_token` format
 `CreateOrderRequest.offer_token` is a signed offer from Messaging (agreed price) that Orders verifies. No contract defines its claims, signing algorithm or key. Needs an agreement with whoever owns Messaging.
 
+### 7. Is the ipapi.co geo-IP call still needed?
+The v3 diagram and `CLAUDE.md` have Orders calling ipapi.co. In the monolith that call picked the visitor's country to show a VAT-adjusted price. With VAT dropped there is no known use left for it. Remove it from the diagram, `CLAUDE.md` and `orders/contract.md`, or name what it is for (for example pre-filling the delivery country).
+
 ## Search
 
-### 7. Indexes and inbox for `product_listings`
+### 8. Indexes and inbox for `product_listings`
 - Add a text index on `name`, `brand_name` and `reference` for `q`, and an index on `brand_id` for `brand_updated`.
 - Add a `processed_events` collection: `_id` = event id, `processed_at` with a TTL index.
 
 ## Cross-team
 
-### 8. Outbox and inbox tables in the other services' ERDs
+### 9. Outbox and inbox tables in the other services' ERDs
 The contracts README requires an `outbox` for every service that publishes and has a database (Users, Catalog, Auctions, Orders), and a `processed_events` inbox for every consumer with a database (Orders, Catalog, Search, Messaging, Editorial, Auctions). Only Orders and Search are proposed above.
 
-### 9. `messaging/contract.md` envelope
+### 10. `messaging/contract.md` envelope
 It shows `"source": "users"` and leaves out `subject`, `dataversion`, `correlationid` and `causationid`. That doesn't match the CloudEvents envelope in `asyncapi.yaml` (`source: /services/<publisher>`).
 
-### 10. Auctions vs. normal sales
+### 11. Auctions vs. normal sales
 A watch on auction should not be sellable through checkout at the same time. Either Auctions reserves it in Catalog when the auction starts, or Catalog marks it `hidden`. Needs one more contract once decided. (Moved from the contracts README.)
 
-### 11. Auctions database
+### 12. Auctions database
 The architecture diagram says "DB". The monolith keeps `auctions` in PostgreSQL, so PostgreSQL is the no-change choice. (Moved from the contracts README.)
