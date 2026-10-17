@@ -3,7 +3,7 @@ import type { InsertResult, OrderPage, OrderQuery, OrderRepository } from "../..
 import type { Address, Order, OrderStatus } from "../../domain/order.js";
 import type { Database } from "./prisma.js";
 
-const orderWithRelations = {
+export const orderWithRelations = {
   items: true,
   billingAddress: true,
   deliveryAddress: true,
@@ -115,8 +115,8 @@ function toAddress(row: AddressRow): Address {
   };
 }
 
-function toOrder(row: OrderRow): Order {
-  // shortcut: every order has both addresses until auction orders exist (DECISIONS.md item 3), revisit then.
+export function toOrder(row: OrderRow): Order {
+  // shortcut: every order has both addresses until auction orders exist ("Auction orders" in DECISIONS.md), revisit then.
   if (!row.billingAddress || !row.deliveryAddress) throw new Error(`Order ${row.id} has no billing or delivery address`);
   return {
     id: row.id,

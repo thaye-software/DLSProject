@@ -96,7 +96,7 @@ export function createApp({
       return;
     }
     if (body.data.offer_token !== null) {
-      // shortcut: offers are rejected until the offer_token format is agreed (DECISIONS.md item 4).
+      // shortcut: offers are rejected until the offer_token format is agreed ("offer_token format" in DECISIONS.md).
       sendValidationProblem(response, instance, "offer_token: offers are not supported yet; send null.");
       return;
     }

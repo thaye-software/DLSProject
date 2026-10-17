@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { PaymentDetails } from "../../application/get-payment-details.js";
+import { addressData, dkk } from "../../domain/order-event.js";
 import { ORDER_STATUSES, type Address, type Order } from "../../domain/order.js";
 
 // Requests: CreateOrderRequest and Address in docs/contracts/openapi.yaml.
@@ -54,22 +55,6 @@ export function toAddress(json: z.infer<typeof addressSchema>): Address {
 }
 
 // Responses: the Order schema in docs/contracts/openapi.yaml.
-const dkk = (amountMinor: number) => ({ amount_minor: amountMinor, currency: "DKK" });
-
-function addressJson(address: Address) {
-  return {
-    first_name: address.firstName,
-    middle_name: address.middleName,
-    last_name: address.lastName,
-    address_line_1: address.addressLine1,
-    address_line_2: address.addressLine2,
-    city: address.city,
-    zip_code: address.zipCode,
-    state_province: address.stateProvince,
-    country_code: address.countryCode,
-  };
-}
-
 export function orderJson(order: Order) {
   return {
     order_id: order.id,
@@ -87,8 +72,8 @@ export function orderJson(order: Order) {
       shipping: dkk(order.shippingPriceDkk),
       total: dkk(order.totalPriceDkk),
     },
-    billing_address: addressJson(order.billingAddress),
-    delivery_address: addressJson(order.deliveryAddress),
+    billing_address: addressData(order.billingAddress),
+    delivery_address: addressData(order.deliveryAddress),
     created_at: order.createdAt.toISOString(),
     // The contract only shows expires_at while the order is RESERVED.
     expires_at: order.status === "RESERVED" && order.expiresAt ? order.expiresAt.toISOString() : null,

@@ -13,11 +13,15 @@ Contracts: `contract.md` (summary), `../docs/contracts/openapi.yaml` and `../doc
 | HTTP in | `GET /orders/{order_id}` | Owner or admin. `404` for someone else's order, so ids can't be probed. |
 | HTTP in | `GET /internal/orders/{order_id}/payment-details` | Internal, for Payment only: service JWT with `iss` payment, `aud` orders, at most 60 s lifetime, signed with `INTERNAL_JWT_SECRET`; `401` otherwise. `200` with the amount due only while the order is `RESERVED` and before `expires_at`, `409` otherwise, `404` if unknown. |
 | HTTP in | `GET /health` | `200` when RabbitMQ and PostgreSQL are both up. |
+| RabbitMQ in | `payment_complete`, `payment_failed`, `payment_refunded` on `payment.events` | Queue `orders.payment.events`, dead letters to `orders.payment.events.dlq`. `payment_complete`: `RESERVED` → `PENDING` plus `order_confirmed` (also just after `expires_at`, as long as the sweeper hasn't expired it); for an `EXPIRED` or `CANCELLED` order a `refund_requested` instead; already paid orders are ignored. `payment_failed`: logged, the order stays `RESERVED`. `payment_refunded`: the order becomes `REFUNDED`. An unknown order is retried, then dead-lettered. |
+| Publishes | `order_confirmed`, `refund_requested` on `order.events` | Through the outbox (see below). |
 | HTTP out | Catalog `POST /internal/reservations`, `DELETE /internal/reservations/{order_id}` | Service JWT (`iss` orders, `aud` catalog), see `docs/contracts/README.md` §5. |
 
 The order id is a UUIDv5 of the user id and `Idempotency-Key`, so concurrent retries share one Catalog reservation and only one insert wins.
 
-Not built yet: cancel, admin status changes, the expiry sweeper, the outbox relay and the event consumers.
+**Events.** Each handled event runs in one transaction: its CloudEvent id goes into `processed_events` (a redelivery is skipped), the status changes only if the order is still in the status the handler read (otherwise the transaction rolls back and the consumer retries), and the events to publish go into `outbox`. The outbox relay publishes pending rows every second, in the order they were written, with publisher confirms, and claims rows with `FOR UPDATE SKIP LOCKED` so several instances can run. Publishing is at least once; consumers drop duplicates by CloudEvent id.
+
+Not built yet: cancel, admin status changes, the expiry sweeper, and the `auction_complete` and `user_deleted` consumers.
 
 ## Configuration
 
