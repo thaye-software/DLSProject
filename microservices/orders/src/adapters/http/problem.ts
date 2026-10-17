@@ -6,6 +6,8 @@ export type Problem = {
   status: number;
   detail: string;
   instance: string;
+  // RFC 9457 extension members, e.g. unavailable_product_ids.
+  extensions?: Record<string, unknown>;
 };
 
 export function sendProblem(response: Response, problem: Problem): void {
@@ -19,6 +21,7 @@ export function sendProblem(response: Response, problem: Problem): void {
         status: problem.status,
         detail: problem.detail,
         instance: problem.instance,
+        ...problem.extensions,
       }),
     );
 }

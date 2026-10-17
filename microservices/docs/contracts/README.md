@@ -150,7 +150,7 @@ Notif only sends the emails the monolith sends today: the order confirmation (fr
 
 How identity and auth work across the gateway:
 
-- **Gateway → services:** the gateway verifies the Supabase JWT (cached signing keys) and forwards `X-User-Id`, `X-User-Role`, `X-User-Email` and `traceparent`. Services accept these headers only from the gateway.
+- **Gateway → services:** the gateway verifies the Supabase JWT (cached signing keys) and forwards `X-User-Id`, `X-User-Role` (`admin` or `customer`, the monolith's `users.role`), `X-User-Email` and `traceparent`. Services accept these headers only from the gateway.
 
 - **Service → service:** calls go to `/internal/*` paths with a service JWT. The gateway does not route `/internal/*`.
 

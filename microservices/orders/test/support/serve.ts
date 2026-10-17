@@ -6,6 +6,11 @@ import { createApp, type AppDependencies } from "../../src/adapters/http/app.js"
 const defaultDependencies: AppDependencies = {
   isBrokerConnected: () => true,
   isDatabaseReachable: async () => true,
+  createOrder: async () => {
+    throw new Error("createOrder not stubbed");
+  },
+  getOrder: async () => null,
+  listOrders: async () => ({ orders: [], total: 0 }),
 };
 
 let server: Server | undefined;

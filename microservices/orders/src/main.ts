@@ -1,5 +1,9 @@
+import { HttpCatalogClient } from "./adapters/catalog/http-catalog-client.js";
+import { PrismaOrderRepository } from "./adapters/db/prisma-order-repository.js";
 import { createDatabase, isDatabaseReachable } from "./adapters/db/prisma.js";
 import { createApp } from "./adapters/http/app.js";
+import { createOrder } from "./application/create-order.js";
+import { getOrder, listOrders } from "./application/read-orders.js";
 import { connectToBroker } from "./adapters/rabbitmq/connection.js";
 import { loadConfig } from "./config.js";
 
@@ -15,9 +19,16 @@ broker.onUnexpectedClose((error) => {
   process.exit(1);
 });
 
+const catalog = new HttpCatalogClient({ baseUrl: config.catalogUrl, jwtSecret: config.internalJwtSecret });
+const orders = new PrismaOrderRepository(database);
+
 const app = createApp({
   isBrokerConnected: broker.isOpen,
   isDatabaseReachable: () => isDatabaseReachable(database),
+  createOrder: (request) =>
+    createOrder(request, { catalog, orders, shippingPriceDkk: config.shippingPriceMinor, now: () => new Date() }),
+  getOrder: (orderId, viewer) => getOrder(orderId, viewer, orders),
+  listOrders: (request) => listOrders(request, orders),
 });
 const server = app.listen(config.port, () => {
   console.log(`orders listening on port ${config.port}`);

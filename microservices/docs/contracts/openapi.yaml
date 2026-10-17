@@ -162,6 +162,18 @@ paths:
                 status: 422
                 detail: Invalid request.
                 instance: /orders
+        "502":
+          description: "Catalog or the database did not answer; nothing was stored and any reservation was released. Safe to retry with the same Idempotency-Key."
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+              example:
+                type: "https://limitedwatches.dk/problems/upstream_unavailable"
+                title: Order could not be created
+                status: 502
+                detail: Catalog or the database did not answer as expected. Retry with the same Idempotency-Key.
+                instance: /orders
     get:
       tags:
         - Orders
@@ -282,6 +294,7 @@ paths:
         - Orders
       operationId: getOrder
       summary: Get an order (owner or admin)
+      description: "A customer gets 404 for another user's order, so order ids cannot be probed."
       security:
         - userJwt: []
       parameters:
@@ -340,8 +353,20 @@ paths:
                   country_code: DK
                 created_at: "2026-10-14T10:00:00Z"
                 expires_at: "2026-10-14T10:30:00Z"
+        "401":
+          description: Missing or invalid JWT
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+              example:
+                type: "https://limitedwatches.dk/problems/unauthorized"
+                title: Missing or invalid JWT
+                status: 401
+                detail: Missing or invalid JWT.
+                instance: /orders/f47ac10b-58cc-4372-a567-0e02b2c3d479
         "404":
-          description: Order not found
+          description: "Order not found, or owned by another user and the caller is not an admin"
           content:
             application/problem+json:
               schema:

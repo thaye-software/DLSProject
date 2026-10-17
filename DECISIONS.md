@@ -15,7 +15,7 @@ Add a check constraint for the nine `OrderStatus` values, as the monolith had (`
 `auction_complete` creates a `RESERVED` order for the winner, but carries no address. Does the winner fill in billing and delivery addresses before paying (an order with no address until then)? Does the 30 min expiry apply to auction wins, or a longer window? Is the price `winning_bid` taken as-is, without a Catalog reservation?
 
 ### 4. `offer_token` format
-`CreateOrderRequest.offer_token` is a signed offer from Messaging (agreed price) that Orders verifies. No contract defines its claims, signing algorithm or key. Needs an agreement with whoever owns Messaging.
+`CreateOrderRequest.offer_token` is a signed offer from Messaging (agreed price) that Orders verifies. No contract defines its claims, signing algorithm or key. Needs an agreement with whoever owns Messaging. Until then, Orders answers 422 to any non-null `offer_token`.
 
 ### 5. Indexes for Search
 - Add a text index on `name`, `brand_name` and `reference` for `q`, and an index on `brand_id` for `brand_updated`.

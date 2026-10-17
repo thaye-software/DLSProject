@@ -4,7 +4,19 @@ Owns orders from reservation to delivery: creates them (reserving stock in Catal
 
 Contracts: `contract.md` (summary), `../docs/contracts/openapi.yaml` and `../docs/contracts/asyncapi.yaml`. Open questions: `../../DECISIONS.md`.
 
-**Status: scaffold.** Only `GET /health` is served so far.
+## Interface
+
+| Direction | What | Notes |
+|---|---|---|
+| HTTP in | `POST /orders` | Public via gateway, trusts `X-User-Id` and `X-User-Email`. Reserves stock in Catalog and stores a `RESERVED` order that expires in 30 minutes. `Idempotency-Key` is required: a repeat returns the first order (201). `409` with `unavailable_product_ids` when Catalog is out of stock, `502` when Catalog or the database fails (the reservation is released). A non-null `offer_token` is rejected with `422` for now. |
+| HTTP in | `GET /orders` | Newest first. A customer gets their own orders, `X-User-Role: admin` gets everyone's. `?status=` (repeatable), `page`, `page_size` (1–100, default 20). |
+| HTTP in | `GET /orders/{order_id}` | Owner or admin. `404` for someone else's order, so ids can't be probed. |
+| HTTP in | `GET /health` | `200` when RabbitMQ and PostgreSQL are both up. |
+| HTTP out | Catalog `POST /internal/reservations`, `DELETE /internal/reservations/{order_id}` | Service JWT (`iss` orders, `aud` catalog), see `docs/contracts/README.md` §5. |
+
+The order id is a UUIDv5 of the user id and `Idempotency-Key`, so concurrent retries share one Catalog reservation and only one insert wins.
+
+Not built yet: cancel, admin status changes, the payment-details endpoint for Payment, the expiry sweeper, the outbox relay and the event consumers.
 
 ## Configuration
 

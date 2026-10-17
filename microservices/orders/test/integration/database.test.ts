@@ -1,16 +1,14 @@
-import { execFileSync } from "node:child_process";
-import { PostgreSqlContainer, type StartedPostgreSqlContainer } from "@testcontainers/postgresql";
+import type { StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createDatabase, isDatabaseReachable, type Database } from "../../src/adapters/db/prisma.js";
+import { startMigratedPostgres } from "../support/postgres.js";
 
 let container: StartedPostgreSqlContainer;
 let database: Database;
 
 beforeAll(async () => {
-  container = await new PostgreSqlContainer("postgres:17-alpine").start();
-  const url = container.getConnectionUri();
-  execFileSync("npx", ["prisma", "migrate", "deploy"], { env: { ...process.env, DATABASE_URL: url }, stdio: "pipe" });
-  database = createDatabase(url);
+  container = await startMigratedPostgres();
+  database = createDatabase(container.getConnectionUri());
 });
 
 afterAll(async () => {
