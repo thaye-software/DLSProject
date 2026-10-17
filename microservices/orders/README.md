@@ -14,14 +14,16 @@ Contracts: `contract.md` (summary), `../docs/contracts/openapi.yaml` and `../doc
 | HTTP in | `GET /internal/orders/{order_id}/payment-details` | Internal, for Payment only: service JWT with `iss` payment, `aud` orders, at most 60 s lifetime, signed with `INTERNAL_JWT_SECRET`; `401` otherwise. `200` with the amount due only while the order is `RESERVED` and before `expires_at`, `409` otherwise, `404` if unknown. |
 | HTTP in | `GET /health` | `200` when RabbitMQ and PostgreSQL are both up. |
 | RabbitMQ in | `payment_complete`, `payment_failed`, `payment_refunded` on `payment.events` | Queue `orders.payment.events`, dead letters to `orders.payment.events.dlq`. `payment_complete`: `RESERVED` → `PENDING` plus `order_confirmed` (also just after `expires_at`, as long as the sweeper hasn't expired it); for an `EXPIRED` or `CANCELLED` order a `refund_requested` instead; already paid orders are ignored. `payment_failed`: logged, the order stays `RESERVED`. `payment_refunded`: the order becomes `REFUNDED`. An unknown order is retried, then dead-lettered. |
-| Publishes | `order_confirmed`, `refund_requested` on `order.events` | Through the outbox (see below). |
+| Publishes | `order_confirmed`, `refund_requested`, `order_expired` on `order.events` | Through the outbox (see below). |
 | HTTP out | Catalog `POST /internal/reservations`, `DELETE /internal/reservations/{order_id}` | Service JWT (`iss` orders, `aud` catalog), see `docs/contracts/README.md` §5. |
 
 The order id is a UUIDv5 of the user id and `Idempotency-Key`, so concurrent retries share one Catalog reservation and only one insert wins.
 
 **Events.** Each handled event runs in one transaction: its CloudEvent id goes into `processed_events` (a redelivery is skipped), the status changes only if the order is still in the status the handler read (otherwise the transaction rolls back and the consumer retries), and the events to publish go into `outbox`. The outbox relay publishes pending rows every second, in the order they were written, with publisher confirms, and claims rows with `FOR UPDATE SKIP LOCKED` so several instances can run. Publishing is at least once; consumers drop duplicates by CloudEvent id.
 
-Not built yet: cancel, admin status changes, the expiry sweeper, and the `auction_complete` and `user_deleted` consumers.
+**Expiry.** Every 5 seconds the sweeper sets `RESERVED` orders past `expires_at` (30 minutes after creation) to `EXPIRED` and writes an `order_expired` per order to the outbox, in batches of 100, one transaction per batch. It claims orders with `FOR UPDATE SKIP LOCKED`, so several instances can sweep, and a `payment_complete` racing it waits for the row and then requests a refund. Catalog releases the stock and Payment cancels the PaymentIntent on `order_expired`; Catalog's own safety net releases a reservation 5 minutes after `expires_at` if Orders is down.
+
+Not built yet: cancel, admin status changes, and the `auction_complete` and `user_deleted` consumers.
 
 ## Configuration
 

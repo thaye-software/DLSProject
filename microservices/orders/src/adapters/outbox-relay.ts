@@ -1,4 +1,5 @@
 import type { Database } from "./db/prisma.js";
+import { startPolling } from "./polling.js";
 import type { EventPublisher, StoredEvent } from "./rabbitmq/publisher.js";
 
 export type OutboxRelayOptions = {
@@ -46,25 +47,7 @@ export function startOutboxRelay({
       { timeout: TRANSACTION_TIMEOUT_MS },
     );
 
-  let stopped = false;
-  let timer: NodeJS.Timeout | undefined;
-  let running: Promise<unknown> = Promise.resolve();
+  const poller = startPolling("Outbox relay", publishPending, intervalMs);
 
-  const tick = () => {
-    running = publishPending()
-      .catch((error) => console.error("Outbox relay failed, retrying next round", error))
-      .finally(() => {
-        if (!stopped) timer = setTimeout(tick, intervalMs);
-      });
-  };
-  tick();
-
-  return {
-    publishPending,
-    stop: async () => {
-      stopped = true;
-      clearTimeout(timer);
-      await running;
-    },
-  };
+  return { publishPending, stop: poller.stop };
 }

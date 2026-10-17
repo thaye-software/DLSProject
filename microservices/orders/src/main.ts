@@ -1,16 +1,19 @@
 import { randomUUID } from "node:crypto";
 import { HttpCatalogClient } from "./adapters/catalog/http-catalog-client.js";
+import { PrismaExpiryStore } from "./adapters/db/prisma-expiry-store.js";
 import { PrismaOrderEventStore } from "./adapters/db/prisma-order-event-store.js";
 import { PrismaOrderRepository } from "./adapters/db/prisma-order-repository.js";
 import { createDatabase, isDatabaseReachable } from "./adapters/db/prisma.js";
 import { createApp } from "./adapters/http/app.js";
 import { startOutboxRelay } from "./adapters/outbox-relay.js";
+import { startPolling } from "./adapters/polling.js";
 import { connectToBroker } from "./adapters/rabbitmq/connection.js";
 import { startConsumer } from "./adapters/rabbitmq/consumer.js";
 import { createPaymentEventHandlers, PAYMENT_EVENTS_EXCHANGE, PAYMENT_EVENTS_QUEUE } from "./adapters/rabbitmq/payment-events.js";
 import { createEventPublisher } from "./adapters/rabbitmq/publisher.js";
 import { assertConsumerTopology } from "./adapters/rabbitmq/topology.js";
 import { createOrder } from "./application/create-order.js";
+import { expireDueOrders } from "./application/expire-orders.js";
 import { getPaymentDetails } from "./application/get-payment-details.js";
 import { getOrder, listOrders } from "./application/read-orders.js";
 import { loadConfig } from "./config.js";
@@ -32,6 +35,18 @@ const orders = new PrismaOrderRepository(database);
 const now = () => new Date();
 
 const outboxRelay = startOutboxRelay({ database, publisher: await createEventPublisher(broker.channel) });
+
+// Unpaid orders expire within a few seconds of expires_at; Catalog only releases the stock itself 5 min later.
+const EXPIRY_SWEEP_INTERVAL_MS = 5000;
+const expiryStore = new PrismaExpiryStore(database);
+const expirySweeper = startPolling(
+  "Expiry sweeper",
+  async () => {
+    const expired = await expireDueOrders({ store: expiryStore, now, newId: randomUUID });
+    if (expired) console.log(`Expired ${expired} unpaid order(s)`);
+  },
+  EXPIRY_SWEEP_INTERVAL_MS,
+);
 
 const paymentEventHandlers = createPaymentEventHandlers({ store: new PrismaOrderEventStore(database), now, newId: randomUUID });
 await assertConsumerTopology(broker.channel, {
@@ -57,6 +72,7 @@ const server = app.listen(config.port, () => {
 async function shutdown(): Promise<void> {
   server.close();
   await paymentEventsConsumer.stop();
+  await expirySweeper.stop();
   await outboxRelay.stop();
   await broker.close();
   await database.$disconnect();
