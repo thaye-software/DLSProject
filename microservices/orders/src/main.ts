@@ -3,6 +3,7 @@ import { PrismaOrderRepository } from "./adapters/db/prisma-order-repository.js"
 import { createDatabase, isDatabaseReachable } from "./adapters/db/prisma.js";
 import { createApp } from "./adapters/http/app.js";
 import { createOrder } from "./application/create-order.js";
+import { getPaymentDetails } from "./application/get-payment-details.js";
 import { getOrder, listOrders } from "./application/read-orders.js";
 import { connectToBroker } from "./adapters/rabbitmq/connection.js";
 import { loadConfig } from "./config.js";
@@ -29,6 +30,8 @@ const app = createApp({
     createOrder(request, { catalog, orders, shippingPriceDkk: config.shippingPriceMinor, now: () => new Date() }),
   getOrder: (orderId, viewer) => getOrder(orderId, viewer, orders),
   listOrders: (request) => listOrders(request, orders),
+  getPaymentDetails: (orderId) => getPaymentDetails(orderId, { orders, now: () => new Date() }),
+  internalJwtSecret: config.internalJwtSecret,
 });
 const server = app.listen(config.port, () => {
   console.log(`orders listening on port ${config.port}`);

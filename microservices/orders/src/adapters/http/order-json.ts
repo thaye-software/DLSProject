@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { PaymentDetails } from "../../application/get-payment-details.js";
 import { ORDER_STATUSES, type Address, type Order } from "../../domain/order.js";
 
 // Requests: CreateOrderRequest and Address in docs/contracts/openapi.yaml.
@@ -91,5 +92,16 @@ export function orderJson(order: Order) {
     created_at: order.createdAt.toISOString(),
     // The contract only shows expires_at while the order is RESERVED.
     expires_at: order.status === "RESERVED" && order.expiresAt ? order.expiresAt.toISOString() : null,
+  };
+}
+
+// The PaymentDetails schema in docs/contracts/openapi.yaml.
+export function paymentDetailsJson(details: PaymentDetails) {
+  return {
+    order_id: details.orderId,
+    user_id: details.userId,
+    status: details.status,
+    amount_due: dkk(details.amountDueDkk),
+    expires_at: details.expiresAt.toISOString(),
   };
 }

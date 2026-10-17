@@ -3,6 +3,8 @@ import type { AddressInfo } from "node:net";
 import { afterEach } from "vitest";
 import { createApp, type AppDependencies } from "../../src/adapters/http/app.js";
 
+export const INTERNAL_JWT_SECRET = "orders-and-payment-share-this-32-char-secret";
+
 const defaultDependencies: AppDependencies = {
   isBrokerConnected: () => true,
   isDatabaseReachable: async () => true,
@@ -11,6 +13,8 @@ const defaultDependencies: AppDependencies = {
   },
   getOrder: async () => null,
   listOrders: async () => ({ orders: [], total: 0 }),
+  getPaymentDetails: async () => ({ outcome: "not_found" }),
+  internalJwtSecret: INTERNAL_JWT_SECRET,
 };
 
 let server: Server | undefined;

@@ -11,12 +11,13 @@ Contracts: `contract.md` (summary), `../docs/contracts/openapi.yaml` and `../doc
 | HTTP in | `POST /orders` | Public via gateway, trusts `X-User-Id` and `X-User-Email`. Reserves stock in Catalog and stores a `RESERVED` order that expires in 30 minutes. `Idempotency-Key` is required: a repeat returns the first order (201). `409` with `unavailable_product_ids` when Catalog is out of stock, `502` when Catalog or the database fails (the reservation is released). A non-null `offer_token` is rejected with `422` for now. |
 | HTTP in | `GET /orders` | Newest first. A customer gets their own orders, `X-User-Role: admin` gets everyone's. `?status=` (repeatable), `page`, `page_size` (1–100, default 20). |
 | HTTP in | `GET /orders/{order_id}` | Owner or admin. `404` for someone else's order, so ids can't be probed. |
+| HTTP in | `GET /internal/orders/{order_id}/payment-details` | Internal, for Payment only: service JWT with `iss` payment, `aud` orders, at most 60 s lifetime, signed with `INTERNAL_JWT_SECRET`; `401` otherwise. `200` with the amount due only while the order is `RESERVED` and before `expires_at`, `409` otherwise, `404` if unknown. |
 | HTTP in | `GET /health` | `200` when RabbitMQ and PostgreSQL are both up. |
 | HTTP out | Catalog `POST /internal/reservations`, `DELETE /internal/reservations/{order_id}` | Service JWT (`iss` orders, `aud` catalog), see `docs/contracts/README.md` §5. |
 
 The order id is a UUIDv5 of the user id and `Idempotency-Key`, so concurrent retries share one Catalog reservation and only one insert wins.
 
-Not built yet: cancel, admin status changes, the payment-details endpoint for Payment, the expiry sweeper, the outbox relay and the event consumers.
+Not built yet: cancel, admin status changes, the expiry sweeper, the outbox relay and the event consumers.
 
 ## Configuration
 

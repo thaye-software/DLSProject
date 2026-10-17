@@ -1,11 +1,13 @@
 import express, { type ErrorRequestHandler, type Express, type Request, type Response } from "express";
 import { z } from "zod";
 import type { CreateOrderRequest, CreateOrderResult } from "../../application/create-order.js";
+import type { PaymentDetailsResult } from "../../application/get-payment-details.js";
 import type { OrderPage } from "../../application/ports/order-repository.js";
 import type { ListOrdersRequest, Viewer } from "../../application/read-orders.js";
 import type { Order } from "../../domain/order.js";
-import { createOrderRequestSchema, listOrdersQuerySchema, orderJson, toAddress } from "./order-json.js";
+import { createOrderRequestSchema, listOrdersQuerySchema, orderJson, paymentDetailsJson, toAddress } from "./order-json.js";
 import { sendProblem } from "./problem.js";
+import { requireServiceJwt } from "./service-auth.js";
 
 export type AppDependencies = {
   isBrokerConnected: () => boolean;
@@ -13,7 +15,12 @@ export type AppDependencies = {
   createOrder: (request: CreateOrderRequest) => Promise<CreateOrderResult>;
   getOrder: (orderId: string, viewer: Viewer) => Promise<Order | null>;
   listOrders: (request: ListOrdersRequest) => Promise<OrderPage>;
+  getPaymentDetails: (orderId: string) => Promise<PaymentDetailsResult>;
+  internalJwtSecret: string;
 };
+
+// Services allowed to call /internal/orders/*.
+const INTERNAL_CALLERS = ["payment"] as const;
 
 const userIdSchema = z.uuid();
 const userEmailSchema = z.email();
@@ -37,6 +44,8 @@ export function createApp({
   createOrder,
   getOrder,
   listOrders,
+  getPaymentDetails,
+  internalJwtSecret,
 }: AppDependencies): Express {
   const app = express();
   app.disable("x-powered-by");
@@ -167,6 +176,34 @@ export function createApp({
     }
     response.json(orderJson(order));
   });
+
+  app.get(
+    "/internal/orders/:order_id/payment-details",
+    requireServiceJwt({ secret: internalJwtSecret, audience: "orders", issuers: INTERNAL_CALLERS }),
+    async (request, response) => {
+      const instance = request.path;
+      const orderId = orderIdSchema.safeParse(request.params.order_id);
+      const result: PaymentDetailsResult = orderId.success ? await getPaymentDetails(orderId.data) : { outcome: "not_found" };
+
+      switch (result.outcome) {
+        case "payable":
+          response.json(paymentDetailsJson(result.details));
+          return;
+        case "not_found":
+          sendProblem(response, { code: "not_found", title: "Order not found", status: 404, detail: "Order not found.", instance });
+          return;
+        case "not_payable":
+          sendProblem(response, {
+            code: "order_not_payable",
+            title: "Order is not payable (not RESERVED or expired)",
+            status: 409,
+            detail: "Order is not payable (not RESERVED or expired).",
+            instance,
+          });
+          return;
+      }
+    },
+  );
 
   app.use(invalidJsonHandler);
   app.use(unexpectedErrorHandler);

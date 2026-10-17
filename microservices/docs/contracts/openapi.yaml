@@ -988,6 +988,18 @@ paths:
                   amount_minor: 11530000
                   currency: DKK
                 expires_at: "2026-10-14T10:30:00Z"
+        "401":
+          description: "Missing or invalid service JWT (signature, aud orders, iss payment, at most 60 s lifetime)"
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+              example:
+                type: "https://limitedwatches.dk/problems/unauthorized"
+                title: Missing or invalid service token
+                status: 401
+                detail: "A valid service JWT is required: signature verification failed."
+                instance: /internal/orders/f47ac10b-58cc-4372-a567-0e02b2c3d479/payment-details
         "404":
           description: Order not found
           content:
