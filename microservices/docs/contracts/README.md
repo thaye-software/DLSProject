@@ -107,7 +107,7 @@ Every message body is a CloudEvent. The AMQP content type is `application/cloude
 
 | Event | Exchange | Producer | Consumers: what they do |
 |---|---|---|---|
-| `user_deleted` | user.events | Users | **Orders, Messaging, Editorial, Auctions** anonymise personal data and keep the id. **Catalog** deletes the user's favorites |
+| `user_deleted` | user.events | Users | **Orders, Messaging, Editorial, Auctions** anonymise personal data and keep the id; **Orders** also cancels the user's unpaid (RESERVED) orders, publishing `order_cancelled` (reason `customer_request`). **Catalog** deletes the user's favorites |
 | `product_created` | catalog.events | Catalog | **Search** inserts into the read model |
 | `product_updated` | catalog.events | Catalog | **Search** replaces the document |
 | `product_deleted` | catalog.events | Catalog | **Search** removes it. Favorites are deleted with the product inside Catalog |

@@ -5,6 +5,7 @@ import { connect, type Channel, type ChannelModel, type ConsumeMessage } from "a
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { PrismaOrderEventStore } from "../../src/adapters/db/prisma-order-event-store.js";
 import { PrismaOrderRepository } from "../../src/adapters/db/prisma-order-repository.js";
+import { PrismaUserDataStore } from "../../src/adapters/db/prisma-user-data-store.js";
 import { createDatabase, type Database } from "../../src/adapters/db/prisma.js";
 import { startOutboxRelay, type OutboxRelay } from "../../src/adapters/outbox-relay.js";
 import { connectToBroker, type BrokerConnection } from "../../src/adapters/rabbitmq/connection.js";
@@ -12,6 +13,8 @@ import { startConsumer, type Consumer } from "../../src/adapters/rabbitmq/consum
 import { createPaymentEventHandlers, PAYMENT_EVENTS_EXCHANGE, PAYMENT_EVENTS_QUEUE } from "../../src/adapters/rabbitmq/payment-events.js";
 import { createEventPublisher, ORDER_EVENTS_EXCHANGE } from "../../src/adapters/rabbitmq/publisher.js";
 import { assertConsumerTopology } from "../../src/adapters/rabbitmq/topology.js";
+import { createUserEventHandlers, USER_EVENTS_EXCHANGE, USER_EVENTS_QUEUE } from "../../src/adapters/rabbitmq/user-events.js";
+import { ANONYMISED } from "../../src/application/anonymise-user.js";
 import { reservedOrder, USER_ID } from "../fixtures/orders.js";
 import { eventSchema } from "../support/contract.js";
 import { startMigratedPostgres } from "../support/postgres.js";
@@ -26,6 +29,7 @@ let orders: PrismaOrderRepository;
 let broker: BrokerConnection;
 let relay: OutboxRelay;
 let consumer: Consumer;
+let userConsumer: Consumer;
 // A plain client standing in for Payment (publishing) and for order.events consumers (Notif, Catalog).
 let testConnection: ChannelModel;
 let testChannel: Channel;
@@ -49,11 +53,15 @@ beforeAll(async () => {
   const handlers = createPaymentEventHandlers({ store: new PrismaOrderEventStore(database), now: () => new Date(), newId: randomUUID });
   await assertConsumerTopology(broker.channel, { exchange: PAYMENT_EVENTS_EXCHANGE, queue: PAYMENT_EVENTS_QUEUE, routingKeys: Object.keys(handlers) });
   consumer = await startConsumer(broker.channel, { queue: PAYMENT_EVENTS_QUEUE, handlers, retryDelaysMs: [10, 10] });
+  const userHandlers = createUserEventHandlers({ store: new PrismaUserDataStore(database), now: () => new Date(), newId: randomUUID });
+  await assertConsumerTopology(broker.channel, { exchange: USER_EVENTS_EXCHANGE, queue: USER_EVENTS_QUEUE, routingKeys: Object.keys(userHandlers) });
+  userConsumer = await startConsumer(broker.channel, { queue: USER_EVENTS_QUEUE, handlers: userHandlers, retryDelaysMs: [10, 10] });
   vi.spyOn(console, "log").mockImplementation(() => undefined);
 });
 
 afterAll(async () => {
   await consumer?.stop();
+  await userConsumer?.stop();
   await relay?.stop();
   await broker?.close();
   await testConnection?.close();
@@ -67,10 +75,14 @@ async function storedOrder(status: "RESERVED" | "EXPIRED" = "RESERVED") {
   return order;
 }
 
-function publishPaymentEvent(type: string, data: Record<string, unknown>, id = randomUUID()): string {
-  const event = { specversion: "1.0", id, source: "/services/payment", type, time: new Date().toISOString(), data };
-  testChannel.publish(PAYMENT_EVENTS_EXCHANGE, type, Buffer.from(JSON.stringify(event)), { persistent: true });
+function publishEvent(exchange: string, source: string, type: string, data: Record<string, unknown>, id = randomUUID()): string {
+  const event = { specversion: "1.0", id, source, type, time: new Date().toISOString(), data };
+  testChannel.publish(exchange, type, Buffer.from(JSON.stringify(event)), { persistent: true });
   return id;
+}
+
+function publishPaymentEvent(type: string, data: Record<string, unknown>, id = randomUUID()): string {
+  return publishEvent(PAYMENT_EVENTS_EXCHANGE, "/services/payment", type, data, id);
 }
 
 function paymentComplete(orderId: string) {
@@ -182,5 +194,21 @@ describe("outbox relay", () => {
 
     await vi.waitFor(() => expect(eventsFor(subject)).toHaveLength(3), BROKER_WAIT);
     expect(eventsFor(subject).map((event) => event.id)).toEqual(ids);
+  });
+});
+
+describe("user.events → Orders", () => {
+  it("anonymises the deleted user's orders", async () => {
+    const userId = randomUUID();
+    const order = reservedOrder({ id: randomUUID(), userId });
+    await orders.insert(order, randomUUID());
+
+    publishEvent(USER_EVENTS_EXCHANGE, "/services/users", "user_deleted", { user_id: userId, version: 7, deleted_at: new Date().toISOString() });
+
+    await vi.waitFor(
+      async () => expect((await orders.findById(order.id))?.customerEmail).toBe(ANONYMISED.customerEmail),
+      BROKER_WAIT,
+    );
+    expect((await orders.findById(order.id))?.billingAddress.lastName).toBe("User");
   });
 });
