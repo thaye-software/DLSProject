@@ -4,6 +4,7 @@ import { PrismaExpiryStore } from "./adapters/db/prisma-expiry-store.js";
 import { PrismaOrderCommandStore } from "./adapters/db/prisma-order-command-store.js";
 import { PrismaOrderEventStore } from "./adapters/db/prisma-order-event-store.js";
 import { PrismaOrderRepository } from "./adapters/db/prisma-order-repository.js";
+import { PrismaUserDataStore } from "./adapters/db/prisma-user-data-store.js";
 import { createDatabase, isDatabaseReachable } from "./adapters/db/prisma.js";
 import { createApp } from "./adapters/http/app.js";
 import { startOutboxRelay } from "./adapters/outbox-relay.js";
@@ -13,6 +14,7 @@ import { startConsumer } from "./adapters/rabbitmq/consumer.js";
 import { createPaymentEventHandlers, PAYMENT_EVENTS_EXCHANGE, PAYMENT_EVENTS_QUEUE } from "./adapters/rabbitmq/payment-events.js";
 import { createEventPublisher } from "./adapters/rabbitmq/publisher.js";
 import { assertConsumerTopology } from "./adapters/rabbitmq/topology.js";
+import { createUserEventHandlers, USER_EVENTS_EXCHANGE, USER_EVENTS_QUEUE } from "./adapters/rabbitmq/user-events.js";
 import { cancelOrder, changeOrderStatus } from "./application/change-order.js";
 import { createOrder } from "./application/create-order.js";
 import { expireDueOrders } from "./application/expire-orders.js";
@@ -59,6 +61,14 @@ await assertConsumerTopology(broker.channel, {
 });
 const paymentEventsConsumer = await startConsumer(broker.channel, { queue: PAYMENT_EVENTS_QUEUE, handlers: paymentEventHandlers });
 
+const userEventHandlers = createUserEventHandlers({ store: new PrismaUserDataStore(database), now, newId: randomUUID });
+await assertConsumerTopology(broker.channel, {
+  exchange: USER_EVENTS_EXCHANGE,
+  queue: USER_EVENTS_QUEUE,
+  routingKeys: Object.keys(userEventHandlers),
+});
+const userEventsConsumer = await startConsumer(broker.channel, { queue: USER_EVENTS_QUEUE, handlers: userEventHandlers });
+
 const app = createApp({
   isBrokerConnected: broker.isOpen,
   isDatabaseReachable: () => isDatabaseReachable(database),
@@ -77,6 +87,7 @@ const server = app.listen(config.port, () => {
 async function shutdown(): Promise<void> {
   server.close();
   await paymentEventsConsumer.stop();
+  await userEventsConsumer.stop();
   await expirySweeper.stop();
   await outboxRelay.stop();
   await broker.close();

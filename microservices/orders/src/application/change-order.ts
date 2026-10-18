@@ -26,7 +26,7 @@ const ALLOWED_FROM: Record<AdminTargetStatus, readonly OrderStatus[]> = {
 
 const itemQuantities = (order: Order) => order.items.map((line) => ({ product_id: line.productId, quantity: line.quantity }));
 
-function orderCancelled(order: Order, reason: "customer_request" | "admin", now: Date, newId: () => string) {
+export function orderCancelled(order: Order, reason: "customer_request" | "admin", now: Date, newId: () => string) {
   return buildOrderEvent({
     id: newId(),
     type: "order_cancelled",
