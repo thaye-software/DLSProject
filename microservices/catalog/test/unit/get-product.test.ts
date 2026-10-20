@@ -16,6 +16,8 @@ function submariner(overrides: Partial<Product> = {}): Product {
     price: { amountMinor: 11_500_000, currency: "DKK" },
     availability: "available",
     thumbnailUrl: "https://cdn.example.com/products/126610ln-1.jpg",
+    stock: 1,
+    version: 1,
     ...overrides,
   };
 }

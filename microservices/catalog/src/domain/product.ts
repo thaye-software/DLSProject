@@ -17,4 +17,7 @@ export type Product = {
   price: Money;
   availability: Availability;
   thumbnailUrl: string | null;
+  // Sellable count. Version starts at 1 and increases by 1 when availability changes.
+  stock: number;
+  version: number;
 };
