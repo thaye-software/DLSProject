@@ -6,6 +6,7 @@ import { createApp, type AppDependencies } from "../../src/adapters/http/app.js"
 const defaultDependencies: AppDependencies = {
   isBrokerConnected: () => true,
   isDatabaseReachable: async () => true,
+  getProduct: async () => null,
 };
 
 let server: Server | undefined;
