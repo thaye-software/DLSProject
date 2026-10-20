@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export type Config = {
   port: number;
+  databaseUrl: string;
+  rabbitmqUrl: string;
   internalJwtSecret: string;
 };
 
@@ -10,6 +12,8 @@ const MIN_HS256_SECRET_LENGTH = 32;
 
 const schema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(DEFAULT_PORT),
+  DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
+  RABBITMQ_URL: z.url({ protocol: /^amqps?$/ }),
   INTERNAL_JWT_SECRET: z.string().min(MIN_HS256_SECRET_LENGTH),
 });
 
@@ -20,5 +24,10 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     throw new Error(`Invalid environment:\n${problems.join("\n")}`);
   }
 
-  return { port: parsed.data.PORT, internalJwtSecret: parsed.data.INTERNAL_JWT_SECRET };
+  return {
+    port: parsed.data.PORT,
+    databaseUrl: parsed.data.DATABASE_URL,
+    rabbitmqUrl: parsed.data.RABBITMQ_URL,
+    internalJwtSecret: parsed.data.INTERNAL_JWT_SECRET,
+  };
 }
