@@ -1,0 +1,67 @@
+// Catalog database. Money is DKK in øre (bigint).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Product {
+  id           String  @id @db.Uuid
+  name         String  @db.VarChar(255)
+  slug         String  @unique @db.VarChar(255)
+  brandName    String? @map("brand_name") @db.VarChar(255)
+  model        String? @db.VarChar(255)
+  priceDkk     BigInt  @map("price_dkk")
+  stock        Int
+  // available | reserved | sold | hidden, enforced by products_availability_check in the migration.
+  availability String  @db.VarChar(16)
+  thumbnailUrl String? @map("thumbnail_url")
+  version      Int     @default(1)
+
+  @@map("products")
+}
+
+model Reservation {
+  id        String            @id @db.Uuid
+  orderId   String            @unique @map("order_id") @db.Uuid
+  // active | released | confirmed, enforced by reservations_status_check in the migration.
+  status    String            @db.VarChar(16)
+  expiresAt DateTime          @map("expires_at")
+  createdAt DateTime          @default(now()) @map("created_at")
+  items     ReservationItem[]
+
+  @@index([status, expiresAt])
+  @@map("reservations")
+}
+
+// Price, name, and thumbnail copied at reserve time, in the order Orders sent the lines.
+model ReservationItem {
+  id            String      @id @default(uuid()) @db.Uuid
+  reservationId String      @map("reservation_id") @db.Uuid
+  position      Int
+  productId     String      @map("product_id") @db.Uuid
+  productName   String      @map("product_name") @db.VarChar(255)
+  quantity      Int
+  unitPriceDkk  BigInt      @map("unit_price_dkk")
+  thumbnailUrl  String?     @map("thumbnail_url")
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@unique([reservationId, position])
+  @@map("reservation_items")
+}
+
+// Transactional outbox: written in the same transaction as the stock change, published by the relay.
+model OutboxEvent {
+  id          String    @id @db.Uuid
+  type        String    @db.VarChar(64)
+  payload     Json      @db.JsonB
+  createdAt   DateTime  @default(now()) @map("created_at")
+  publishedAt DateTime? @map("published_at")
+
+  @@index([publishedAt, createdAt])
+  @@map("outbox")
+}
