@@ -1,422 +1,301 @@
-Catalogue service contract
-=========================
-Audience: Authentication, Users, Messaging, Payments, Email, Search, Order.
-Catalogue owns brands, watch products, images, visibility, stock, and favorites.
-It does not own sessions, user profiles, conversations, payments, mail,
-exchange rates, VAT, orders, or negotiated offer prices.
+Catalog service contract
+=======================
+Audience: Orders, Search, Messaging, Editorial, Auctions, and the API gateway.
+Catalog owns products, stock, and reservations in PostgreSQL.
+It publishes catalog.events. Search is the only consumer of that exchange.
 
-Transport is not fixed (the contract does not choose how the call travels.
-It only fixes the operation name and the fields that go in and out.).
-Each operation below is one command or query.
-REST, GraphQL, gRPC, or SOAP must carry the same fields. Events are facts
-already committed in Catalogue. Delivery is at least once. Consumers must
-be idempotent.
+It does not own sessions, user profiles, conversations, blog posts, auctions,
+payments, mail, the search index, exchange rates, VAT, orders, or negotiated
+offer prices.
+
+Field lists for HTTP live in microservices/docs/contracts/openapi.yaml.
+Field lists for events live in microservices/docs/contracts/asyncapi.yaml.
+This file says what Catalog does. If a field here and a YAML schema disagree,
+the YAML wins and this file should be corrected.
+
+Transport
+  HTTP/JSON for calls. RabbitMQ for events, one exchange per publisher.
+  Catalog's exchange is catalog.events (topic).
+  Delivery is at least once. Consumers are idempotent on the CloudEvents id.
+  Product, brand, and availability events also carry an aggregate version.
+  A consumer ignores an event whose version is not newer than the one it stored.
 
 Conventions
-  Ids are UUID strings.
-  Timestamps are ISO-8601 UTC.
-  priceDkk and every other money field in this contract are integers in
-  minor units of DKK (øre). 1 DKK = 100.
-  Errors are { code, message }. Callers branch on code.
+  Ids Catalog creates (reservation_id, CloudEvents id) are UUID v4.
+  order_id is the UUID Orders sends. Orders derives it; Catalog does not.
+  Timestamps are ISO-8601 UTC, such as 2026-10-14T10:00:00Z.
+  Payload fields are snake_case. Schemas reject unknown fields on the way in.
+  Consumers ignore fields they do not know.
+  Money is { amount_minor, currency }. amount_minor is an integer in øre.
+  1 DKK = 100. Catalog prices use currency DKK. Never a float. VAT is not
+  calculated; the listed price is final.
+  Errors are application/problem+json: type, title, status, detail, instance.
+  type is https://limitedwatches.dk/problems/<code>.
+  Callers branch on the HTTP status. A reservation 409 also includes
+  unavailable_product_ids (UUID array).
+  Availability is available, reserved, sold, or hidden.
+  hidden means the product is not visible.
 
-Error codes
-  NOT_FOUND      id or slug does not exist
-  VALIDATION     missing or illegal field
-  OUT_OF_STOCK   reserve failed because stock was 0
-  CONFLICT       unique name, unique slug, or duplicate favorite
-  FORBIDDEN      caller is not allowed
-  UNAVAILABLE    dependency down; reads are safe to retry
+  RabbitMQ messages are persistent, content type application/cloudevents+json.
+  The publisher waits for a broker confirm. Each consumer queue is a durable
+  quorum queue named <consumer>.<exchange>, with x-dead-letter-exchange = dlx
+  and a queue <queue>.dlq. A handler that throws is retried 5 times, waiting
+  1s, 2s, 4s, 8s, and 8s, then dead-lettered. A body that is not a CloudEvent,
+  or whose data does not match the event type, is dead-lettered without those
+  retries. The handler acks only after its database transaction commits.
 
-Caller
-  Every call carries a Caller, supplied by the API gateway after
-  Authentication has checked the credential. Catalogue does not parse
-  end-user tokens itself when Caller is present.
+Auth
+  Catalog does not parse end-user Supabase tokens.
+  The gateway verifies those and may forward X-User-Id, X-User-Role
+  (admin or customer), X-User-Email, and traceparent. Catalog accepts those
+  headers only from the gateway.
 
-  Caller
-    userId: string | null          null for a pure service call
-    role: "admin" | "customer" | "service"
-    service: "order" | "users" | "search" | "messaging" | "email"
-             | "payments" | null   set only when role is "service"
+  GET /products/{product_id} is public. No login.
 
-  A customer may only pass their own userId on favorite operations.
-  Admin-only operations reject every other role with FORBIDDEN.
-  Operations limited to one service reject other service names with FORBIDDEN.
+  /internal/* is service-to-service. The gateway does not route it.
+  The caller signs an HS256 JWT with the shared INTERNAL_JWT_SECRET and sends
+  Authorization: Bearer. Claims: iss = calling service, aud = catalog,
+  iat, exp at most 60 seconds later. Catalog checks the signature, aud, exp,
+  and that iss is a caller it expects. Otherwise 401 problem+json.
+  Orders uses iss = orders.
 
-Shared types
+HTTP
+----
 
-  Brand
-    id, slug, name: string
-    country, addressLine1, addressLine2, zipCode, city, stateProvince,
-    phoneNumber, email, website: string | null
-    slug is assigned by Catalogue from the name (lowercase, spaces become "-").
-    name is unique.
+GET /health
+  200 { status: "ok" } when PostgreSQL and RabbitMQ are both reachable.
+  503 problem+json otherwise: database_unavailable or broker_unavailable.
+  Same shape as Orders.
 
-  ProductImage
-    id, productId: string
-    imageUrl: string               absolute URL of a blob Catalogue stores
-    isThumbnail: boolean
+GET /products/{product_id}
+  Public. Also used by Messaging, Editorial, and Auctions.
+  A hidden product is still 200, with availability hidden.
+  200 ProductSummary:
+    product_id, name, slug, brand_name, model, price, availability,
+    thumbnail_url
+  brand_name, model, and thumbnail_url may be null.
+  404 problem+json when the id does not exist.
+  The body has no serial_number and no internal_id.
+  Auctions may call this. How a watch on auction is held is not decided
+  (DECISIONS.md item 7). An auction win might not reserve here
+  (DECISIONS.md item 2). This contract does not define either one.
 
-  WatchDetails
-    id, brandId: string
-    internalId, model, slug, reference, serialNumber: string
-    year: int
-    size: int | null                millimetres
-    movement, glassType, braceletType, braceletColor, dialColor: string | null
-    limited, box, papers: boolean
-    condition: int                  free integer rating, not an enum
-    vat: int | null                 stored on the watch; Catalogue does not
-                                    calculate tax. VAT rates are not this service.
+POST /internal/reservations
+  Orders only. Service JWT, iss = orders.
+  Header Idempotency-Key is a UUID and must equal order_id.
+  Body:
+    order_id
+    items[]: product_id, quantity (>= 1, one or more lines)
+    expires_at
+  All lines reserve or none do. Catalog decrements stock by each quantity.
+  The 201 prices are Catalog's list prices. Orders does not send a price.
+  201 Reservation:
+    reservation_id, order_id, status (active), items, expires_at, created_at
+    each item: product_id, product_name, quantity, unit_price, thumbnail_url
+  Orders copies product_name, thumbnail_url, and unit_price onto the order
+  line. Later edits in Catalog do not change that copy.
+  The 201 items are exactly the requested product ids and quantities.
+  Orders compares them to the request and, on a mismatch, fails the save
+  and calls DELETE. Catalog does not add, drop, or resize a line.
+  Idempotent on order_id. The same order_id returns the first reservation
+  and does not decrement again, even if the new body differs.
+  A missing Idempotency-Key, a key that is not a UUID, a key that is not
+  order_id, or an illegal body: 422 problem+json, code validation_error,
+  title Invalid request, stock unchanged. Orders treats any status other
+  than 201, 200, and 409 as a failure and tells the customer to retry, so
+  these requests must not be 500.
+  409 problem+json, code out_of_stock, with unavailable_product_ids, and no
+  stock change, when any line is missing, hidden, sold, or short of stock.
+  Orders treats every 409 as unavailable.
+  The first success writes product_availability_changed, reason order_reserved.
+  correlationid and order_id are the order id. subject is the product id.
+  causationid is null, because the cause is this HTTP call, not an event.
+  A repeat does not write the event again.
+  expires_at is stored as Orders sent it. Orders sets it to 30 minutes after
+  the order is created. Catalog does not replace that timestamp.
+  Catalog itself releases a reservation still active at expires_at plus 5
+  minutes. That covers Orders being down. Orders' own expiry is the normal
+  path and runs at expires_at, five minutes earlier.
 
-  Product
-    id: string
-    productType, name, description: string
-    priceDkk: int                   øre, >= 0
-    stock: int                      >= 0
-    visible: boolean
-    createdAt: timestamp
-    watch: WatchDetails
-    brand: Brand
-    images: ProductImage[]
+DELETE /internal/reservations/{order_id}
+  Orders only. Service JWT, iss = orders.
+  Only for the rollback when Orders reserved and then failed to save the order.
+  It releases only an active reservation.
+  204 when this call releases the stock, when it was already released, when
+  it is already confirmed, and when the order id is unknown. Confirmed and
+  unknown do not change stock.
+  A real release writes product_availability_changed, reason order_released,
+  with the same correlation id and subject rules as reserve, causationid null.
+  Normal cancel and expiry do not use this call. They use order events.
 
-  ProductCard
-    id, slug, name, brandName: string
-    priceDkk: int
-    thumbnailUrl: string | null
-    visible: boolean
-    stock: int
-    slug is the watch slug. This is the snapshot other services may copy.
-    It has no serial number.
-    thumbnailUrl is the image with isThumbnail true, or the first image
-    if none is marked. Null when the product has no images.
+Stock
+-----
+  stock on the product is the sellable count. Reserve decrements it by the
+  line quantity. Confirm does not decrement again.
+  Availability is reserved while at least one unit is held by an active
+  reservation.
+  It is sold when a reservation is confirmed and the sellable stock is 0.
+  It is available when nothing is held and the sellable stock is greater
+  than 0. Confirming one unit of a product that still has stock left
+  therefore ends as available, not sold.
+  Releasing adds those reserved quantities back, once per reservation.
+  A later DELETE, safety-net pass, order_expired, or second delivery of the
+  same event does not add them again.
+  version on the product starts at 1 and increases by 1 on each of these
+  changes. The event carries the new version and the previous availability.
 
-  CatalogueEventProduct
-    Every ProductCard field, plus:
-      description, reference, brandSlug: string
-      condition: int
-      year: int
-      size: int | null
-      limited: boolean
-    No serial number. This is the event body Search is allowed to index.
+Events Catalog publishes
+------------------------
+Exchange catalog.events. Routing key = CloudEvents type.
+Envelope on every event: specversion 1.0, id (uuid), source /services/catalog,
+type, time, datacontenttype application/json, subject (the aggregate id),
+dataversion 1, correlationid, causationid (nullable), data.
+Search binds one queue, search.catalog.events, plus search.catalog.events.dlq.
 
-Operations
-----------
+product_created
+  data: product (ProductSnapshot), changed_by (user uuid)
+  Search inserts the listing.
 
-Reads
-  These do not require a Caller. Anonymous shoppers, customers, admins,
-  and service callers may all use them:
-  GetProduct, GetProductCard, ListPublicProducts, ListProductsByBrand,
-  GetFilterMetadata, ListBrands, GetBrand, SearchProducts.
-  The shopfront is public today. Requiring a session here would drop
-  browsing, brand pages, and the product page.
+product_updated
+  data: product (ProductSnapshot), changed_by, changed_fields
+  changed_fields names top-level ProductSnapshot fields, for example price
+  or description. At least one.
+  Search replaces the document.
 
-  GetProduct
-    in:  { id } or { slug }         exactly one
-    out: Product | NOT_FOUND
-    Used by Order, Messaging, Email, Payments, Search, and the shopfront
-    when they need the full watch.
-    Returns the product even when visible is false or stock is 0.
-    The current product page does the same. List operations below do not.
-    A hidden product is therefore readable by anyone who has the id or slug.
-    Missing id or slug is NOT_FOUND. The response includes serialNumber.
-    Callers that only need a card use GetProductCard, which also returns
-    hidden and out-of-stock products and omits the serial number.
+product_deleted
+  data: product_id, version, deleted_by, deleted_at
+  Search removes the listing.
 
-  GetProductCard
-    in:  { id } or { slug }
-    out: ProductCard | NOT_FOUND
-    Use this for lists, chat headers, mail images, and order lines.
-    Order and Messaging must tolerate NOT_FOUND after a product is deleted.
-    They keep their own copy of the card from the moment they first stored
-    the id.
+product_availability_changed
+  data: product_id, version, availability, previous_availability, stock,
+        reason, order_id (nullable), changed_at
+  reason is order_reserved, order_released, order_confirmed, or admin_update.
+  Search shows available, reserved, or sold.
 
-  ListPublicProducts
-    in:
-      brandNames: string[]          optional, match Brand.name
-      conditionValues: int[]        optional
-      minPriceDkk, maxPriceDkk: int optional, minor units (øre)
-      yearStart, yearEnd: int       optional, inclusive
-      minSize, maxSize: int         optional, millimetres, inclusive
-      isLimited: boolean            optional
-      limit: int                    required, 1..100
-      cursor: string | null         null for the first page
-    out: { items: ProductCard[], nextCursor: string | null }
-    Returns only visible products with stock >= 1.
-    Shopfront and Search call this for the grid and structured filters.
-    It is not text search.
+brand_updated
+  data: brand (brand_id, name, slug), version, changed_by, changed_at
+  Search updates the brand name and slug on listings with that brand_id.
 
-  ListProductsByBrand
-    in:  { brandSlug: string }
-    out: ProductCard[]              visible and stock >= 1, or empty if the
-                                    brand slug is unknown (not NOT_FOUND)
+ProductSnapshot is the full product state. Consumers do not call Catalog
+back to fill it in. Fields: product_id, version, product_type, name,
+description, price, stock, visible, availability, watch, images, created_at,
+updated_at. watch may be null.
+WatchDetails is public watch data: watch_id, brand, model, slug, reference,
+year, condition, size_mm, movement, glass_type, limited, box, papers,
+bracelet_type, bracelet_color, dial_color. serial_number and internal_id
+are never published.
+ProductImage: image_id, url, is_thumbnail.
+Brand on a watch: brand_id, name, slug.
 
-  GetFilterMetadata
-    in:  {}
-    out:
-      priceDkk: { lowest: int | null, highest: int | null }   minor units
-      size: { smallest: int | null, largest: int | null }
-      year: { oldest: int | null, newest: int | null }
-      conditions: { condition: int, count: int }[]
-    Bounds and counts are taken only from visible products with stock >= 1,
-    the same set ListPublicProducts returns. If that set is empty, every
-    bound is null and conditions is []. The monolith's fallbacks (price
-    42069, size 23 and 52) are UI placeholders. They are not part of this
-    contract. Shopfront and Search use this to draw filter bounds.
+The HTTP that creates, updates, or deletes a product or a brand is not in
+the OpenAPI file. Do not invent it here. The five events above are still
+the ones Search consumes once that HTTP exists.
+admin_update is a legal reason on product_availability_changed. The admin
+call that would cause it is not specified.
 
-  ListBrands
-    in:  {}
-    out: Brand[]
+Events Catalog consumes
+-----------------------
+Queue catalog.order.events on exchange order.events, plus
+catalog.order.events.dlq. Idempotent on the CloudEvents id, stored with the
+stock change. Also idempotent on the reservation: stock moves once, even
+when the safety net and an event both run.
 
-  GetBrand
-    in:  { id } or { slug }
-    out: Brand | NOT_FOUND
+The quantities put back are the ones stored on the reservation, which are
+the lines Orders copied from the 201. An event whose order id has no
+reservation is acknowledged and changes nothing. That includes an auction
+win if it never reserved (DECISIONS.md item 2 is still open).
+correlationid on the availability event is the order id. causationid is
+the CloudEvents id of the order event. subject is the product id.
 
-  SearchProducts
-    in:  { text: string, limit: int }     limit 1..100
-    out: ProductCard[]
-    Case-insensitive substring on product name, brand name, or reference.
-    Only visible products with stock >= 1. Empty text returns VALIDATION.
-    This is the catalogue source of truth for that match.
-    The Search service is the public search API (see Search below). It
-    calls this operation, or it builds an index from events and must
-    return the same matches. It must not invent price, stock, or visibility.
+order_confirmed
+  Applies only to an active reservation. Mark it confirmed and publish
+  product_availability_changed, reason order_confirmed. Stock is not
+  decremented again. Already released or already confirmed: change nothing.
+  Availability then follows the stock rules above.
 
-Admin writes (Caller.role = admin)
+order_cancelled
+  Returns the reserved quantities once, including when the reservation was
+  already confirmed. A customer cancel is only from RESERVED, so that
+  reservation is still active. An admin cancel of a paid order (PENDING
+  through DELIVERED) publishes order_cancelled with was_paid true, and the
+  stock must come back from sold. Publish reason order_released.
+  Orders does not send order_cancelled after RETURNED: the stock already
+  came back on order_status_changed, and a second event would add it twice.
 
-  CreateBrand
-    in:  Brand fields except id and slug
-    out: Brand
-    CONFLICT if name already exists.
+order_expired
+  Returns the stock only when the reservation is still active. Same event
+  as a release, reason order_released.
 
-  UpdateBrand
-    in:  { id: string, fields: partial Brand except id and slug }
-    out: Brand
-    NOT_FOUND if id does not exist. CONFLICT if the new name is taken.
-    Publishes brand_updated. A name change also updates brandName on
-    later ProductCard reads. Existing snapshots held by other services
-    are not rewritten by Catalogue.
+order_status_changed
+  Put stock back only when previous_status is PENDING, PROCESSING, SHIPPED,
+  or DELIVERED and status is RETURNED or REFUNDED. Other transitions do not
+  change stock. REFUNDED after RETURNED does not match that previous_status,
+  so it does not add stock a second time.
+  Catalog acts only when this event arrives. DECISIONS.md item 4 is open:
+  a system refund has no user id for changed_by, and Orders then publishes
+  nothing. Catalog does not gain a second release call for that case.
 
-  CreateWatch
-    in:
-      product: { productType, name, description, priceDkk, stock, visible }
-      watch: WatchDetails except id, slug, and any product id
-             brandId is required
-      imageUrls: string[]            may be empty; URLs from UploadImage
-    out: Product
-    NOT_FOUND if brandId does not exist.
-    VALIDATION if priceDkk < 0 or stock < 0.
-    Publishes product_created.
-    Slug is `{brand slug}-{model slug}-{product id}`. The product id makes
-    the slug unique even when two watches share a brand and a model.
+Queue catalog.user.events on exchange user.events, plus
+catalog.user.events.dlq, routing key user_deleted.
+The favorites that deletion would clear are not specified yet. Until they
+are, this consumer has no fields and no effect to implement.
 
-  UpdateWatch
-    in:
-      productId: string
-      product: partial product fields, optional
-      watch: partial watch fields except id and slug, optional
-      imageUrls: string[] | omitted
-    out: Product
-    If imageUrls is present, the stored image set becomes exactly that list.
-    If it is omitted, images are unchanged.
-    Publishes product_updated.
+What each neighbour does
+------------------------
 
-  SetVisibility
-    in:  { productId: string, visible: boolean }
-    out: { productId, visible }
-    Publishes product_updated with changed containing "visible".
+Orders
+  Calls POST /internal/reservations and, only to roll back a failed save,
+  DELETE /internal/reservations/{order_id}.
+  Publishes order_confirmed, order_cancelled, order_expired, and
+  order_status_changed. Catalog never calls Orders.
+  One reservation may hold several products, and a line quantity may be
+  greater than 1.
 
-  DeleteProduct
-    in:  { productId: string }
-    out: { productId }
-    NOT_FOUND if it does not exist.
-    Publishes product_deleted.
-    Catalogue does not check for existing orders or conversations.
-    Order must already have copied ProductCard (at least id, name,
-    brandName, priceDkk, slug, thumbnailUrl) onto the order line at
-    reserve time. Messaging must already have copied the card it shows
-    in the thread. After delete, GetProduct and GetProductCard return
-    NOT_FOUND.
+Payment
+  Does not call Catalog and does not consume catalog.events.
+  The charged amount is the price Orders copied at reserve time, or an
+  offer price Orders accepted. Catalog is not told the offer and does not
+  check what was captured.
 
-  GetStockTotal
-    in:  {}
-    out: { totalStock: int }        sum of stock across all products,
-                                    including hidden and zero
+Notif
+  Does not call Catalog and does not consume catalog.events.
+  The confirmation email is filled from order_confirmed, which already
+  carries the copied product name and thumbnail.
 
-  UploadImage
-    in:  file bytes, contentType, optional productId
-    out: { imageUrl: string, imageId: string | null }
-    Stores the blob in Catalogue storage.
-    If productId is set, also inserts a ProductImage and returns imageId.
-    If productId is omitted, imageId is null and the URL is passed later
-    to CreateWatch or UpdateWatch.
-
-Stock (Order and admin)
-
-  ReserveStock
-    Caller.service must be "order".
-    in:  { productId: string, quantity: 1, orderId: string }
-    out: { productId, orderId, stockRemaining: int }
-         or OUT_OF_STOCK or NOT_FOUND
-    Atomic. Decrements stock by 1 only when stock > 0 and visible is true.
-    quantity other than 1 is VALIDATION.
-    If visible is false, returns CONFLICT and does not decrement.
-    One order reserves one watch. orderId is the order id, not a line id.
-    Idempotent on orderId: the same orderId and the same productId do not
-    decrement twice. A repeat returns the first result.
-    The same orderId with a different productId returns CONFLICT and does
-    not change stock.
-    Publishes product_updated with changed containing "stock" on the
-    first success only. The event product is a CatalogueEventProduct.
-
-  AdjustStock
-    Caller.service = "order", or Caller.role = admin.
-    in:
-      productId: string
-      quantity: int                  > 0
-      direction: "increment" | "decrement"
-      reason: "expire" | "cancel" | "return" | "admin_correction"
-      orderId: string | null         required for expire, cancel, return
-    out: { productId, stock: int }
-    For expire, cancel, and return, quantity must be 1. Any other quantity
-    is VALIDATION. admin_correction may use any quantity > 0.
-    VALIDATION if quantity <= 0 or reason does not match the caller.
-    CONFLICT if a decrement would make stock negative. Stock is unchanged.
-    NOT_FOUND if the product does not exist.
-    Idempotent on (orderId, reason): Order may retry expire, cancel, and
-    return without applying them twice. admin_correction is not idempotent
-    and requires role admin and orderId null.
-    Publishes product_updated with changed containing "stock" on the first
-    application only. A retry of the same (orderId, reason) returns
-    { productId, stock } from that first application and does not publish again.
-
-Favorites
-
-  ListFavorites
-    in:  { userId: string }
-    out: ProductCard[]
-    Customer: userId must equal Caller.userId. Admin may pass any userId.
-    Only favorites whose product still exists and has stock >= 1.
-    visible is not required. Hidden in-stock watches still appear.
-    This matches getFavoritedProductsByUserId. Deleted products are absent.
-
-  IsFavorite
-    in:  { userId: string, productId: string }
-    out: { favorite: boolean }
-    Same caller rule as ListFavorites. Unknown product returns favorite false.
-
-  ToggleFavorite
-    Caller.role = customer, userId = Caller.userId.
-    in:  { userId: string, productId: string }
-    out: { favorite: boolean }
-    NOT_FOUND if the product does not exist.
-
-  ClearFavorites
-    Caller.service = "users", or triggered by the user_deleted event.
-    in:  { userId: string }
-    out: { removed: int }
-    Idempotent. A second clear for the same userId returns removed 0.
-    user_deleted and a direct ClearFavorites may both arrive.
-
-Events Catalogue publishes
-  product_created   { product: CatalogueEventProduct, occurredAt }
-  product_updated   { product: CatalogueEventProduct, changed: string[], occurredAt }
-                    changed is a list of field names. "stock" and "visible"
-                    are used when those change. A brand rename does not
-                    emit product_updated for every watch.
-  product_deleted   { productId: string, occurredAt }
-  brand_updated     { brand: Brand, occurredAt }
-
-  Search must consume all four, or call the read operations instead.
-  Email is not required to consume them. Email calls GetProductCard
-  when a template needs a name or an image.
-  Order may consume product_updated to drop a stale cached price.
-  ReserveStock is the authority for stock, not the event.
-  Payments does not need these events.
-
-Events Catalogue consumes
-  user_deleted      { userId: string }    published by Users
-                    effect: ClearFavorites for that userId
-  Catalogue consumes nothing else. It does not consume order, payment,
-  message, or auction events. Order calls ReserveStock and AdjustStock.
-
-What each neighbour must provide or must not expect
----------------------------------------------------
-
-Authentication
-  Catalogue asks one thing when the gateway has not already built Caller:
-    ValidateSession
-      in:  { bearerToken: string }
-      out: Caller | FORBIDDEN
-  Authentication owns passwords, sessions, and role assignment.
-  It must be able to represent these service names on Caller.service:
-  order, users, search, messaging, email, payments.
-  Catalogue stores no credentials. role "admin" is what gates brand,
-  watch, visibility, image upload, stock total, and admin stock corrections.
-
-Users
-  Users publishes user_deleted { userId } when an account is deleted.
-  Catalogue does not read profiles, emails, or addresses.
-  A username shown next to a favorite is a Users lookup in the client,
-  not a Catalogue field.
-
-Order
-  Order calls GetProduct or GetProductCard, ReserveStock, and AdjustStock.
-  Catalogue never calls Order.
-  At the successful ReserveStock, Order stores its own copy of ProductCard
-  on the order line. Later deletes and price edits must not change that line.
-  Stock goes down only through ReserveStock (quantity 1).
-  Stock comes back only through AdjustStock with reason expire, cancel,
-  or return, quantity 1, and the same orderId.
-  One order buys one watch. Do not reserve a second product on that orderId.
-  Order does not call ReserveStock when GetProduct shows visible false.
-  ReserveStock also rejects that case.
-  Order does not write visibility, price, or images.
-  A negotiated offer, if Order accepts one, replaces priceDkk only on
-  the order's own copy. Catalogue is not told the offer amount.
-
-Payments
-  Payments may call GetProductCard to read the list priceDkk.
-  Catalogue does not call Payments.
-  Catalogue does not convert currency and does not return VAT.
-  Payments must not expect Convert or VAT operations from Catalogue.
-  Currency conversion and VAT are outside this contract. No service listed
-  here is required to provide them for Catalogue to work.
-  Charging, refunds, and the amount actually captured are Payments data.
-  That amount is the list priceDkk copied at reserve time, or an offer
-  price Order accepted. Catalogue does not check the charged amount.
-
-Email
-  Email may call GetProductCard { id } to fill a name and thumbnailUrl.
-  Catalogue does not call Email and does not send mail.
-  Email does not have to subscribe to product events.
-
-Messaging
-  Messaging may call GetProductCard when a conversation is opened about
-  a product. It stores product id plus the card fields it renders.
-  Catalogue does not call Messaging and does not store messages.
-  A negotiated offer price is not a Catalogue field and not a Catalogue
-  operation. Messaging or Order owns that price and its expiry.
-  Catalogue will still report the list priceDkk.
+Messaging and Editorial
+  May call GET /products/{product_id}. A 404 means the product is gone.
+  They keep their own copy of whatever they render. Catalog does not store
+  messages or posts.
 
 Search
-  Search is the service the shopfront calls for text search.
-  Catalogue remains the source of truth for product fields.
-  Search either:
-    calls SearchProducts and ListPublicProducts, or
-    consumes product_created, product_updated, product_deleted, and
-    brand_updated and serves from its index.
-  If Search uses an index, it indexes CatalogueEventProduct, not a reduced
-  card. A hit must still match SearchProducts for the same text, including
-  reference. priceDkk, stock, and visible must come from the latest
-  consumed event or from a GetProductCard call. Structured filters must
-  match ListPublicProducts. Search does not accept writes to catalogue data.
-  Do not expose both the live Catalogue queries and a stale index as two
-  public sources. The shopfront calls Search for text search, and either
-  Search or Catalogue for the filter grid, not both for the same query.
+  The shopfront calls Search for text search, not Catalog.
+  Search consumes all five catalog.events. It does not write catalog data.
+  price, stock, visibility, and availability come from the latest event.
 
-Out of scope for every service in this contract
-  Auctions, Editorial, and the Cloud AI provider on the architecture
-  diagram. Nobody here publishes or consumes auction_complete, and
-  Catalogue does not take part in bidding.
-  Blog posts are not catalogue data.
-  Exchange rates and country VAT rates have no owner in this contract.
-  Catalogue returns DKK minor units only.
+Auctions
+  May call GET /products/{product_id}.
+  DECISIONS.md item 7 is open, so this contract does not say whether an
+  auction reserves stock or the product becomes hidden.
+  DECISIONS.md item 2 is open, so this contract does not say whether an
+  auction win calls POST /internal/reservations.
+
+Users
+  Publishes user_deleted. Catalog does not read profiles, emails, or
+  addresses.
+
+Not specified yet
+-----------------
+No request or response fields for any of these. They are named so they are
+not invented from an older draft.
+
+  Favorites. The contracts README says Catalog owns them and would delete
+  them on user_deleted, and would delete them when a product is deleted.
+  There is no favorite HTTP and no favorite payload in the YAML.
+
+  Admin writes that create, update, or delete products and brands.
+  The events those writes would publish are specified above. The HTTP is not.
+
+  Image upload and Supabase Storage. An event may carry ProductImage.url.
+  How the blob is stored is not a contract.
+
+  The Cloud AI provider named on the architecture diagram.
