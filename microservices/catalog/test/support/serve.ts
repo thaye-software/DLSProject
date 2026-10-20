@@ -3,10 +3,19 @@ import type { AddressInfo } from "node:net";
 import { afterEach } from "vitest";
 import { createApp, type AppDependencies } from "../../src/adapters/http/app.js";
 
+export const INTERNAL_JWT_SECRET = "orders-and-payment-share-this-32-char-secret";
+
 const defaultDependencies: AppDependencies = {
   isBrokerConnected: () => true,
   isDatabaseReachable: async () => true,
   getProduct: async () => null,
+  reserveStock: async () => {
+    throw new Error("reserveStock not stubbed");
+  },
+  releaseReservation: async () => {
+    throw new Error("releaseReservation not stubbed");
+  },
+  internalJwtSecret: INTERNAL_JWT_SECRET,
 };
 
 let server: Server | undefined;
