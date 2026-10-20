@@ -23,14 +23,27 @@ export type ReserveDecision =
   | { kind: "reject"; unavailableProductIds: string[] }
   | { kind: "apply"; reservation: Reservation; products: Product[]; events: AvailabilityEvent[] };
 
+export type ReleaseResult =
+  | { outcome: "released"; reservation: Reservation }
+  | { outcome: "already_released"; reservation: Reservation }
+  | { outcome: "confirmed"; reservation: Reservation }
+  | { outcome: "unknown" };
+
+export type ReleaseDecision =
+  | { kind: "unchanged"; outcome: "unknown" }
+  | { kind: "unchanged"; outcome: "already_released" | "confirmed"; reservation: Reservation }
+  | { kind: "apply"; reservation: Reservation; products: Product[]; events: AvailabilityEvent[] };
+
 export type ReservationSnapshot = {
   reservation: Reservation | null;
+  reservations: readonly Reservation[];
   products: readonly Product[];
 };
 
 export type ReservationStore = {
   // The decision runs against a copy. Products, the reservation, and outbox rows change together, or not at all.
   reserve(orderId: string, decide: (snapshot: ReservationSnapshot) => ReserveDecision): Promise<ReserveResult>;
+  release(orderId: string, decide: (snapshot: ReservationSnapshot) => ReleaseDecision): Promise<ReleaseResult>;
   product(productId: string): Promise<Product | null>;
   events(): Promise<readonly AvailabilityEvent[]>;
 };
