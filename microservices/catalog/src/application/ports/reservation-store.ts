@@ -44,6 +44,7 @@ export type ReservationStore = {
   // The decision runs against a copy. Products, the reservation, and outbox rows change together, or not at all.
   reserve(orderId: string, decide: (snapshot: ReservationSnapshot) => ReserveDecision): Promise<ReserveResult>;
   release(orderId: string, decide: (snapshot: ReservationSnapshot) => ReleaseDecision): Promise<ReleaseResult>;
+  reservations(): Promise<readonly Reservation[]>;
   product(productId: string): Promise<Product | null>;
   events(): Promise<readonly AvailabilityEvent[]>;
 };

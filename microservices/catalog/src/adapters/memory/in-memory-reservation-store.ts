@@ -55,6 +55,9 @@ export function createInMemoryReservationStore(
       const released: ReleaseResult = { outcome: "released", reservation: decision.reservation };
       return Promise.resolve(released);
     },
+    reservations() {
+      return Promise.resolve([...reservations.values()].map(copyReservation));
+    },
     product(productId) {
       return Promise.resolve(products.find((product) => product.productId === productId) ?? null);
     },
