@@ -55,3 +55,11 @@ CLAUDE.local.md
 
 # draw.io
 .$microservice-erd.drawio.dtmp
+
+# uml-viewer generated diagram and mailbox
+.uml/
+.uml-viewer/
+
+# per-service quality snapshots (crapper, dryer, mutator)
+.metrics/
+/HANDOFF.md

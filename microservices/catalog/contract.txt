@@ -1,0 +1,422 @@
+Catalogue service contract
+=========================
+Audience: Authentication, Users, Messaging, Payments, Email, Search, Order.
+Catalogue owns brands, watch products, images, visibility, stock, and favorites.
+It does not own sessions, user profiles, conversations, payments, mail,
+exchange rates, VAT, orders, or negotiated offer prices.
+
+Transport is not fixed (the contract does not choose how the call travels.
+It only fixes the operation name and the fields that go in and out.).
+Each operation below is one command or query.
+REST, GraphQL, gRPC, or SOAP must carry the same fields. Events are facts
+already committed in Catalogue. Delivery is at least once. Consumers must
+be idempotent.
+
+Conventions
+  Ids are UUID strings.
+  Timestamps are ISO-8601 UTC.
+  priceDkk and every other money field in this contract are integers in
+  minor units of DKK (øre). 1 DKK = 100.
+  Errors are { code, message }. Callers branch on code.
+
+Error codes
+  NOT_FOUND      id or slug does not exist
+  VALIDATION     missing or illegal field
+  OUT_OF_STOCK   reserve failed because stock was 0
+  CONFLICT       unique name, unique slug, or duplicate favorite
+  FORBIDDEN      caller is not allowed
+  UNAVAILABLE    dependency down; reads are safe to retry
+
+Caller
+  Every call carries a Caller, supplied by the API gateway after
+  Authentication has checked the credential. Catalogue does not parse
+  end-user tokens itself when Caller is present.
+
+  Caller
+    userId: string | null          null for a pure service call
+    role: "admin" | "customer" | "service"
+    service: "order" | "users" | "search" | "messaging" | "email"
+             | "payments" | null   set only when role is "service"
+
+  A customer may only pass their own userId on favorite operations.
+  Admin-only operations reject every other role with FORBIDDEN.
+  Operations limited to one service reject other service names with FORBIDDEN.
+
+Shared types
+
+  Brand
+    id, slug, name: string
+    country, addressLine1, addressLine2, zipCode, city, stateProvince,
+    phoneNumber, email, website: string | null
+    slug is assigned by Catalogue from the name (lowercase, spaces become "-").
+    name is unique.
+
+  ProductImage
+    id, productId: string
+    imageUrl: string               absolute URL of a blob Catalogue stores
+    isThumbnail: boolean
+
+  WatchDetails
+    id, brandId: string
+    internalId, model, slug, reference, serialNumber: string
+    year: int
+    size: int | null                millimetres
+    movement, glassType, braceletType, braceletColor, dialColor: string | null
+    limited, box, papers: boolean
+    condition: int                  free integer rating, not an enum
+    vat: int | null                 stored on the watch; Catalogue does not
+                                    calculate tax. VAT rates are not this service.
+
+  Product
+    id: string
+    productType, name, description: string
+    priceDkk: int                   øre, >= 0
+    stock: int                      >= 0
+    visible: boolean
+    createdAt: timestamp
+    watch: WatchDetails
+    brand: Brand
+    images: ProductImage[]
+
+  ProductCard
+    id, slug, name, brandName: string
+    priceDkk: int
+    thumbnailUrl: string | null
+    visible: boolean
+    stock: int
+    slug is the watch slug. This is the snapshot other services may copy.
+    It has no serial number.
+    thumbnailUrl is the image with isThumbnail true, or the first image
+    if none is marked. Null when the product has no images.
+
+  CatalogueEventProduct
+    Every ProductCard field, plus:
+      description, reference, brandSlug: string
+      condition: int
+      year: int
+      size: int | null
+      limited: boolean
+    No serial number. This is the event body Search is allowed to index.
+
+Operations
+----------
+
+Reads
+  These do not require a Caller. Anonymous shoppers, customers, admins,
+  and service callers may all use them:
+  GetProduct, GetProductCard, ListPublicProducts, ListProductsByBrand,
+  GetFilterMetadata, ListBrands, GetBrand, SearchProducts.
+  The shopfront is public today. Requiring a session here would drop
+  browsing, brand pages, and the product page.
+
+  GetProduct
+    in:  { id } or { slug }         exactly one
+    out: Product | NOT_FOUND
+    Used by Order, Messaging, Email, Payments, Search, and the shopfront
+    when they need the full watch.
+    Returns the product even when visible is false or stock is 0.
+    The current product page does the same. List operations below do not.
+    A hidden product is therefore readable by anyone who has the id or slug.
+    Missing id or slug is NOT_FOUND. The response includes serialNumber.
+    Callers that only need a card use GetProductCard, which also returns
+    hidden and out-of-stock products and omits the serial number.
+
+  GetProductCard
+    in:  { id } or { slug }
+    out: ProductCard | NOT_FOUND
+    Use this for lists, chat headers, mail images, and order lines.
+    Order and Messaging must tolerate NOT_FOUND after a product is deleted.
+    They keep their own copy of the card from the moment they first stored
+    the id.
+
+  ListPublicProducts
+    in:
+      brandNames: string[]          optional, match Brand.name
+      conditionValues: int[]        optional
+      minPriceDkk, maxPriceDkk: int optional, minor units (øre)
+      yearStart, yearEnd: int       optional, inclusive
+      minSize, maxSize: int         optional, millimetres, inclusive
+      isLimited: boolean            optional
+      limit: int                    required, 1..100
+      cursor: string | null         null for the first page
+    out: { items: ProductCard[], nextCursor: string | null }
+    Returns only visible products with stock >= 1.
+    Shopfront and Search call this for the grid and structured filters.
+    It is not text search.
+
+  ListProductsByBrand
+    in:  { brandSlug: string }
+    out: ProductCard[]              visible and stock >= 1, or empty if the
+                                    brand slug is unknown (not NOT_FOUND)
+
+  GetFilterMetadata
+    in:  {}
+    out:
+      priceDkk: { lowest: int | null, highest: int | null }   minor units
+      size: { smallest: int | null, largest: int | null }
+      year: { oldest: int | null, newest: int | null }
+      conditions: { condition: int, count: int }[]
+    Bounds and counts are taken only from visible products with stock >= 1,
+    the same set ListPublicProducts returns. If that set is empty, every
+    bound is null and conditions is []. The monolith's fallbacks (price
+    42069, size 23 and 52) are UI placeholders. They are not part of this
+    contract. Shopfront and Search use this to draw filter bounds.
+
+  ListBrands
+    in:  {}
+    out: Brand[]
+
+  GetBrand
+    in:  { id } or { slug }
+    out: Brand | NOT_FOUND
+
+  SearchProducts
+    in:  { text: string, limit: int }     limit 1..100
+    out: ProductCard[]
+    Case-insensitive substring on product name, brand name, or reference.
+    Only visible products with stock >= 1. Empty text returns VALIDATION.
+    This is the catalogue source of truth for that match.
+    The Search service is the public search API (see Search below). It
+    calls this operation, or it builds an index from events and must
+    return the same matches. It must not invent price, stock, or visibility.
+
+Admin writes (Caller.role = admin)
+
+  CreateBrand
+    in:  Brand fields except id and slug
+    out: Brand
+    CONFLICT if name already exists.
+
+  UpdateBrand
+    in:  { id: string, fields: partial Brand except id and slug }
+    out: Brand
+    NOT_FOUND if id does not exist. CONFLICT if the new name is taken.
+    Publishes brand_updated. A name change also updates brandName on
+    later ProductCard reads. Existing snapshots held by other services
+    are not rewritten by Catalogue.
+
+  CreateWatch
+    in:
+      product: { productType, name, description, priceDkk, stock, visible }
+      watch: WatchDetails except id, slug, and any product id
+             brandId is required
+      imageUrls: string[]            may be empty; URLs from UploadImage
+    out: Product
+    NOT_FOUND if brandId does not exist.
+    VALIDATION if priceDkk < 0 or stock < 0.
+    Publishes product_created.
+    Slug is `{brand slug}-{model slug}-{product id}`. The product id makes
+    the slug unique even when two watches share a brand and a model.
+
+  UpdateWatch
+    in:
+      productId: string
+      product: partial product fields, optional
+      watch: partial watch fields except id and slug, optional
+      imageUrls: string[] | omitted
+    out: Product
+    If imageUrls is present, the stored image set becomes exactly that list.
+    If it is omitted, images are unchanged.
+    Publishes product_updated.
+
+  SetVisibility
+    in:  { productId: string, visible: boolean }
+    out: { productId, visible }
+    Publishes product_updated with changed containing "visible".
+
+  DeleteProduct
+    in:  { productId: string }
+    out: { productId }
+    NOT_FOUND if it does not exist.
+    Publishes product_deleted.
+    Catalogue does not check for existing orders or conversations.
+    Order must already have copied ProductCard (at least id, name,
+    brandName, priceDkk, slug, thumbnailUrl) onto the order line at
+    reserve time. Messaging must already have copied the card it shows
+    in the thread. After delete, GetProduct and GetProductCard return
+    NOT_FOUND.
+
+  GetStockTotal
+    in:  {}
+    out: { totalStock: int }        sum of stock across all products,
+                                    including hidden and zero
+
+  UploadImage
+    in:  file bytes, contentType, optional productId
+    out: { imageUrl: string, imageId: string | null }
+    Stores the blob in Catalogue storage.
+    If productId is set, also inserts a ProductImage and returns imageId.
+    If productId is omitted, imageId is null and the URL is passed later
+    to CreateWatch or UpdateWatch.
+
+Stock (Order and admin)
+
+  ReserveStock
+    Caller.service must be "order".
+    in:  { productId: string, quantity: 1, orderId: string }
+    out: { productId, orderId, stockRemaining: int }
+         or OUT_OF_STOCK or NOT_FOUND
+    Atomic. Decrements stock by 1 only when stock > 0 and visible is true.
+    quantity other than 1 is VALIDATION.
+    If visible is false, returns CONFLICT and does not decrement.
+    One order reserves one watch. orderId is the order id, not a line id.
+    Idempotent on orderId: the same orderId and the same productId do not
+    decrement twice. A repeat returns the first result.
+    The same orderId with a different productId returns CONFLICT and does
+    not change stock.
+    Publishes product_updated with changed containing "stock" on the
+    first success only. The event product is a CatalogueEventProduct.
+
+  AdjustStock
+    Caller.service = "order", or Caller.role = admin.
+    in:
+      productId: string
+      quantity: int                  > 0
+      direction: "increment" | "decrement"
+      reason: "expire" | "cancel" | "return" | "admin_correction"
+      orderId: string | null         required for expire, cancel, return
+    out: { productId, stock: int }
+    For expire, cancel, and return, quantity must be 1. Any other quantity
+    is VALIDATION. admin_correction may use any quantity > 0.
+    VALIDATION if quantity <= 0 or reason does not match the caller.
+    CONFLICT if a decrement would make stock negative. Stock is unchanged.
+    NOT_FOUND if the product does not exist.
+    Idempotent on (orderId, reason): Order may retry expire, cancel, and
+    return without applying them twice. admin_correction is not idempotent
+    and requires role admin and orderId null.
+    Publishes product_updated with changed containing "stock" on the first
+    application only. A retry of the same (orderId, reason) returns
+    { productId, stock } from that first application and does not publish again.
+
+Favorites
+
+  ListFavorites
+    in:  { userId: string }
+    out: ProductCard[]
+    Customer: userId must equal Caller.userId. Admin may pass any userId.
+    Only favorites whose product still exists and has stock >= 1.
+    visible is not required. Hidden in-stock watches still appear.
+    This matches getFavoritedProductsByUserId. Deleted products are absent.
+
+  IsFavorite
+    in:  { userId: string, productId: string }
+    out: { favorite: boolean }
+    Same caller rule as ListFavorites. Unknown product returns favorite false.
+
+  ToggleFavorite
+    Caller.role = customer, userId = Caller.userId.
+    in:  { userId: string, productId: string }
+    out: { favorite: boolean }
+    NOT_FOUND if the product does not exist.
+
+  ClearFavorites
+    Caller.service = "users", or triggered by the user_deleted event.
+    in:  { userId: string }
+    out: { removed: int }
+    Idempotent. A second clear for the same userId returns removed 0.
+    user_deleted and a direct ClearFavorites may both arrive.
+
+Events Catalogue publishes
+  product_created   { product: CatalogueEventProduct, occurredAt }
+  product_updated   { product: CatalogueEventProduct, changed: string[], occurredAt }
+                    changed is a list of field names. "stock" and "visible"
+                    are used when those change. A brand rename does not
+                    emit product_updated for every watch.
+  product_deleted   { productId: string, occurredAt }
+  brand_updated     { brand: Brand, occurredAt }
+
+  Search must consume all four, or call the read operations instead.
+  Email is not required to consume them. Email calls GetProductCard
+  when a template needs a name or an image.
+  Order may consume product_updated to drop a stale cached price.
+  ReserveStock is the authority for stock, not the event.
+  Payments does not need these events.
+
+Events Catalogue consumes
+  user_deleted      { userId: string }    published by Users
+                    effect: ClearFavorites for that userId
+  Catalogue consumes nothing else. It does not consume order, payment,
+  message, or auction events. Order calls ReserveStock and AdjustStock.
+
+What each neighbour must provide or must not expect
+---------------------------------------------------
+
+Authentication
+  Catalogue asks one thing when the gateway has not already built Caller:
+    ValidateSession
+      in:  { bearerToken: string }
+      out: Caller | FORBIDDEN
+  Authentication owns passwords, sessions, and role assignment.
+  It must be able to represent these service names on Caller.service:
+  order, users, search, messaging, email, payments.
+  Catalogue stores no credentials. role "admin" is what gates brand,
+  watch, visibility, image upload, stock total, and admin stock corrections.
+
+Users
+  Users publishes user_deleted { userId } when an account is deleted.
+  Catalogue does not read profiles, emails, or addresses.
+  A username shown next to a favorite is a Users lookup in the client,
+  not a Catalogue field.
+
+Order
+  Order calls GetProduct or GetProductCard, ReserveStock, and AdjustStock.
+  Catalogue never calls Order.
+  At the successful ReserveStock, Order stores its own copy of ProductCard
+  on the order line. Later deletes and price edits must not change that line.
+  Stock goes down only through ReserveStock (quantity 1).
+  Stock comes back only through AdjustStock with reason expire, cancel,
+  or return, quantity 1, and the same orderId.
+  One order buys one watch. Do not reserve a second product on that orderId.
+  Order does not call ReserveStock when GetProduct shows visible false.
+  ReserveStock also rejects that case.
+  Order does not write visibility, price, or images.
+  A negotiated offer, if Order accepts one, replaces priceDkk only on
+  the order's own copy. Catalogue is not told the offer amount.
+
+Payments
+  Payments may call GetProductCard to read the list priceDkk.
+  Catalogue does not call Payments.
+  Catalogue does not convert currency and does not return VAT.
+  Payments must not expect Convert or VAT operations from Catalogue.
+  Currency conversion and VAT are outside this contract. No service listed
+  here is required to provide them for Catalogue to work.
+  Charging, refunds, and the amount actually captured are Payments data.
+  That amount is the list priceDkk copied at reserve time, or an offer
+  price Order accepted. Catalogue does not check the charged amount.
+
+Email
+  Email may call GetProductCard { id } to fill a name and thumbnailUrl.
+  Catalogue does not call Email and does not send mail.
+  Email does not have to subscribe to product events.
+
+Messaging
+  Messaging may call GetProductCard when a conversation is opened about
+  a product. It stores product id plus the card fields it renders.
+  Catalogue does not call Messaging and does not store messages.
+  A negotiated offer price is not a Catalogue field and not a Catalogue
+  operation. Messaging or Order owns that price and its expiry.
+  Catalogue will still report the list priceDkk.
+
+Search
+  Search is the service the shopfront calls for text search.
+  Catalogue remains the source of truth for product fields.
+  Search either:
+    calls SearchProducts and ListPublicProducts, or
+    consumes product_created, product_updated, product_deleted, and
+    brand_updated and serves from its index.
+  If Search uses an index, it indexes CatalogueEventProduct, not a reduced
+  card. A hit must still match SearchProducts for the same text, including
+  reference. priceDkk, stock, and visible must come from the latest
+  consumed event or from a GetProductCard call. Structured filters must
+  match ListPublicProducts. Search does not accept writes to catalogue data.
+  Do not expose both the live Catalogue queries and a stale index as two
+  public sources. The shopfront calls Search for text search, and either
+  Search or Catalogue for the filter grid, not both for the same query.
+
+Out of scope for every service in this contract
+  Auctions, Editorial, and the Cloud AI provider on the architecture
+  diagram. Nobody here publishes or consumes auction_complete, and
+  Catalogue does not take part in bidding.
+  Blog posts are not catalogue data.
+  Exchange rates and country VAT rates have no owner in this contract.
+  Catalogue returns DKK minor units only.
