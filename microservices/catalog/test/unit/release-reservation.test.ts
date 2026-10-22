@@ -176,4 +176,28 @@ describe("releaseReservation", () => {
       reason: "order_released",
     });
   });
+
+  it("throws when the reserved product is not in the snapshot", async () => {
+    const reservation: Reservation = {
+      reservationId: "11111111-1111-4111-8111-111111111111",
+      orderId: ORDER_ID,
+      status: "active",
+      items: [
+        {
+          productId: SUBMARINER_ID,
+          productName: "Rolex Submariner Date 126610LN",
+          quantity: 1,
+          unitPrice: { amountMinor: 11_500_000, currency: "DKK" },
+          thumbnailUrl: null,
+        },
+      ],
+      expiresAt: EXPIRES_AT,
+      createdAt: RESERVED_AT,
+    };
+    const store = createInMemoryReservationStore([], [reservation]);
+
+    await expect(releaseReservation(ORDER_ID, { store, now: () => RELEASED_AT, newId: refusingNewId })).rejects.toThrow(
+      `Product ${SUBMARINER_ID} disappeared before its reservation could be released`,
+    );
+  });
 });

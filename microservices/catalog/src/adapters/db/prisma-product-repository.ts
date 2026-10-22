@@ -1,5 +1,6 @@
 import type { ProductRepository } from "../../application/ports/product-repository.js";
 import { AVAILABILITIES, type Availability, type Product } from "../../domain/product.js";
+import { enumMember } from "./enum-member.js";
 import type { Database } from "./prisma.js";
 
 export type ProductRow = {
@@ -55,7 +56,5 @@ export class PrismaProductRepository implements ProductRepository {
 }
 
 function availability(value: string): Availability {
-  const match = AVAILABILITIES.find((candidate) => candidate === value);
-  if (!match) throw new Error(`Unknown availability ${value}`);
-  return match;
+  return enumMember(AVAILABILITIES, value, "availability");
 }

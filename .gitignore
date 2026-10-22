@@ -62,4 +62,6 @@ CLAUDE.local.md
 
 # per-service quality snapshots (crapper, dryer, mutator)
 .metrics/
-/HANDOFF.md
+
+# IDE specific
+.idea

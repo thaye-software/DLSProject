@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createInMemoryReservationStore } from "../../src/adapters/memory/in-memory-reservation-store.js";
-import { reserveStock } from "../../src/application/reserve-stock.js";
+import { productAfterStockCheck, reserveStock } from "../../src/application/reserve-stock.js";
 import type { Product } from "../../src/domain/product.js";
 
 const ORDER_ID = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
@@ -190,5 +190,9 @@ describe("reserveStock", () => {
     expect(second).toEqual({ outcome: "replayed", reservation: first.outcome === "reserved" ? first.reservation : undefined });
     await expect(store.product(SUBMARINER_ID)).resolves.toMatchObject({ stock: 1, version: 2 });
     expect(await store.events()).toHaveLength(1);
+  });
+
+  it("throws when a product disappeared after the stock check", () => {
+    expect(() => productAfterStockCheck(new Map(), SUBMARINER_ID)).toThrow(`Product ${SUBMARINER_ID} disappeared after the stock check`);
   });
 });

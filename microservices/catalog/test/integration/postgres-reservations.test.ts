@@ -11,7 +11,9 @@ import type { ReserveRequest } from "../../src/application/ports/reservation-sto
 import { releaseDueReservations } from "../../src/application/release-due-reservations.js";
 import { releaseReservation } from "../../src/application/release-reservation.js";
 import { reserveStock, type ReserveStockDependencies } from "../../src/application/reserve-stock.js";
+import { availabilityEvent } from "../../src/domain/availability-event.js";
 import type { Product } from "../../src/domain/product.js";
+import type { Reservation } from "../../src/domain/reservation.js";
 import { INTERNAL_JWT_SECRET, serve } from "../support/serve.js";
 import { startMigratedPostgres } from "../support/postgres.js";
 
@@ -69,6 +71,57 @@ async function eventsFor(orderId: string) {
 async function reserve(product: Product, quantity = 1, orderId = randomUUID(), expiresAt = EXPIRES_AT) {
   const result = await reserveStock({ orderId, items: [{ productId: product.productId, quantity }], expiresAt }, context(NOW));
   return { orderId, result };
+}
+
+function observeStore() {
+  const calls = { productUpdates: 0, outboxInserts: 0 };
+  const observed = new PrismaReservationStore(
+    database.$extends({
+      query: {
+        product: {
+          update({ args, query }) {
+            calls.productUpdates += 1;
+            return query(args);
+          },
+        },
+        outboxEvent: {
+          createMany({ args, query }) {
+            calls.outboxInserts += 1;
+            return query(args);
+          },
+        },
+      },
+    }) as unknown as Database,
+  );
+  return { observed, calls };
+}
+
+async function insertActiveReservation(product: Product, orderId = randomUUID()): Promise<Reservation> {
+  const reservationId = randomUUID();
+  await database.reservation.create({
+    data: {
+      id: reservationId,
+      orderId,
+      status: "active",
+      expiresAt: EXPIRES_AT,
+      createdAt: NOW,
+      items: {
+        create: [
+          {
+            position: 0,
+            productId: product.productId,
+            productName: product.name,
+            quantity: 1,
+            unitPriceDkk: BigInt(product.price.amountMinor),
+            thumbnailUrl: product.thumbnailUrl,
+          },
+        ],
+      },
+    },
+  });
+  const stored = (await store.reservations()).find((reservation) => reservation.orderId === orderId);
+  if (!stored) throw new Error(`Reservation ${orderId} was not stored`);
+  return stored;
 }
 
 function serviceToken(): Promise<string> {
@@ -233,6 +286,78 @@ describe("Postgres products, reservations, and the availability outbox", () => {
     expect(result.outcome).toBe("confirmed");
     await expect(store.product(product.productId)).resolves.toMatchObject({ stock: 1, version: 1, availability: "available" });
     expect(await eventsFor(orderId)).toEqual([]);
+  });
+
+  it("updates stock when a product that is already reserved is reserved again", async () => {
+    const product = await insertProduct(watch({ availability: "reserved", stock: 2, version: 4 }));
+    const { observed, calls } = observeStore();
+
+    const result = await reserveStock(
+      { orderId: randomUUID(), items: [{ productId: product.productId, quantity: 1 }], expiresAt: EXPIRES_AT },
+      { store: observed, now: () => NOW, newId: randomUUID },
+    );
+
+    expect(result.outcome).toBe("reserved");
+    await expect(observed.product(product.productId)).resolves.toMatchObject({ stock: 1, version: 5, availability: "reserved" });
+    expect(calls.productUpdates).toBe(1);
+  });
+
+  it("does not update a product row when the decision leaves stock, version, and availability unchanged", async () => {
+    const product = await insertProduct(watch({ stock: 2, availability: "reserved", version: 4 }));
+    const orderId = randomUUID();
+    await insertActiveReservation(product, orderId);
+    const { observed, calls } = observeStore();
+
+    const result = await observed.release(orderId, (snapshot) => {
+      const reservation = snapshot.reservation;
+      if (!reservation) throw new Error(`Reservation ${orderId} was not locked`);
+      return {
+        kind: "apply",
+        reservation: { ...reservation, status: "released" },
+        products: snapshot.products.map((held) => ({ ...held, price: { ...held.price } })),
+        events: [
+          availabilityEvent({
+            id: randomUUID(),
+            productId: product.productId,
+            orderId,
+            time: NOW,
+            version: product.version,
+            availability: product.availability,
+            previousAvailability: product.availability,
+            stock: product.stock,
+            reason: "order_released",
+            causationId: null,
+          }),
+        ],
+      };
+    });
+
+    expect(result.outcome).toBe("released");
+    expect(calls.productUpdates).toBe(0);
+    await expect(observed.product(product.productId)).resolves.toMatchObject({ stock: 2, version: 4, availability: "reserved" });
+  });
+
+  it("commits a release that has no availability events without inserting an outbox row", async () => {
+    const product = await insertProduct(watch({ stock: 2 }));
+    const orderId = randomUUID();
+    await insertActiveReservation(product, orderId);
+    const { observed, calls } = observeStore();
+
+    const result = await observed.release(orderId, (snapshot) => {
+      const reservation = snapshot.reservation;
+      if (!reservation) throw new Error(`Reservation ${orderId} was not locked`);
+      return {
+        kind: "apply",
+        reservation: { ...reservation, status: "released" },
+        products: snapshot.products.map((held) => ({ ...held, price: { ...held.price } })),
+        events: [],
+      };
+    });
+
+    expect(result.outcome).toBe("released");
+    expect(calls.outboxInserts).toBe(0);
+    expect(await eventsFor(orderId)).toEqual([]);
+    expect((await observed.reservations()).find((reservation) => reservation.orderId === orderId)?.status).toBe("released");
   });
 
   it("releases a reservation that is still active five minutes after expires_at", async () => {

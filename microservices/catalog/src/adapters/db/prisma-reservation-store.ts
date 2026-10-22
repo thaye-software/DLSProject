@@ -11,7 +11,8 @@ import type {
 import { AVAILABILITY_REASONS, type AvailabilityEvent } from "../../domain/availability-event.js";
 import { AVAILABILITIES, type Product } from "../../domain/product.js";
 import { RESERVATION_STATUSES, type Reservation, type ReservationStatus } from "../../domain/reservation.js";
-import { toProduct } from "./prisma-product-repository.js";
+import { enumMember } from "./enum-member.js";
+import { PrismaProductRepository, toProduct } from "./prisma-product-repository.js";
 import type { Database } from "./prisma.js";
 
 const reservationWithItems = {
@@ -76,9 +77,8 @@ export class PrismaReservationStore implements ReservationStore {
     return rows.map(toReservation);
   }
 
-  async product(productId: string): Promise<Product | null> {
-    const row = await this.database.product.findUnique({ where: { id: productId } });
-    return row ? toProduct(row) : null;
+  product(productId: string): Promise<Product | null> {
+    return new PrismaProductRepository(this.database).findById(productId);
   }
 
   async events(): Promise<readonly AvailabilityEvent[]> {
@@ -166,7 +166,5 @@ function toReservation(row: ReservationRow): Reservation {
 }
 
 function status(value: string): ReservationStatus {
-  const match = RESERVATION_STATUSES.find((candidate) => candidate === value);
-  if (!match) throw new Error(`Unknown reservation status ${value}`);
-  return match;
+  return enumMember(RESERVATION_STATUSES, value, "reservation status");
 }
