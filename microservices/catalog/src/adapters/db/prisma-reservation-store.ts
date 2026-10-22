@@ -105,7 +105,8 @@ export class PrismaReservationStore implements ReservationStore {
 
       const decision: CancelDecision = decide(snapshot);
       if (decision.kind === "unchanged") {
-        return decision.outcome === "unknown" ? { outcome: "unknown" } : { outcome: decision.outcome, reservation: decision.reservation };
+        if (decision.outcome === "already_released") return { outcome: "already_released", reservation: decision.reservation };
+        return { outcome: decision.outcome };
       }
 
       const inbox = await tx.processedEvent.createMany({ data: [{ eventId: event.id, type: event.type }], skipDuplicates: true });

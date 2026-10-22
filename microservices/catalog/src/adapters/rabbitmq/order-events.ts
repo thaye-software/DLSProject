@@ -4,9 +4,15 @@ import { confirmReservation } from "../../application/confirm-reservation.js";
 import { expireReservation } from "../../application/expire-reservation.js";
 import type { OrderEventInbox } from "../../application/ports/order-event-inbox.js";
 import type { ReserveStockDependencies } from "../../application/reserve-stock.js";
+import { ORDER_STATUSES, returnOnStatusChange } from "../../application/status-changed-reservation.js";
 import { handleEvent, type EventHandler } from "./consumer.js";
 
 const orderIdData = z.object({ order_id: z.uuid() });
+const statusChangedData = z.object({
+  order_id: z.uuid(),
+  previous_status: z.enum(ORDER_STATUSES),
+  status: z.enum(ORDER_STATUSES),
+});
 
 // Turns one CloudEvent into an inbox apply. Routing keys stay unbound until a commit handles that event.
 export function orderEventHandler(
@@ -29,6 +35,9 @@ export function createOrderEventHandlers(dependencies: ReserveStockDependencies)
     }),
     order_expired: handleEvent(orderIdData, async (data, event) => {
       await expireReservation(data.order_id, event.id, dependencies);
+    }),
+    order_status_changed: handleEvent(statusChangedData, async (data, event) => {
+      await returnOnStatusChange(data.order_id, event.id, data.previous_status, data.status, dependencies);
     }),
   };
 }

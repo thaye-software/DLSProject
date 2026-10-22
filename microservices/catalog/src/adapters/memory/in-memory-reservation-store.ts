@@ -88,7 +88,9 @@ export function createInMemoryReservationStore(
       const decision: CancelDecision = decide(snapshotFor(orderId));
       if (decision.kind === "unchanged") {
         const unchanged: CancelResult =
-          decision.outcome === "unknown" ? { outcome: "unknown" } : { outcome: decision.outcome, reservation: decision.reservation };
+          decision.outcome === "already_released"
+            ? { outcome: "already_released", reservation: decision.reservation }
+            : { outcome: decision.outcome };
         return Promise.resolve(unchanged);
       }
       products = decision.products.map(copyProduct);

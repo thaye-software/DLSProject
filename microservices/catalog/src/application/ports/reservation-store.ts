@@ -54,11 +54,12 @@ export type ConfirmDecision =
 export type CancelResult =
   | { outcome: "released"; reservation: Reservation }
   | { outcome: "already_released"; reservation: Reservation }
+  | { outcome: "not_returning" }
   | { outcome: "duplicate" }
   | { outcome: "unknown" };
 
 export type CancelDecision =
-  | { kind: "unchanged"; outcome: "unknown" }
+  | { kind: "unchanged"; outcome: "unknown" | "not_returning" }
   | { kind: "unchanged"; outcome: "already_released"; reservation: Reservation }
   | { kind: "apply"; reservation: Reservation; products: Product[]; events: AvailabilityEvent[] };
 
@@ -82,6 +83,7 @@ export type ReservationStore = {
   // The CloudEvents id is stored only when an active reservation is confirmed. A repeat of that id does not confirm again.
   confirm(orderId: string, event: ConfirmEvent, decide: (snapshot: ReservationSnapshot) => ConfirmDecision): Promise<ConfirmResult>;
   // The CloudEvents id is stored only when the reserved quantities come back. A repeat of that id does not add them again.
+  // A decision of not_returning records nothing: the order event did not bring stock back.
   cancel(orderId: string, event: ConfirmEvent, decide: (snapshot: ReservationSnapshot) => CancelDecision): Promise<CancelResult>;
   // The CloudEvents id is stored only when an active reservation expires. Released and confirmed reservations record nothing.
   expire(orderId: string, event: ConfirmEvent, decide: (snapshot: ReservationSnapshot) => ReleaseDecision): Promise<ExpireResult>;
