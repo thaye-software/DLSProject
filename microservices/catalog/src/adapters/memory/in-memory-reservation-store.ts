@@ -1,4 +1,6 @@
 import type {
+  CancelDecision,
+  CancelResult,
   ConfirmDecision,
   ConfirmResult,
   ReleaseDecision,
@@ -79,6 +81,21 @@ export function createInMemoryReservationStore(
       processed.add(event.id);
       const confirmed: ConfirmResult = { outcome: "confirmed", reservation: decision.reservation };
       return Promise.resolve(confirmed);
+    },
+    cancel(orderId, event, decide) {
+      if (processed.has(event.id)) return Promise.resolve({ outcome: "duplicate" });
+      const decision: CancelDecision = decide(snapshotFor(orderId));
+      if (decision.kind === "unchanged") {
+        const unchanged: CancelResult =
+          decision.outcome === "unknown" ? { outcome: "unknown" } : { outcome: decision.outcome, reservation: decision.reservation };
+        return Promise.resolve(unchanged);
+      }
+      products = decision.products.map(copyProduct);
+      reservations.set(decision.reservation.orderId, copyReservation(decision.reservation));
+      events = [...events, ...decision.events];
+      processed.add(event.id);
+      const released: CancelResult = { outcome: "released", reservation: decision.reservation };
+      return Promise.resolve(released);
     },
     reservations() {
       return Promise.resolve([...reservations.values()].map(copyReservation));

@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { Prisma } from "../../generated/prisma/client.js";
 import type {
+  CancelDecision,
+  CancelResult,
   ConfirmDecision,
   ConfirmEvent,
   ConfirmResult,
@@ -91,6 +93,25 @@ export class PrismaReservationStore implements ReservationStore {
 
       await applyDecision(tx, snapshot, decision.reservation, decision.products, decision.events);
       return { outcome: "confirmed", reservation: decision.reservation };
+    });
+  }
+
+  cancel(orderId: string, event: ConfirmEvent, decide: (snapshot: ReservationSnapshot) => CancelDecision): Promise<CancelResult> {
+    return this.database.$transaction(async (tx) => {
+      const snapshot = await lockedSnapshot(tx, orderId);
+      const seen = await tx.processedEvent.findUnique({ where: { eventId: event.id } });
+      if (seen) return { outcome: "duplicate" };
+
+      const decision: CancelDecision = decide(snapshot);
+      if (decision.kind === "unchanged") {
+        return decision.outcome === "unknown" ? { outcome: "unknown" } : { outcome: decision.outcome, reservation: decision.reservation };
+      }
+
+      const inbox = await tx.processedEvent.createMany({ data: [{ eventId: event.id, type: event.type }], skipDuplicates: true });
+      if (inbox.count === 0) return { outcome: "duplicate" };
+
+      await applyDecision(tx, snapshot, decision.reservation, decision.products, decision.events);
+      return { outcome: "released", reservation: decision.reservation };
     });
   }
 

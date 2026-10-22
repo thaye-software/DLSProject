@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { cancelReservation } from "../../application/cancel-reservation.js";
 import { confirmReservation } from "../../application/confirm-reservation.js";
 import type { OrderEventInbox } from "../../application/ports/order-event-inbox.js";
 import type { ReserveStockDependencies } from "../../application/reserve-stock.js";
@@ -16,11 +17,14 @@ export function orderEventHandler(
   });
 }
 
-// Each key is bound only once this process can apply it. order_confirmed is the first.
+// Each key is bound only once this process can apply it.
 export function createOrderEventHandlers(dependencies: ReserveStockDependencies): Record<string, EventHandler> {
   return {
     order_confirmed: handleEvent(orderIdData, async (data, event) => {
       await confirmReservation(data.order_id, event.id, dependencies);
+    }),
+    order_cancelled: handleEvent(orderIdData, async (data, event) => {
+      await cancelReservation(data.order_id, event.id, dependencies);
     }),
   };
 }

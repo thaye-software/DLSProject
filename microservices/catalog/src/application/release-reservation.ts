@@ -1,4 +1,4 @@
-import { availabilityEvent } from "../domain/availability-event.js";
+import { availabilityEvent, type AvailabilityEvent } from "../domain/availability-event.js";
 import type { Availability, Product } from "../domain/product.js";
 import type { Reservation } from "../domain/reservation.js";
 import type { ReleaseDecision, ReleaseResult, ReservationStore } from "./ports/reservation-store.js";
@@ -21,7 +21,18 @@ export function planRelease(
   if (!existing) return { kind: "unchanged", outcome: "unknown" };
   if (existing.status === "released") return { kind: "unchanged", outcome: "already_released", reservation: existing };
   if (existing.status === "confirmed") return { kind: "unchanged", outcome: "confirmed", reservation: existing };
+  return returnReservedQuantities(existing, reservations, products, now, newId, null);
+}
 
+// The stored quantities go back once and the reservation becomes released. order_cancelled passes the order event id.
+export function returnReservedQuantities(
+  existing: Reservation,
+  reservations: readonly Reservation[],
+  products: readonly Product[],
+  now: Date,
+  newId: () => string,
+  causationId: string | null,
+): { kind: "apply"; reservation: Reservation; products: Product[]; events: AvailabilityEvent[] } {
   const byId = new Map(products.map((product) => [product.productId, product]));
   const returning = new Map<string, number>();
   for (const line of existing.items) returning.set(line.productId, (returning.get(line.productId) ?? 0) + line.quantity);
@@ -36,20 +47,20 @@ export function planRelease(
       price: { ...product.price },
       stock,
       version: product.version + 1,
-      availability: availabilityAfterRelease(productIsHeld(reservations, productId, orderId), stock),
+      availability: availabilityAfterRelease(productIsHeld(reservations, productId, existing.orderId), stock),
     };
     changed.set(productId, next);
     return availabilityEvent({
       id: newId(),
       productId,
-      orderId,
+      orderId: existing.orderId,
       time: now,
       version: next.version,
       availability: next.availability,
       previousAvailability: product.availability,
       stock: next.stock,
       reason: "order_released",
-      causationId: null,
+      causationId,
     });
   });
 

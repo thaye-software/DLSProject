@@ -145,6 +145,7 @@ describe("order_confirmed", () => {
         attempts.count += 1;
         return store.confirm(id, event, decide);
       },
+      cancel: store.cancel.bind(store),
       reservations: store.reservations.bind(store),
       product: store.product.bind(store),
       events: store.events.bind(store),
