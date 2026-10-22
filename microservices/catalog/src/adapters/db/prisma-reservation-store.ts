@@ -148,7 +148,7 @@ async function applyDecision(
   }
 }
 
-function toReservation(row: ReservationRow): Reservation {
+export function toReservation(row: ReservationRow): Reservation {
   return {
     reservationId: row.id,
     orderId: row.orderId,

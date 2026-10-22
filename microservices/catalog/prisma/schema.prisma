@@ -65,3 +65,12 @@ model OutboxEvent {
   @@index([publishedAt, createdAt])
   @@map("outbox")
 }
+
+// Idempotent inbox: the CloudEvent ids already handled.
+model ProcessedEvent {
+  eventId     String   @id @map("event_id") @db.Uuid
+  type        String   @db.VarChar(64)
+  processedAt DateTime @default(now()) @map("processed_at")
+
+  @@map("processed_events")
+}
