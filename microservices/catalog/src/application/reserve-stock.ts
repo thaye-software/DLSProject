@@ -1,7 +1,7 @@
 import { availabilityEvent, type AvailabilityEvent } from "../domain/availability-event.js";
 import type { Product } from "../domain/product.js";
 import type { Reservation, ReservationLine } from "../domain/reservation.js";
-import type { ReserveDecision, ReserveRequest, ReserveResult, ReservationStore } from "./ports/reservation-store.js";
+import type { ReserveDecision, ReserveLine, ReserveRequest, ReserveResult, ReservationStore } from "./ports/reservation-store.js";
 
 export type ReserveStockDependencies = {
   store: ReservationStore;

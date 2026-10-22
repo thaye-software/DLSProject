@@ -1,6 +1,7 @@
 import { availabilityEvent, type AvailabilityEvent } from "../domain/availability-event.js";
-import type { Availability, Product } from "../domain/product.js";
+import type { Product } from "../domain/product.js";
 import type { Reservation } from "../domain/reservation.js";
+import { copyHeldProduct, productIsHeld } from "./held-product.js";
 import type { ReleaseDecision, ReleaseResult, ReservationStore } from "./ports/reservation-store.js";
 import type { ReserveStockDependencies } from "./reserve-stock.js";
 
@@ -18,11 +19,21 @@ export function planRelease(
   newId: () => string,
   causationId: string | null,
 ): ReleaseDecision {
+  const found = findOpenReservation(reservations, orderId);
+  if (found.kind === "unchanged") return found;
+  if (found.reservation.status === "confirmed") return { kind: "unchanged", outcome: "confirmed", reservation: found.reservation };
+  return returnReservedQuantities(found.reservation, reservations, products, now, newId, causationId);
+}
+
+// Unknown and already released are shared. planRelease then refuses a confirmed reservation; planCancel does not.
+export function findOpenReservation(
+  reservations: readonly Reservation[],
+  orderId: string,
+): { kind: "unchanged"; outcome: "unknown" } | { kind: "unchanged"; outcome: "already_released"; reservation: Reservation } | { kind: "open"; reservation: Reservation } {
   const existing = reservations.find((reservation) => reservation.orderId === orderId) ?? null;
   if (!existing) return { kind: "unchanged", outcome: "unknown" };
   if (existing.status === "released") return { kind: "unchanged", outcome: "already_released", reservation: existing };
-  if (existing.status === "confirmed") return { kind: "unchanged", outcome: "confirmed", reservation: existing };
-  return returnReservedQuantities(existing, reservations, products, now, newId, causationId);
+  return { kind: "open", reservation: existing };
 }
 
 // The stored quantities go back once and the reservation becomes released. An order event passes its id; a direct release passes null.
@@ -43,13 +54,7 @@ export function returnReservedQuantities(
     const product = byId.get(productId);
     if (!product) throw new Error(`Product ${productId} disappeared before its reservation could be released`);
     const stock = product.stock + quantity;
-    const next: Product = {
-      ...product,
-      price: { ...product.price },
-      stock,
-      version: product.version + 1,
-      availability: availabilityAfterRelease(productIsHeld(reservations, productId, existing.orderId), stock),
-    };
+    const next = copyHeldProduct(product, stock, productIsHeld(reservations, productId, existing.orderId));
     changed.set(productId, next);
     return availabilityEvent({
       id: newId(),
@@ -73,17 +78,3 @@ export function returnReservedQuantities(
   };
 }
 
-function productIsHeld(reservations: readonly Reservation[], productId: string, exceptOrderId: string): boolean {
-  return reservations.some(
-    (reservation) =>
-      reservation.orderId !== exceptOrderId &&
-      reservation.status === "active" &&
-      reservation.items.some((line) => line.productId === productId && line.quantity > 0),
-  );
-}
-
-function availabilityAfterRelease(stillHeld: boolean, stock: number): Availability {
-  if (stillHeld) return "reserved";
-  if (stock > 0) return "available";
-  return "sold";
-}

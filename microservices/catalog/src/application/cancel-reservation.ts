@@ -1,7 +1,7 @@
 import type { Product } from "../domain/product.js";
 import type { Reservation } from "../domain/reservation.js";
 import type { CancelDecision, CancelResult } from "./ports/reservation-store.js";
-import { returnReservedQuantities } from "./release-reservation.js";
+import { findOpenReservation, returnReservedQuantities } from "./release-reservation.js";
 import type { ReserveStockDependencies } from "./reserve-stock.js";
 
 // A customer cancel is still active. An admin cancel of a paid order is already confirmed. Both put the stored quantities back once.
@@ -24,8 +24,7 @@ export function planCancel(
   now: Date,
   newId: () => string,
 ): CancelDecision {
-  const existing = reservations.find((reservation) => reservation.orderId === orderId) ?? null;
-  if (!existing) return { kind: "unchanged", outcome: "unknown" };
-  if (existing.status === "released") return { kind: "unchanged", outcome: "already_released", reservation: existing };
-  return returnReservedQuantities(existing, reservations, products, now, newId, eventId);
+  const found = findOpenReservation(reservations, orderId);
+  if (found.kind === "unchanged") return found;
+  return returnReservedQuantities(found.reservation, reservations, products, now, newId, eventId);
 }

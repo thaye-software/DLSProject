@@ -17,6 +17,7 @@ import type {
 import { AVAILABILITY_REASONS, type AvailabilityEvent } from "../../domain/availability-event.js";
 import { AVAILABILITIES, type Product } from "../../domain/product.js";
 import { RESERVATION_STATUSES, type Reservation, type ReservationStatus } from "../../domain/reservation.js";
+import { cancelUnchanged, unchangedKnown } from "../../application/unchanged-outcome.js";
 import { enumMember } from "./enum-member.js";
 import { PrismaProductRepository, toProduct } from "./prisma-product-repository.js";
 import type { Database } from "./prisma.js";
@@ -79,61 +80,15 @@ export class PrismaReservationStore implements ReservationStore {
   }
 
   confirm(orderId: string, event: ConfirmEvent, decide: (snapshot: ReservationSnapshot) => ConfirmDecision): Promise<ConfirmResult> {
-    return this.database.$transaction(async (tx) => {
-      const snapshot = await lockedSnapshot(tx, orderId);
-      const seen = await tx.processedEvent.findUnique({ where: { eventId: event.id } });
-      if (seen) return { outcome: "duplicate" };
-
-      const decision: ConfirmDecision = decide(snapshot);
-      if (decision.kind === "unchanged") {
-        return decision.outcome === "unknown" ? { outcome: "unknown" } : { outcome: decision.outcome, reservation: decision.reservation };
-      }
-
-      const inbox = await tx.processedEvent.createMany({ data: [{ eventId: event.id, type: event.type }], skipDuplicates: true });
-      if (inbox.count === 0) return { outcome: "duplicate" };
-
-      await applyDecision(tx, snapshot, decision.reservation, decision.products, decision.events);
-      return { outcome: "confirmed", reservation: decision.reservation };
-    });
+    return recordStockEvent<ConfirmDecision, ConfirmResult>(this.database, orderId, event, decide, unchangedKnown, (reservation) => ({ outcome: "confirmed", reservation }), { outcome: "duplicate" });
   }
 
   cancel(orderId: string, event: ConfirmEvent, decide: (snapshot: ReservationSnapshot) => CancelDecision): Promise<CancelResult> {
-    return this.database.$transaction(async (tx) => {
-      const snapshot = await lockedSnapshot(tx, orderId);
-      const seen = await tx.processedEvent.findUnique({ where: { eventId: event.id } });
-      if (seen) return { outcome: "duplicate" };
-
-      const decision: CancelDecision = decide(snapshot);
-      if (decision.kind === "unchanged") {
-        if (decision.outcome === "already_released") return { outcome: "already_released", reservation: decision.reservation };
-        return { outcome: decision.outcome };
-      }
-
-      const inbox = await tx.processedEvent.createMany({ data: [{ eventId: event.id, type: event.type }], skipDuplicates: true });
-      if (inbox.count === 0) return { outcome: "duplicate" };
-
-      await applyDecision(tx, snapshot, decision.reservation, decision.products, decision.events);
-      return { outcome: "released", reservation: decision.reservation };
-    });
+    return recordStockEvent<CancelDecision, CancelResult>(this.database, orderId, event, decide, cancelUnchanged, (reservation) => ({ outcome: "released", reservation }), { outcome: "duplicate" });
   }
 
   expire(orderId: string, event: ConfirmEvent, decide: (snapshot: ReservationSnapshot) => ReleaseDecision): Promise<ExpireResult> {
-    return this.database.$transaction(async (tx) => {
-      const snapshot = await lockedSnapshot(tx, orderId);
-      const seen = await tx.processedEvent.findUnique({ where: { eventId: event.id } });
-      if (seen) return { outcome: "duplicate" };
-
-      const decision: ReleaseDecision = decide(snapshot);
-      if (decision.kind === "unchanged") {
-        return decision.outcome === "unknown" ? { outcome: "unknown" } : { outcome: decision.outcome, reservation: decision.reservation };
-      }
-
-      const inbox = await tx.processedEvent.createMany({ data: [{ eventId: event.id, type: event.type }], skipDuplicates: true });
-      if (inbox.count === 0) return { outcome: "duplicate" };
-
-      await applyDecision(tx, snapshot, decision.reservation, decision.products, decision.events);
-      return { outcome: "released", reservation: decision.reservation };
-    });
+    return recordStockEvent<ReleaseDecision, ExpireResult>(this.database, orderId, event, decide, unchangedKnown, (reservation) => ({ outcome: "released", reservation }), { outcome: "duplicate" });
   }
 
   async reservations(): Promise<readonly Reservation[]> {
@@ -149,6 +104,36 @@ export class PrismaReservationStore implements ReservationStore {
     const rows = await this.database.outboxEvent.findMany({ orderBy: [{ createdAt: "asc" }, { id: "asc" }] });
     return rows.map((row) => storedEventSchema.parse(row.payload));
   }
+}
+
+type RecordedDecision =
+  | { kind: "unchanged" }
+  | { kind: "apply"; reservation: Reservation; products: readonly Product[]; events: readonly AvailabilityEvent[] };
+
+function recordStockEvent<Decision extends RecordedDecision, Result>(
+  database: Database,
+  orderId: string,
+  event: ConfirmEvent,
+  decide: (snapshot: ReservationSnapshot) => Decision,
+  unchanged: (decision: Extract<Decision, { kind: "unchanged" }>) => Result,
+  applied: (reservation: Reservation) => Result,
+  duplicate: Result,
+): Promise<Result> {
+  return database.$transaction(async (tx) => {
+    const snapshot = await lockedSnapshot(tx, orderId);
+    const seen = await tx.processedEvent.findUnique({ where: { eventId: event.id } });
+    if (seen) return duplicate;
+
+    const decision = decide(snapshot);
+    // A generic union of the two kinds does not narrow on `kind`, so the sides are named here.
+    if (decision.kind === "unchanged") return unchanged(decision as Extract<Decision, { kind: "unchanged" }>);
+    const inbox = await tx.processedEvent.createMany({ data: [{ eventId: event.id, type: event.type }], skipDuplicates: true });
+    if (inbox.count === 0) return duplicate;
+
+    const appliedDecision = decision as Extract<Decision, { kind: "apply" }>;
+    await applyDecision(tx, snapshot, appliedDecision.reservation, appliedDecision.products, appliedDecision.events);
+    return applied(appliedDecision.reservation);
+  });
 }
 
 async function lockedSnapshot(tx: Tx, orderId: string): Promise<ReservationSnapshot> {

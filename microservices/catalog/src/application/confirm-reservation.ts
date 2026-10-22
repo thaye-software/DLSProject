@@ -1,6 +1,7 @@
 import { availabilityEvent } from "../domain/availability-event.js";
-import type { Availability, Product } from "../domain/product.js";
+import type { Product } from "../domain/product.js";
 import type { Reservation } from "../domain/reservation.js";
+import { copyHeldProduct, productIsHeld } from "./held-product.js";
 import type { ConfirmDecision, ConfirmResult } from "./ports/reservation-store.js";
 import type { ReserveStockDependencies } from "./reserve-stock.js";
 
@@ -34,7 +35,7 @@ export function planConfirm(
   const events = productIds(existing).map((productId) => {
     const product = byId.get(productId);
     if (!product) throw new Error(`Product ${productId} disappeared before its reservation could be confirmed`);
-    const next = confirmedProduct(product, productIsHeld(reservations, productId, orderId));
+    const next = copyHeldProduct(product, product.stock, productIsHeld(reservations, productId, orderId));
     changed.set(productId, next);
     return availabilityEvent({
       id: newId(),
@@ -64,30 +65,4 @@ function productIds(reservation: Reservation): string[] {
     if (!ids.includes(line.productId)) ids.push(line.productId);
   }
   return ids;
-}
-
-function confirmedProduct(product: Product, stillHeld: boolean): Product {
-  return {
-    ...product,
-    price: { ...product.price },
-    stock: product.stock,
-    version: product.version + 1,
-    availability: availabilityAfterConfirm(stillHeld, product.stock),
-  };
-}
-
-function productIsHeld(reservations: readonly Reservation[], productId: string, exceptOrderId: string): boolean {
-  return reservations.some(
-    (reservation) =>
-      reservation.orderId !== exceptOrderId &&
-      reservation.status === "active" &&
-      reservation.items.some((line) => line.productId === productId && line.quantity > 0),
-  );
-}
-
-// Sold only when this confirm leaves no active hold and no sellable unit. Another hold keeps the product reserved.
-function availabilityAfterConfirm(stillHeld: boolean, stock: number): Availability {
-  if (stillHeld) return "reserved";
-  if (stock > 0) return "available";
-  return "sold";
 }
