@@ -4,7 +4,9 @@ import { PrismaProductRepository } from "./adapters/db/prisma-product-repository
 import { PrismaReservationStore } from "./adapters/db/prisma-reservation-store.js";
 import { seedCatalog } from "./adapters/db/seed.js";
 import { createApp } from "./adapters/http/app.js";
+import { startOutboxRelay } from "./adapters/outbox-relay.js";
 import { connectToBroker } from "./adapters/rabbitmq/connection.js";
+import { createEventPublisher } from "./adapters/rabbitmq/publisher.js";
 import { startReservationSafetyNet } from "./adapters/safety-net.js";
 import { releaseReservation } from "./application/release-reservation.js";
 import { reserveStock } from "./application/reserve-stock.js";
@@ -26,8 +28,8 @@ const products = new PrismaProductRepository(database);
 const reservations = new PrismaReservationStore(database);
 const reservationContext = { store: reservations, now: () => new Date(), newId: randomUUID };
 const safetyNet = startReservationSafetyNet(reservationContext);
+const outboxRelay = startOutboxRelay({ database, publisher: await createEventPublisher(broker.channel) });
 
-// The channel is open for health. Publishing catalog.events waits until the outbox relay exists.
 const app = createApp({
   isBrokerConnected: broker.isOpen,
   isDatabaseReachable: () => isDatabaseReachable(database),
@@ -44,6 +46,7 @@ const server = app.listen(config.port, () => {
 async function shutdown(): Promise<void> {
   server.close();
   await safetyNet.stop();
+  await outboxRelay.stop();
   await broker.close();
   await database.$disconnect();
   process.exit(0);
