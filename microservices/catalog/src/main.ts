@@ -6,7 +6,10 @@ import { seedCatalog } from "./adapters/db/seed.js";
 import { createApp } from "./adapters/http/app.js";
 import { startOutboxRelay } from "./adapters/outbox-relay.js";
 import { connectToBroker } from "./adapters/rabbitmq/connection.js";
+import { startConsumer } from "./adapters/rabbitmq/consumer.js";
+import { createOrderEventHandlers } from "./adapters/rabbitmq/order-events.js";
 import { createEventPublisher } from "./adapters/rabbitmq/publisher.js";
+import { assertConsumerTopology, CATALOG_ORDER_EVENTS_QUEUE, ORDER_EVENTS_EXCHANGE } from "./adapters/rabbitmq/topology.js";
 import { startReservationSafetyNet } from "./adapters/safety-net.js";
 import { releaseReservation } from "./application/release-reservation.js";
 import { reserveStock } from "./application/reserve-stock.js";
@@ -29,6 +32,13 @@ const reservations = new PrismaReservationStore(database);
 const reservationContext = { store: reservations, now: () => new Date(), newId: randomUUID };
 const safetyNet = startReservationSafetyNet(reservationContext);
 const outboxRelay = startOutboxRelay({ database, publisher: await createEventPublisher(broker.channel) });
+const orderEventHandlers = createOrderEventHandlers(reservationContext);
+await assertConsumerTopology(broker.channel, {
+  exchange: ORDER_EVENTS_EXCHANGE,
+  queue: CATALOG_ORDER_EVENTS_QUEUE,
+  routingKeys: Object.keys(orderEventHandlers),
+});
+const orderEventsConsumer = await startConsumer(broker.channel, { queue: CATALOG_ORDER_EVENTS_QUEUE, handlers: orderEventHandlers });
 
 const app = createApp({
   isBrokerConnected: broker.isOpen,
@@ -45,6 +55,7 @@ const server = app.listen(config.port, () => {
 
 async function shutdown(): Promise<void> {
   server.close();
+  await orderEventsConsumer.stop();
   await safetyNet.stop();
   await outboxRelay.stop();
   await broker.close();

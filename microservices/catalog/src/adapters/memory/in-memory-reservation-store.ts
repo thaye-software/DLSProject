@@ -1,4 +1,13 @@
-import type { ReleaseDecision, ReleaseResult, ReservationSnapshot, ReservationStore, ReserveDecision, ReserveResult } from "../../application/ports/reservation-store.js";
+import type {
+  ConfirmDecision,
+  ConfirmResult,
+  ReleaseDecision,
+  ReleaseResult,
+  ReservationSnapshot,
+  ReservationStore,
+  ReserveDecision,
+  ReserveResult,
+} from "../../application/ports/reservation-store.js";
 import type { AvailabilityEvent } from "../../domain/availability-event.js";
 import type { Product } from "../../domain/product.js";
 import type { Reservation } from "../../domain/reservation.js";
@@ -23,6 +32,7 @@ export function createInMemoryReservationStore(
   let products = initialProducts.map(copyProduct);
   const reservations = new Map(initialReservations.map((reservation) => [reservation.orderId, copyReservation(reservation)]));
   let events: AvailabilityEvent[] = [];
+  const processed = new Set<string>();
 
   const snapshotFor = (orderId: string): ReservationSnapshot => {
     const reservation = reservations.get(orderId);
@@ -54,6 +64,21 @@ export function createInMemoryReservationStore(
       events = [...events, ...decision.events];
       const released: ReleaseResult = { outcome: "released", reservation: decision.reservation };
       return Promise.resolve(released);
+    },
+    confirm(orderId, event, decide) {
+      if (processed.has(event.id)) return Promise.resolve({ outcome: "duplicate" });
+      const decision: ConfirmDecision = decide(snapshotFor(orderId));
+      if (decision.kind === "unchanged") {
+        const unchanged: ConfirmResult =
+          decision.outcome === "unknown" ? { outcome: "unknown" } : { outcome: decision.outcome, reservation: decision.reservation };
+        return Promise.resolve(unchanged);
+      }
+      products = decision.products.map(copyProduct);
+      reservations.set(decision.reservation.orderId, copyReservation(decision.reservation));
+      events = [...events, ...decision.events];
+      processed.add(event.id);
+      const confirmed: ConfirmResult = { outcome: "confirmed", reservation: decision.reservation };
+      return Promise.resolve(confirmed);
     },
     reservations() {
       return Promise.resolve([...reservations.values()].map(copyReservation));

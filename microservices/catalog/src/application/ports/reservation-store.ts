@@ -34,6 +34,23 @@ export type ReleaseDecision =
   | { kind: "unchanged"; outcome: "already_released" | "confirmed"; reservation: Reservation }
   | { kind: "apply"; reservation: Reservation; products: Product[]; events: AvailabilityEvent[] };
 
+export type ConfirmEvent = {
+  id: string;
+  type: string;
+};
+
+export type ConfirmResult =
+  | { outcome: "confirmed"; reservation: Reservation }
+  | { outcome: "already_released"; reservation: Reservation }
+  | { outcome: "already_confirmed"; reservation: Reservation }
+  | { outcome: "duplicate" }
+  | { outcome: "unknown" };
+
+export type ConfirmDecision =
+  | { kind: "unchanged"; outcome: "unknown" }
+  | { kind: "unchanged"; outcome: "already_released" | "already_confirmed"; reservation: Reservation }
+  | { kind: "apply"; reservation: Reservation; products: Product[]; events: AvailabilityEvent[] };
+
 export type ReservationSnapshot = {
   reservation: Reservation | null;
   reservations: readonly Reservation[];
@@ -44,6 +61,8 @@ export type ReservationStore = {
   // The decision runs against a copy. Products, the reservation, and outbox rows change together, or not at all.
   reserve(orderId: string, decide: (snapshot: ReservationSnapshot) => ReserveDecision): Promise<ReserveResult>;
   release(orderId: string, decide: (snapshot: ReservationSnapshot) => ReleaseDecision): Promise<ReleaseResult>;
+  // The CloudEvents id is stored only when an active reservation is confirmed. A repeat of that id does not confirm again.
+  confirm(orderId: string, event: ConfirmEvent, decide: (snapshot: ReservationSnapshot) => ConfirmDecision): Promise<ConfirmResult>;
   reservations(): Promise<readonly Reservation[]>;
   product(productId: string): Promise<Product | null>;
   events(): Promise<readonly AvailabilityEvent[]>;
