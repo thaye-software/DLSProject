@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { cancelReservation } from "../../application/cancel-reservation.js";
 import { confirmReservation } from "../../application/confirm-reservation.js";
+import { expireReservation } from "../../application/expire-reservation.js";
 import type { OrderEventInbox } from "../../application/ports/order-event-inbox.js";
 import type { ReserveStockDependencies } from "../../application/reserve-stock.js";
 import { handleEvent, type EventHandler } from "./consumer.js";
@@ -25,6 +26,9 @@ export function createOrderEventHandlers(dependencies: ReserveStockDependencies)
     }),
     order_cancelled: handleEvent(orderIdData, async (data, event) => {
       await cancelReservation(data.order_id, event.id, dependencies);
+    }),
+    order_expired: handleEvent(orderIdData, async (data, event) => {
+      await expireReservation(data.order_id, event.id, dependencies);
     }),
   };
 }

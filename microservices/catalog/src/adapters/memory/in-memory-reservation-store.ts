@@ -2,6 +2,7 @@ import type {
   CancelDecision,
   CancelResult,
   ConfirmDecision,
+  ExpireResult,
   ConfirmResult,
   ReleaseDecision,
   ReleaseResult,
@@ -95,6 +96,21 @@ export function createInMemoryReservationStore(
       events = [...events, ...decision.events];
       processed.add(event.id);
       const released: CancelResult = { outcome: "released", reservation: decision.reservation };
+      return Promise.resolve(released);
+    },
+    expire(orderId, event, decide) {
+      if (processed.has(event.id)) return Promise.resolve({ outcome: "duplicate" });
+      const decision: ReleaseDecision = decide(snapshotFor(orderId));
+      if (decision.kind === "unchanged") {
+        const unchanged: ExpireResult =
+          decision.outcome === "unknown" ? { outcome: "unknown" } : { outcome: decision.outcome, reservation: decision.reservation };
+        return Promise.resolve(unchanged);
+      }
+      products = decision.products.map(copyProduct);
+      reservations.set(decision.reservation.orderId, copyReservation(decision.reservation));
+      events = [...events, ...decision.events];
+      processed.add(event.id);
+      const released: ExpireResult = { outcome: "released", reservation: decision.reservation };
       return Promise.resolve(released);
     },
     reservations() {

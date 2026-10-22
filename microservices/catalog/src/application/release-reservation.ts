@@ -7,7 +7,7 @@ import type { ReserveStockDependencies } from "./reserve-stock.js";
 // An active reservation's quantities come back once. Confirmed, released, and unknown orders do not move stock.
 export async function releaseReservation(orderId: string, { store, now, newId }: ReserveStockDependencies): Promise<ReleaseResult> {
   const at = now();
-  return store.release(orderId, (snapshot) => planRelease(snapshot.reservations, snapshot.products, orderId, at, newId));
+  return store.release(orderId, (snapshot) => planRelease(snapshot.reservations, snapshot.products, orderId, at, newId, null));
 }
 
 export function planRelease(
@@ -16,15 +16,16 @@ export function planRelease(
   orderId: string,
   now: Date,
   newId: () => string,
+  causationId: string | null,
 ): ReleaseDecision {
   const existing = reservations.find((reservation) => reservation.orderId === orderId) ?? null;
   if (!existing) return { kind: "unchanged", outcome: "unknown" };
   if (existing.status === "released") return { kind: "unchanged", outcome: "already_released", reservation: existing };
   if (existing.status === "confirmed") return { kind: "unchanged", outcome: "confirmed", reservation: existing };
-  return returnReservedQuantities(existing, reservations, products, now, newId, null);
+  return returnReservedQuantities(existing, reservations, products, now, newId, causationId);
 }
 
-// The stored quantities go back once and the reservation becomes released. order_cancelled passes the order event id.
+// The stored quantities go back once and the reservation becomes released. An order event passes its id; a direct release passes null.
 export function returnReservedQuantities(
   existing: Reservation,
   reservations: readonly Reservation[],

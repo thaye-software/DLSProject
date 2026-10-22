@@ -4,6 +4,7 @@ import type {
   CancelDecision,
   CancelResult,
   ConfirmDecision,
+  ExpireResult,
   ConfirmEvent,
   ConfirmResult,
   ReleaseDecision,
@@ -103,6 +104,25 @@ export class PrismaReservationStore implements ReservationStore {
       if (seen) return { outcome: "duplicate" };
 
       const decision: CancelDecision = decide(snapshot);
+      if (decision.kind === "unchanged") {
+        return decision.outcome === "unknown" ? { outcome: "unknown" } : { outcome: decision.outcome, reservation: decision.reservation };
+      }
+
+      const inbox = await tx.processedEvent.createMany({ data: [{ eventId: event.id, type: event.type }], skipDuplicates: true });
+      if (inbox.count === 0) return { outcome: "duplicate" };
+
+      await applyDecision(tx, snapshot, decision.reservation, decision.products, decision.events);
+      return { outcome: "released", reservation: decision.reservation };
+    });
+  }
+
+  expire(orderId: string, event: ConfirmEvent, decide: (snapshot: ReservationSnapshot) => ReleaseDecision): Promise<ExpireResult> {
+    return this.database.$transaction(async (tx) => {
+      const snapshot = await lockedSnapshot(tx, orderId);
+      const seen = await tx.processedEvent.findUnique({ where: { eventId: event.id } });
+      if (seen) return { outcome: "duplicate" };
+
+      const decision: ReleaseDecision = decide(snapshot);
       if (decision.kind === "unchanged") {
         return decision.outcome === "unknown" ? { outcome: "unknown" } : { outcome: decision.outcome, reservation: decision.reservation };
       }

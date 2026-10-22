@@ -141,6 +141,7 @@ async function cancelAndRedeliver(product: Product, status: ReservationStatus, s
     reserve: store.reserve.bind(store),
     release: store.release.bind(store),
     confirm: store.confirm.bind(store),
+    expire: store.expire.bind(store),
     cancel: (id, event, decide) => {
       attempts.count += 1;
       return store.cancel(id, event, decide);

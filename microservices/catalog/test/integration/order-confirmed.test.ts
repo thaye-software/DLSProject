@@ -146,6 +146,7 @@ describe("order_confirmed", () => {
         return store.confirm(id, event, decide);
       },
       cancel: store.cancel.bind(store),
+      expire: store.expire.bind(store),
       reservations: store.reservations.bind(store),
       product: store.product.bind(store),
       events: store.events.bind(store),
