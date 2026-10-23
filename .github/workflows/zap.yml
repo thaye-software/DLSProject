@@ -1,0 +1,53 @@
+name: zap
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: microservices
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure services with fake providers
+        run: |
+          cat > payments/.env <<'EOF'
+          PAYMENT_PROVIDER=fake
+          ORDERS_URL=http://orders:3000
+          INTERNAL_JWT_SECRET=ci-only-secret-0123456789abcdef0123456789
+          EOF
+          cat > emails/.env <<'EOF'
+          MAILER=fake
+          EOF
+
+      - name: Start stack
+        run: docker compose up --build --detach --wait --wait-timeout 180
+
+      - name: ZAP Baseline Scan (payment)
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: http://localhost:3006
+          allow_issue_writing: false
+          artifact_name: zap_scan_payment
+
+      - name: ZAP Baseline Scan (notif)
+        if: ${{ !cancelled() }}
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: http://localhost:3007
+          allow_issue_writing: false
+          artifact_name: zap_scan_notif
+
+      - name: Service logs
+        if: ${{ failure() }}
+        run: docker compose logs
+
+      - name: Stop stack
+        if: ${{ always() }}
+        run: docker compose down --volumes
