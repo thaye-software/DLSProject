@@ -1,6 +1,6 @@
 # DLS Project
 
-`monolith/limited-watches/` is the old project. `microservices/` is the new microservice version, built to the architecture below. Per-service database tables (ERD) and event payloads (CloudEvents envelope, shared types, order statuses) for Orders and Search: `microservices/orders/contract.md` and `microservices/search/contract.md`, taken from the team's Event contracts sheet.
+`limited-watches/` is the old project. `microservices/` is the new microservice version, built to the architecture below. Event payloads (CloudEvents envelope, shared types, order statuses) for Orders and Search: `microservices/CONTRACTS.md`, taken from the team's Event contracts sheet.
 
 ## Architecture v3 (target)
 
@@ -15,7 +15,7 @@
 - Messaging: MongoDB. Broadcasts via Supabase Realtime. Calls Catalog over HTTP.
 - Catalog: PostgreSQL. Supabase Storage (product images), Cloud AI provider. Callee of HTTP from Editorial, Messaging, Auctions and Orders.
 - Auctions: own DB. Calls Catalog over HTTP.
-- Orders: PostgreSQL. Calls Catalog over HTTP to reserve stock. Payment calls Orders over HTTP.
+- Orders: PostgreSQL. ipapi.co (geo-IP). Calls Catalog over HTTP to reserve stock. Payment calls Orders over HTTP.
 - Payment: stateless, no DB. Stripe (create intent out, webhook in).
 - Notif / Email: stateless, no DB. Resend (email).
 
