@@ -1,0 +1,20 @@
+services:
+  notif:
+    profiles: ["${START_NOTIF:-true}"]
+    build: .
+    env_file:
+      - path: ./.env
+        required: false
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    ports:
+      - "3007:3007"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3007/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3

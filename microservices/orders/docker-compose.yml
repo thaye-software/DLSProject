@@ -1,0 +1,48 @@
+services:
+  orders-db:
+    profiles: ["${START_ORDERS:-true}"]
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: orders
+      POSTGRES_PASSWORD: orders
+      POSTGRES_DB: orders
+    ports:
+      - "5433:5432"
+    volumes:
+      - orders-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "orders", "-d", "orders"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  orders:
+    profiles: ["${START_ORDERS:-true}"]
+    build: .
+    env_file:
+      - path: ./.env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://orders:orders@orders-db:5432/orders
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      CATALOG_URL: http://catalog:3002
+    ports:
+      - "3000:3000"
+    depends_on:
+      orders-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      catalog:
+        condition: service_healthy
+        # Catalog can be switched off with START_CATALOG=false (or run elsewhere).
+        required: false
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  orders-db-data:
