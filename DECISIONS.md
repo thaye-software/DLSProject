@@ -19,17 +19,19 @@ A second `refund_requested` for the same order must not refund twice. The admin 
 
 ## Search
 
-### 5. Indexes for Search
-- Add a text index on `name`, `brand_name` and `reference` for `q`, and an index on `brand_id` for `brand_updated`.
-- Add a TTL index on `processed_events.processed_at` (the collection itself is in the ERD).
+### 5. Catalog doesn't publish product events yet
+Catalog's contract says the HTTP that creates, updates or deletes a product or brand doesn't exist yet, and its code publishes only `product_availability_changed`. Search ignores that for a product it has no listing for, so **the index stays empty** until Catalog publishes `product_created` for the products it already has (the seeded ones too), then `product_updated`, `product_deleted` and `brand_updated` as they change. Needs one decision on Catalog's side: publish a `product_created` per existing product at start-up or from the seed (idempotent, Search drops repeats by version), or an internal "republish everything" call.
+
+### 6. Slug of a product that isn't a watch
+`ProductListing.slug` is required in `openapi.yaml`, but a slug only exists on `WatchDetails`, which is null for other products (straps and the like). Search currently slugifies the product name for those. Either Catalog sends a slug on `ProductSnapshot` itself, or `slug` becomes nullable in `ProductListing`.
 
 ## Cross-team
 
-### 6. `messaging/contract.md` envelope
+### 7. `messaging/contract.md` envelope
 It shows `"source": "users"` and leaves out `subject`, `dataversion`, `correlationid` and `causationid`. That doesn't match the CloudEvents envelope in `asyncapi.yaml` (`source: /services/<publisher>`).
 
-### 7. Auctions vs. normal sales
+### 8. Auctions vs. normal sales
 A watch on auction should not be sellable through checkout at the same time. Either Auctions reserves it in Catalog when the auction starts, or Catalog marks it `hidden`. Needs one more contract once decided. (Moved from the contracts README.)
 
-### 8. Auctions database
+### 9. Auctions database
 The architecture diagram says "DB". The monolith keeps `auctions` in PostgreSQL, so PostgreSQL is the no-change choice. (Moved from the contracts README.)

@@ -26,10 +26,10 @@ Queue per consumer: `<consumer>.<exchange>`, with a dead-letter queue `.dlq`.
 
 | Event | Subject | `data` | Search does |
 |---|---|---|---|
-| `product_created` | `product.product_id` | `product: ProductSnapshot`, `changed_by` | insert listing |
-| `product_updated` | `product.product_id` | `product: ProductSnapshot`, `changed_by`, `changed_fields: string[]` | replace listing |
+| `product_created` | `product.product_id` | `product: ProductSnapshot`, `changed_by` | insert listing (a `hidden` product is skipped) |
+| `product_updated` | `product.product_id` | `product: ProductSnapshot`, `changed_by`, `changed_fields: string[]` | replace listing (a `hidden` product is removed instead) |
 | `product_deleted` | `product_id` | `product_id`, `version`, `deleted_by`, `deleted_at` | remove listing |
-| `product_availability_changed` | `product_id` | `product_id`, `version`, `availability`, `previous_availability`, `stock`, `reason` (`order_reserved`\|`order_released`\|`order_confirmed`\|`admin_update`), `order_id?`, `changed_at` | show available / reserved / sold |
+| `product_availability_changed` | `product_id` | `product_id`, `version`, `availability`, `previous_availability`, `stock`, `reason` (`order_reserved`\|`order_released`\|`order_confirmed`\|`admin_update`), `order_id?`, `changed_at` | show available / reserved / sold; `hidden` removes the listing |
 | `brand_updated` | `brand.brand_id` | `brand: Brand`, `version`, `changed_by`, `changed_at` | update brand on its listings |
 
 Snapshots are full, so handlers are idempotent upserts. Use `version` to ignore stale or out-of-order events.
@@ -52,9 +52,15 @@ See `docs/contracts/openapi.yaml`: public `GET /search` (`q`, `brand`, `availabi
 
 ## Data model (MongoDB + Redis)
 
-`product_listings` (new), keyed by `REF product_id`: `name`, `slug`, `REF brand_id`, `brand_name`, `brand_slug`, `model`, `reference`, `year`, `size_mm`, `condition`, `limited`, `price_dkk`, `availability`, `thumbnail_url`, `version`, `updated_at`.
+`product_listings`, keyed by `_id` = `product_id`: `name`, `slug`, `brand_id`, `brand_name`, `brand_slug`, `model`, `reference`, `year`, `size_mm`, `condition`, `limited`, `price_dkk`, `availability`, `thumbnail_url`, `version`, `updated_at`. A deleted or hidden product keeps only `{ _id, version, deleted: true }` (a tombstone). Indexes: `(availability, price_dkk)`, `brand_slug`, `brand_id`, `updated_at`.
 
-`processed_events` (`event_id`, `type`, `processed_at`, with a TTL index): the idempotent inbox from the contracts README §3. Search publishes nothing, so it has no outbox.
+`brands` (new): `_id` = `brand_id`, `name`, `slug`, `version`, so a product snapshot built before a rename can't undo it.
+
+`processed_events` (`_id` = event id, `type`, `processed_at`, with a 14 day TTL index): the idempotent inbox from the contracts README §3. Search publishes nothing, so it has no outbox.
+
+Redis: `search:generation` (a counter, incremented on every index change) and `search:<generation>:<query>` (a result, 60 s TTL).
+
+Behaviour, matching and ranking: see `README.md`.
 
 ## Open points
 
