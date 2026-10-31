@@ -1,0 +1,604 @@
+{
+  "info": {
+    "name": "Orders",
+    "description": "Orders service, called directly (not through the gateway): the user comes in as X-User-Id / X-User-Email / X-User-Role headers. Run `Create order` first; it stores `orderId` for the other requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "userId",
+      "value": "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+    },
+    {
+      "key": "userEmail",
+      "value": "mette@example.com"
+    },
+    {
+      "key": "productId",
+      "value": "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+    },
+    {
+      "key": "orderId",
+      "value": ""
+    },
+    {
+      "key": "idempotencyKey",
+      "value": ""
+    },
+    {
+      "key": "internalJwtSecret",
+      "value": "replace-with-at-least-32-random-characters"
+    },
+    {
+      "key": "serviceToken",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status is 200\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create order",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!pm.collectionVariables.get(\"idempotencyKey\")) pm.collectionVariables.set(\"idempotencyKey\", pm.variables.replaceIn(\"{{$guid}}\"));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status is 201\", () => pm.response.to.have.status(201));",
+              "pm.test(\"order is RESERVED\", () => pm.expect(pm.response.json().status).to.eql(\"RESERVED\"));",
+              "pm.collectionVariables.set(\"orderId\", pm.response.json().order_id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "description": "Needs a running Catalog with the seeded product. Re-sending with the same Idempotency-Key returns the first order; clear the `idempotencyKey` collection variable for a new one.",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idempotencyKey}}"
+          },
+          {
+            "key": "X-User-Id",
+            "value": "{{userId}}"
+          },
+          {
+            "key": "X-User-Email",
+            "value": "{{userEmail}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [\n    {\n      \"product_id\": \"{{productId}}\",\n      \"quantity\": 1\n    }\n  ],\n  \"offer_token\": null,\n  \"billing_address\": {\n    \"first_name\": \"Mette\",\n    \"middle_name\": null,\n    \"last_name\": \"Jensen\",\n    \"address_line_1\": \"Nørregade 12\",\n    \"address_line_2\": null,\n    \"city\": \"København K\",\n    \"zip_code\": \"1165\",\n    \"state_province\": null,\n    \"country_code\": \"DK\"\n  },\n  \"delivery_address\": {\n    \"first_name\": \"Mette\",\n    \"middle_name\": null,\n    \"last_name\": \"Jensen\",\n    \"address_line_1\": \"Nørregade 12\",\n    \"address_line_2\": null,\n    \"city\": \"København K\",\n    \"zip_code\": \"1165\",\n    \"state_province\": null,\n    \"country_code\": \"DK\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/orders",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create order: missing Idempotency-Key",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status is 422\", () => pm.response.to.have.status(422));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-User-Id",
+            "value": "{{userId}}"
+          },
+          {
+            "key": "X-User-Email",
+            "value": "{{userEmail}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/orders",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create order: no user headers",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status is 401\", () => pm.response.to.have.status(401));",
+              "pm.test(\"problem code is unauthorized\", () => pm.expect(pm.response.json().type).to.match(/\\/unauthorized$/));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{$guid}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/orders",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List my orders",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"has a page of items\", () => pm.expect(pm.response.json()).to.have.keys([\"items\", \"page\", \"page_size\", \"total\"]));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-User-Id",
+            "value": "{{userId}}"
+          },
+          {
+            "key": "X-User-Email",
+            "value": "{{userEmail}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/orders?page=1&page_size=20",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "page_size",
+              "value": "20"
+            },
+            {
+              "key": "status",
+              "value": "RESERVED",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "List all orders (admin)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status is 200\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-User-Id",
+            "value": "{{userId}}"
+          },
+          {
+            "key": "X-User-Email",
+            "value": "{{userEmail}}"
+          },
+          {
+            "key": "X-User-Role",
+            "value": "admin"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/orders",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get order",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"is the order\", () => pm.expect(pm.response.json().order_id).to.eql(pm.collectionVariables.get(\"orderId\")));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-User-Id",
+            "value": "{{userId}}"
+          },
+          {
+            "key": "X-User-Email",
+            "value": "{{userEmail}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/orders/{{orderId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders",
+            "{{orderId}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get order: unknown id",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status is 404\", () => pm.response.to.have.status(404));",
+              "pm.test(\"problem code is not_found\", () => pm.expect(pm.response.json().type).to.match(/\\/not_found$/));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-User-Id",
+            "value": "{{userId}}"
+          },
+          {
+            "key": "X-User-Email",
+            "value": "{{userEmail}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/orders/00000000-0000-4000-8000-000000000000",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders",
+            "00000000-0000-4000-8000-000000000000"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Change status (admin)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"200 or 409 when the transition is not allowed\", () => pm.expect(pm.response.code).to.be.oneOf([200, 409]));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "description": "Forward only: PENDING → PROCESSING → SHIPPED → DELIVERED, DELIVERED → RETURNED, CANCELLED, REFUNDED. A RESERVED order is moved to PENDING by Payment, so this returns 409 until it has been paid.",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-User-Id",
+            "value": "{{userId}}"
+          },
+          {
+            "key": "X-User-Email",
+            "value": "{{userEmail}}"
+          },
+          {
+            "key": "X-User-Role",
+            "value": "admin"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"PROCESSING\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/orders/{{orderId}}/status",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders",
+            "{{orderId}}",
+            "status"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Change status: not an admin",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"rejected\", () => pm.expect(pm.response.code).to.be.oneOf([403, 404]));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-User-Id",
+            "value": "{{userId}}"
+          },
+          {
+            "key": "X-User-Email",
+            "value": "{{userEmail}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"status\":\"PROCESSING\"}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/orders/{{orderId}}/status",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders",
+            "{{orderId}}",
+            "status"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Payment details (internal, service JWT)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// HS256 service token as Payment would send it: iss payment, aud orders, 30 s lifetime.",
+              "const b64url = (wordArray) => CryptoJS.enc.Base64.stringify(wordArray).replace(/=+$/, '').replace(/\\+/g, '-').replace(/\\//g, '_');",
+              "const part = (obj) => b64url(CryptoJS.enc.Utf8.parse(JSON.stringify(obj)));",
+              "const iat = Math.floor(Date.now() / 1000);",
+              "const unsigned = part({ alg: 'HS256', typ: 'JWT' }) + '.' + part({ iss: 'payment', aud: 'orders', iat, exp: iat + 30 });",
+              "pm.collectionVariables.set('serviceToken', unsigned + '.' + b64url(CryptoJS.HmacSHA256(unsigned, pm.collectionVariables.get('internalJwtSecret'))));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"200 for a payable order, 409 once it is not\", () => pm.expect(pm.response.code).to.be.oneOf([200, 409]));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "description": "Set `internalJwtSecret` to INTERNAL_JWT_SECRET from orders/.env. Works only while the order is RESERVED.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{serviceToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/internal/orders/{{orderId}}/payment-details",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "internal",
+            "orders",
+            "{{orderId}}",
+            "payment-details"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Payment details: no token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status is 401\", () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/internal/orders/{{orderId}}/payment-details",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "internal",
+            "orders",
+            "{{orderId}}",
+            "payment-details"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Cancel order (only while RESERVED)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"is CANCELLED\", () => pm.expect(pm.response.json().status).to.eql(\"CANCELLED\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-User-Id",
+            "value": "{{userId}}"
+          },
+          {
+            "key": "X-User-Email",
+            "value": "{{userEmail}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/orders/{{orderId}}/cancel",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "orders",
+            "{{orderId}}",
+            "cancel"
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,390 @@
+{
+  "info": {
+    "name": "Search",
+    "description": "Search service, called directly. The index stays empty until Catalog publishes product_created (see DECISIONS.md), so most of these return no items on a fresh stack; the tests check the status and shape only.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3003"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status is 200\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Default (available only)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"is a page of results\", () => pm.expect(pm.response.json()).to.have.keys([\"items\", \"page\", \"page_size\", \"total\"]));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/search",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "search"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Free text",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"is a page of results\", () => pm.expect(pm.response.json()).to.have.keys([\"items\", \"page\", \"page_size\", \"total\"]));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/search?q=submariner",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "search"
+          ],
+          "query": [
+            {
+              "key": "q",
+              "value": "submariner"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Reference as part of a word",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"is a page of results\", () => pm.expect(pm.response.json()).to.have.keys([\"items\", \"page\", \"page_size\", \"total\"]));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/search?q=1266",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "search"
+          ],
+          "query": [
+            {
+              "key": "q",
+              "value": "1266"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Brand",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"is a page of results\", () => pm.expect(pm.response.json()).to.have.keys([\"items\", \"page\", \"page_size\", \"total\"]));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/search?brand=rolex",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "search"
+          ],
+          "query": [
+            {
+              "key": "brand",
+              "value": "rolex"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Several availabilities",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"is a page of results\", () => pm.expect(pm.response.json()).to.have.keys([\"items\", \"page\", \"page_size\", \"total\"]));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/search?availability=available&availability=sold",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "search"
+          ],
+          "query": [
+            {
+              "key": "availability",
+              "value": "available"
+            },
+            {
+              "key": "availability",
+              "value": "sold"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Price range (øre)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"is a page of results\", () => pm.expect(pm.response.json()).to.have.keys([\"items\", \"page\", \"page_size\", \"total\"]));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/search?min_price=5000000&max_price=12000000",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "search"
+          ],
+          "query": [
+            {
+              "key": "min_price",
+              "value": "5000000"
+            },
+            {
+              "key": "max_price",
+              "value": "12000000"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Paging",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status is 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"is a page of results\", () => pm.expect(pm.response.json()).to.have.keys([\"items\", \"page\", \"page_size\", \"total\"]));",
+              "pm.test(\"page and size echoed\", () => { const b = pm.response.json(); pm.expect(b.page).to.eql(2); pm.expect(b.page_size).to.eql(5); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/search?page=2&page_size=5",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "search"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "2"
+            },
+            {
+              "key": "page_size",
+              "value": "5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Invalid: availability hidden",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status is 422\", () => pm.response.to.have.status(422));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/search?availability=hidden",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "search"
+          ],
+          "query": [
+            {
+              "key": "availability",
+              "value": "hidden"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Invalid: min_price above max_price",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status is 422\", () => pm.response.to.have.status(422));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/search?min_price=10&max_price=5",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "search"
+          ],
+          "query": [
+            {
+              "key": "min_price",
+              "value": "10"
+            },
+            {
+              "key": "max_price",
+              "value": "5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Invalid: page_size 101",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"status is 422\", () => pm.response.to.have.status(422));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/search?page_size=101",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "search"
+          ],
+          "query": [
+            {
+              "key": "page_size",
+              "value": "101"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
