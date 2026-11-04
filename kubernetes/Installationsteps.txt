@@ -1,11 +1,71 @@
+Local Kubernetes setup (Windows)
+================================
+Goal: a local cluster we can talk to with kubectl, following kubernetes/thomasinstallguide.txt.
+We do one step at a time and only mark a step done after it has been checked on this machine.
+
+What the pieces are
+-------------------
+- kubectl: the command-line client. It sends requests to a cluster. It is not the cluster.
+- WSL 2: Windows Subsystem for Linux. Docker Desktop on Windows runs its engine inside WSL 2.
+- Docker Desktop: builds and runs containers, and can start a local Kubernetes cluster (kubeadm).
+- Kubernetes cluster: the thing that actually runs pods. Docker Desktop creates it when Kubernetes is enabled.
+- Lens: a free desktop app for looking at the cluster. Optional, later.
+
+Checked on this machine (2026-11-04)
+-------------------------------------
+- kubectl client: installed, version v1.37.2.
+- kubectl context: none. `kubectl config current-context` says "current-context is not set".
+- cluster: none. `kubectl cluster-info` tries http://localhost:8080 and the connection is refused.
+  That address is kubectl's fallback when no cluster is configured. Nothing is listening there.
+- docker: not installed (`docker` is not a command, Docker Desktop.exe is not on disk).
+- WSL: not installed. `wsl --status` and `wsl -l -v` only print the installer help.
+  This Windows build still has the WSL stub, not a working WSL 2 install.
 
 
+Step 1 — install kubectl
+------------------------
+Status: done.
 
-install cubectl:
+kubectl is the client only. Installing it does not start Kubernetes.
+
+Install (Windows, winget):
 https://kubernetes.io/docs/tasks/tools/install-kubectl-windows/#install-nonstandard-package-tools
-```
-winget install -e --id Kubernetes.kubectl
-```
+
+    winget install -e --id Kubernetes.kubectl
+
+Check:
+
+    kubectl version --client
+
+Expected: a client version line, for example "Client Version: v1.37.2".
+There is no server version yet, because there is no cluster.
+
+
+Step 2 — install WSL 2
+----------------------
+Status: not started.
+
+Why this is next: Docker Desktop (the next step in the guide) needs WSL 2.
+The guide says: if Kubernetes in Docker Desktop does not come up, check WSL
+(`wsl -v`) and update it (`wsl --update`). On this machine WSL is missing entirely,
+so we install it before Docker.
+
+Command (needs an Administrator PowerShell, and usually a reboot):
+
+    wsl --install -d Ubuntu
+
+That turns on the WSL Windows features and installs a default Linux distro (Ubuntu).
+After reboot, Ubuntu will ask for a Linux username and password. That account is
+only for the Linux VM. It is not your Windows login.
+
+Check after reboot:
+
+    wsl --status
+    wsl -l -v
+
+
+Expected: default version 2, and a distro listed with VERSION 2.
+
 
 
 
