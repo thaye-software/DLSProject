@@ -1,0 +1,17 @@
+
+
+
+install cubectl:
+https://kubernetes.io/docs/tasks/tools/install-kubectl-windows/#install-nonstandard-package-tools
+```
+winget install -e --id Kubernetes.kubectl
+```
+
+
+
+
+
+
+
+
+
