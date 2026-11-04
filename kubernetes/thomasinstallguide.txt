@@ -1,0 +1,38 @@
+
+(Teams - TeamDLS 2026 Efterår - 2026-11-04)
+
+Docker desktop - enable kubernetes (Kubeadm)
+(if not working, check your WSL version. it might need an update: wsl -v wsl --update)
+
+install kubectl on your computer
+
+install lens IDE (free version): https://lenshq.io/
+
+in your project, use AI to generate a folder /kubernetes with subfolders for each service with all the yaml manifests based on your docker-compose.yaml:
+yaml manifests needed for each service:
+deployment.yaml
+service.yaml
+(later: ScaledObject yaml but we will need to install KEDA on our Kubernetes cluster)
+
+for databases:
+also
+PersistentVolume yaml
+
+For services that you need to access from the localhost, you need to use NodePort in the service yaml.
+
+prompt example: "i have this docker compose, i need kubernetes manifests for local kubernetes deployment"
+
+You need the docker images of your microservices in the registry - like dockerhub (kubernetes does not use local images):
+
+You can build and push the images manually - example:
+
+Create docker images and push them to your dockerhub:
+docker build -t pesekt1/bank ./bank
+docker push pesekt1/bank
+
+better way:
+create a simple CICD that builds an image and pushes it to dockerhub with tag "latest"
+
+try to deploy (run this from the root - you need /kubernetes folder):
+kubectl apply -R -f /kubernetes
+
