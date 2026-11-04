@@ -13,13 +13,15 @@ What the pieces are
 
 Checked on this machine (2026-11-04)
 -------------------------------------
-- kubectl client: installed, version v1.37.2.
-- kubectl context: none. `kubectl config current-context` says "current-context is not set".
-- cluster: none. `kubectl cluster-info` tries http://localhost:8080 and the connection is refused.
-  That address is kubectl's fallback when no cluster is configured. Nothing is listening there.
-- docker: Docker Desktop 4.98.0 is installed. The client works (29.9.2). The engine is not
-  running yet, so `docker version` has no Server section.
-- WSL: installed. Default distro Ubuntu, default version 2, WSL version 3.0.1.0.
+- kubectl client: v1.37.2. Current context: docker-desktop.
+- cluster: running. Control plane at https://kubernetes.docker.internal:6443.
+  Node docker-desktop is Ready, role control-plane, Kubernetes v1.36.1.
+  Client v1.37.2 and server v1.36.1 are one minor version apart, which kubectl allows.
+- docker: Docker Desktop 4.98.0 is running. Client and Server are both 29.9.2.
+  Context is desktop-linux. The engine is the linux/amd64 one inside WSL.
+- WSL: Ubuntu is the default distro, version 2, currently Stopped.
+  Docker added its own distro, docker-desktop, version 2, and that one is Running.
+  The engine lives in docker-desktop. Ubuntu staying Stopped is expected.
 
 
 Step 1 — install kubectl
@@ -73,7 +75,7 @@ Result on this machine:
 
 Step 3 — install Docker Desktop and start the engine
 ----------------------------------------------------
-Status: installed, engine not started yet.
+Status: done (health check 2026-11-04).
 
 Docker Desktop runs containers on this PC. It is also the program that will
 create the local Kubernetes cluster, but that switch stays off until the engine
@@ -102,14 +104,74 @@ What you do now:
 3. Leave the backend on WSL 2. Ubuntu is already installed, so use that distro
    if it asks which one to integrate with.
 4. Wait until the whale icon is steady and the window says the engine is running.
-   The first start can take a few minutes. It starts the Ubuntu WSL distro.
+   The first start can take a few minutes.
 
 Check, from a new terminal (a terminal opened before install may not see `docker` on PATH):
 
     docker version
 
-Done looks like: a Client section and a Server section. The Server section means
-the engine inside WSL is up. We do not enable Kubernetes until that check passes.
+Health check result:
+- Docker Desktop.exe found.
+- docker on PATH: C:\Program Files\Docker\Docker\resources\bin\docker.exe
+- Client 29.9.2, context desktop-linux.
+- Server: Docker Desktop 4.98.0, Engine 29.9.2, OS/Arch linux/amd64.
+- Docker Desktop process running.
+- WSL: Ubuntu Stopped (version 2), docker-desktop Running (version 2).
+
+The Server section means the engine is up. Docker Desktop runs that engine in its
+own WSL distro, named docker-desktop, not in Ubuntu. Ubuntu can stay Stopped.
+
+
+Step 4 — enable Kubernetes in Docker Desktop
+---------------------------------------------
+Status: done (checked 2026-11-04).
+
+The engine can run containers. It is not a Kubernetes cluster until this switch
+is on. Docker Desktop then builds a one-node cluster with kubeadm, which is the
+option named in kubernetes/thomasinstallguide.txt. The cluster runs inside the
+same docker-desktop WSL distro. kubectl, already installed, will talk to it.
+
+In Docker Desktop:
+1. Open Settings (the gear).
+2. Open Kubernetes.
+3. Tick Enable Kubernetes.
+4. If the page offers a choice of cluster type, choose kubeadm.
+5. Click Apply & restart.
+6. Wait until the Kubernetes status is green / "running". The first time downloads
+   cluster images and can take several minutes. Leave Docker Desktop open.
+
+Then, in a terminal:
+
+    kubectl config current-context
+    kubectl cluster-info
+    kubectl get nodes
+
+Result on this machine:
+- current context: docker-desktop
+- control plane: https://kubernetes.docker.internal:6443
+- CoreDNS is running in namespace kube-system
+- node docker-desktop: Ready, role control-plane, age about 108s at first check, version v1.36.1
+
+kubectl on this PC is v1.37.2. The cluster is v1.36.1. One minor version of
+difference is normal and supported. Docker Desktop chooses the cluster version.
+We do not need to downgrade kubectl.
+
+
+Step 5 — install Lens
+---------------------
+Status: not started. This is the next step.
+
+Lens is a desktop app that shows the same cluster kubectl talks to: nodes, pods,
+logs, and YAML. It is optional. The cluster already works without it. The guide
+asks for the free version: https://lenshq.io/
+
+Install it from that site (or the Lens installer it offers for Windows), sign in
+with the free account if it asks, then add the local cluster. Docker Desktop
+usually appears on its own as context docker-desktop, because Lens reads the
+same kubeconfig file kubectl uses (C:\Users\Bruger\.kube\config).
+
+Check: Lens shows the docker-desktop cluster, and the node docker-desktop is Ready.
+That is the same node `kubectl get nodes` already printed.
 
 
 
