@@ -174,6 +174,30 @@ Check: Lens shows the docker-desktop cluster, and the node docker-desktop is Rea
 That is the same node `kubectl get nodes` already printed.
 
 
+After Lens is installed, you should set it up:
+in the first dialogue box,
+"Step 1 Kubenetes environments"
+you should do nothing. We run kubernetes locally, so we dont need any clouds.
+
+in this step:
+"step 2 local kubeconfigs"
+Click Watch files.
+out cluster should be stored in one file, not in a folder of configs. Point Lens at:
+     C:\Users\Bruger\.kube\config
+
+"step 3 Ai tool"
+use your tool of choice or NO AI.
+
+"step 4 AI tool access"
+Leave both toggle switches off and continue.
+
+"Step 5 Git ops"
+skip and continue
+
+
+
+
+
 
 
 
