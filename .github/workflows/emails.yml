@@ -1,3 +1,5 @@
+# emails pipeline: test ──► security-scan ──► publish (pushes to dev/main only).
+# Runs only when emails (or a stage it uses) changes, so emails ships independently.
 name: emails
 
 on:
@@ -6,14 +8,22 @@ on:
     paths:
       - "microservices/emails/**"
       - "microservices/docs/contracts/**"
+      - "microservices/docker-compose.yml"
       - ".github/workflows/emails.yml"
-      - ".github/workflows/_node-service.yml"
+      - ".github/workflows/execute-tests.yml"
+      - ".github/workflows/security-scan.yml"
+      - ".github/workflows/publish-image.yml"
+      - "microservices/scripts/zap/**"
   pull_request:
     paths:
       - "microservices/emails/**"
       - "microservices/docs/contracts/**"
+      - "microservices/docker-compose.yml"
       - ".github/workflows/emails.yml"
-      - ".github/workflows/_node-service.yml"
+      - ".github/workflows/execute-tests.yml"
+      - ".github/workflows/security-scan.yml"
+      - ".github/workflows/publish-image.yml"
+      - "microservices/scripts/zap/**"
 
 permissions:
   contents: read
@@ -24,12 +34,25 @@ concurrency:
 
 jobs:
   test:
-    permissions:
-      contents: read
-      packages: write # for the publish job in _node-service.yml
-    uses: ./.github/workflows/_node-service.yml
+    uses: ./.github/workflows/execute-tests.yml
     with:
       service: emails
     secrets:
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
       RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
+
+  security-scan:
+    needs: test
+    uses: ./.github/workflows/security-scan.yml
+    with:
+      service: emails
+
+  publish:
+    needs: [test, security-scan]
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/publish-image.yml
+    with:
+      service: emails

@@ -1,0 +1,199 @@
+# Reusable ZAP security gate for one microservice. Each service workflow calls it between
+# execute-tests.yml and publish-image.yml, so an image is only pushed when its service passed the
+# scan. It can also be started by hand (Actions -> security-scan -> Run workflow) for any service.
+#
+# The whole compose stack starts, because the service's dependencies and test data need the others.
+# Only the given service is scanned:
+#   1. baseline scan: passive, what ZAP finds by crawling from / (response headers, 404s)
+#   2. API scan: every operation the contract tags with the service, with active attacks
+#      (SQL injection, XSS, path traversal, ...), authenticated, against real records
+# A gate after each scan fails the job on alerts at ZAP_FAIL_RISK or above and prints why:
+# in its log, as annotations on the run page and in the job summary.
+name: security-scan
+
+on:
+  workflow_call:
+    inputs:
+      service:
+        description: Folder under microservices/ (catalog, orders, search, emails or payments)
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      service:
+        description: Service to scan
+        required: true
+        type: choice
+        options: [catalog, orders, search, emails, payments]
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: ZAP scan (${{ inputs.service }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: microservices
+    env:
+      SERVICE: ${{ inputs.service }}
+      # Lowest ZAP risk that fails the gate: 3 High, 2 Medium, 1 Low, 0 Informational.
+      ZAP_FAIL_RISK: "2"
+      # Every service in the compose files sits behind profiles: ["${START_X:-true}"].
+      # Locally microservices/.env (from .env.example) sets this; without it only rabbitmq starts.
+      COMPOSE_PROFILES: "true"
+      # Catalog, Orders and Payment sign and verify service JWTs with this shared secret.
+      INTERNAL_JWT_SECRET: ci-only-secret-0123456789abcdef0123456789
+      # The user the API scan acts as (the gateway's X-User-Id / X-User-Email).
+      ZAP_USER_ID: 0b3c5a1e-7f2d-4c9a-8e61-2d4f7a9b1c03
+      ZAP_USER_EMAIL: zap@example.com
+    steps:
+      - uses: actions/checkout@v7
+
+      # Port, the contract's tag for the service, and the service JWT (issuer audience) the auth proxy
+      # signs for the service's internal routes.
+      - name: Resolve scan settings
+        id: cfg
+        run: |
+          case "$SERVICE" in
+            orders)   port=3000 tag=Orders  jwt="payment orders" ;;  # GET /internal/orders/{id}/payment-details
+            catalog)  port=3002 tag=Catalog jwt="orders catalog" ;;  # /internal/reservations
+            search)   port=3003 tag=Search  jwt="" ;;
+            payments) port=3006 tag=Payment jwt="" ;;
+            emails)   port=3007 tag=Notif   jwt="" ;;
+            *) echo "::error::No ZAP settings for service '$SERVICE'"; exit 1 ;;
+          esac
+          {
+            echo "PORT=$port"
+            echo "PROXY_PORT=$((port + 1000))"
+            echo "ZAP_TAG=$tag"
+            echo "ZAP_JWT=$jwt"
+          } >> "$GITHUB_ENV"
+          echo "port=$port" >> "$GITHUB_OUTPUT"
+          echo "Scanning $SERVICE on port $port (contract tag $tag)"
+
+      - name: Configure services with fake providers
+        run: |
+          cat > catalog/.env <<EOF
+          INTERNAL_JWT_SECRET=$INTERNAL_JWT_SECRET
+          EOF
+          cat > orders/.env <<EOF
+          INTERNAL_JWT_SECRET=$INTERNAL_JWT_SECRET
+          EOF
+          cat > payments/.env <<EOF
+          PAYMENT_PROVIDER=fake
+          ORDERS_URL=http://orders:3000
+          INTERNAL_JWT_SECRET=$INTERNAL_JWT_SECRET
+          EOF
+          cat > emails/.env <<'EOF'
+          MAILER=fake
+          EOF
+
+      - name: Start stack
+        run: docker compose up --build --detach --wait --wait-timeout 300
+
+      # --wait only covers the containers that were created, so check every service answers.
+      - name: Check services are up
+        id: up
+        run: |
+          docker compose ps
+          for port in 3000 3002 3003 3006 3007; do
+            curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 3 \
+              "http://localhost:$port/health" > /dev/null
+            echo "port $port healthy"
+          done
+
+      # ---------------------------------------------------------------------------------------------
+      # 1. Baseline scan
+      # ---------------------------------------------------------------------------------------------
+      - name: ZAP baseline scan
+        id: baseline
+        if: ${{ !cancelled() && steps.up.outcome == 'success' }}
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: http://localhost:${{ steps.cfg.outputs.port }}
+          allow_issue_writing: false
+          artifact_name: zap_baseline_${{ inputs.service }}
+
+      - name: ZAP gate - baseline
+        if: ${{ !cancelled() && steps.baseline.outcome == 'success' }}
+        run: node scripts/zap/check-report.js "$SERVICE baseline"
+
+      # ---------------------------------------------------------------------------------------------
+      # 2. API scan (runs even when the baseline gate failed, so both reports are always there)
+      # ---------------------------------------------------------------------------------------------
+      # Catalog, Orders and Payment have routes keyed by product and order, so they get real records.
+      - name: Seed test data
+        id: data
+        if: ${{ !cancelled() && steps.up.outcome == 'success' && contains(fromJSON('["catalog", "orders", "payments"]'), inputs.service) }}
+        run: |
+          # The runtime image has no tsx for `npm run db:seed`, so call the compiled seed directly.
+          docker compose exec -T catalog node --input-type=module -e '
+            import { createDatabase } from "./dist/adapters/db/prisma.js";
+            import { seedCatalog, SEEDED_PRODUCT_ID } from "./dist/adapters/db/seed.js";
+            const database = createDatabase(process.env.DATABASE_URL);
+            await seedCatalog(database);
+            await database.$disconnect();
+            console.log("seeded product " + SEEDED_PRODUCT_ID);'
+
+          # One RESERVED order owned by the scan user, created from the contract's own request example.
+          yq -o=json '.paths["/orders"].post.requestBody.content["application/json"].example' docs/contracts/openapi.yaml \
+            | curl --fail-with-body --silent --show-error -X POST http://localhost:3000/orders \
+                -H "content-type: application/json" \
+                -H "idempotency-key: $(cat /proc/sys/kernel/random/uuid)" \
+                -H "x-user-id: $ZAP_USER_ID" -H "x-user-email: $ZAP_USER_EMAIL" \
+                --data-binary @- > "$RUNNER_TEMP/order.json"
+          jq '{order_id, status}' "$RUNNER_TEMP/order.json"
+          echo "ORDER_ID=$(jq -er .order_id "$RUNNER_TEMP/order.json")" >> "$GITHUB_ENV"
+          echo "PRODUCT_ID=$(jq -er '.items[0].product_id' "$RUNNER_TEMP/order.json")" >> "$GITHUB_ENV"
+
+      # The service's operations from the contract, pointed at its auth proxy, with order_id/product_id
+      # set to the records above. ZAP runs in Docker with the workspace mounted at /zap/wrk.
+      - name: Build API spec
+        id: spec
+        if: ${{ !cancelled() && steps.up.outcome == 'success' && steps.data.outcome != 'failure' }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/.zap"
+          yq -o=json docs/contracts/openapi.yaml > "$GITHUB_WORKSPACE/.zap/openapi.json"
+          node scripts/zap/service-spec.js "$GITHUB_WORKSPACE/.zap/openapi.json" "$ZAP_TAG" \
+            "http://localhost:$PROXY_PORT" "$GITHUB_WORKSPACE/.zap/$SERVICE.json"
+
+      # Port 4xxx -> 3xxx, adding the gateway's user headers and, for internal routes, a service JWT
+      # signed per request (services reject tokens older than 60 s; a scan takes minutes).
+      - name: Start gateway stand-in
+        id: proxy
+        if: ${{ !cancelled() && steps.spec.outcome == 'success' }}
+        run: |
+          # $ZAP_JWT is "<issuer> <audience>" or empty, so it is split on purpose.
+          nohup node scripts/zap/auth-proxy.js "$PROXY_PORT" "http://localhost:$PORT" $ZAP_JWT \
+            > "$RUNNER_TEMP/proxy.log" 2>&1 &
+          curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 1 \
+            "http://localhost:$PROXY_PORT/health" > /dev/null
+          cat "$RUNNER_TEMP/proxy.log"
+
+      - name: ZAP API scan
+        id: api
+        if: ${{ !cancelled() && steps.proxy.outcome == 'success' }}
+        uses: zaproxy/action-api-scan@v0.10.0
+        with:
+          target: /zap/wrk/.zap/${{ inputs.service }}.json
+          format: openapi
+          allow_issue_writing: false
+          artifact_name: zap_api_scan_${{ inputs.service }}
+
+      - name: ZAP gate - API scan
+        if: ${{ !cancelled() && steps.api.outcome == 'success' }}
+        run: node scripts/zap/check-report.js "$SERVICE API scan"
+
+      # Only when the stack or the scan setup broke; a failed gate already says why above.
+      - name: Service logs
+        if: ${{ failure() && (steps.up.outcome == 'failure' || steps.data.outcome == 'failure' || steps.spec.outcome == 'failure' || steps.proxy.outcome == 'failure' || steps.baseline.outcome == 'failure' || steps.api.outcome == 'failure') }}
+        run: |
+          docker compose logs
+          [ -f "$RUNNER_TEMP/proxy.log" ] && { echo "--- auth proxy"; cat "$RUNNER_TEMP/proxy.log"; } || true
+
+      - name: Stop stack
+        if: ${{ always() }}
+        run: docker compose down --volumes

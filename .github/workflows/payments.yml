@@ -1,3 +1,5 @@
+# payments pipeline: test ──► security-scan ──► publish (pushes to dev/main only).
+# Runs only when payments (or a stage it uses) changes, so payments ships independently.
 name: payments
 
 on:
@@ -6,14 +8,22 @@ on:
     paths:
       - "microservices/payments/**"
       - "microservices/docs/contracts/**"
+      - "microservices/docker-compose.yml"
       - ".github/workflows/payments.yml"
-      - ".github/workflows/_node-service.yml"
+      - ".github/workflows/execute-tests.yml"
+      - ".github/workflows/security-scan.yml"
+      - ".github/workflows/publish-image.yml"
+      - "microservices/scripts/zap/**"
   pull_request:
     paths:
       - "microservices/payments/**"
       - "microservices/docs/contracts/**"
+      - "microservices/docker-compose.yml"
       - ".github/workflows/payments.yml"
-      - ".github/workflows/_node-service.yml"
+      - ".github/workflows/execute-tests.yml"
+      - ".github/workflows/security-scan.yml"
+      - ".github/workflows/publish-image.yml"
+      - "microservices/scripts/zap/**"
 
 permissions:
   contents: read
@@ -24,11 +34,24 @@ concurrency:
 
 jobs:
   test:
-    permissions:
-      contents: read
-      packages: write # for the publish job in _node-service.yml
-    uses: ./.github/workflows/_node-service.yml
+    uses: ./.github/workflows/execute-tests.yml
     with:
       service: payments
     secrets:
       STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+
+  security-scan:
+    needs: test
+    uses: ./.github/workflows/security-scan.yml
+    with:
+      service: payments
+
+  publish:
+    needs: [test, security-scan]
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/publish-image.yml
+    with:
+      service: payments

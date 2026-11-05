@@ -1,0 +1,60 @@
+# Reusable test stage for one Node/TypeScript microservice: typecheck, unit tests, integration tests
+# (Vitest + testcontainers) and build. Each service workflow calls it first, before
+# security-scan.yml and publish-image.yml.
+name: execute-tests
+
+on:
+  workflow_call:
+    inputs:
+      service:
+        description: Folder under microservices/
+        required: true
+        type: string
+    secrets:
+      # Optional: the Stripe and Resend integration tests skip themselves when these are missing.
+      STRIPE_SECRET_KEY:
+        required: false
+      RESEND_API_KEY:
+        required: false
+      RESEND_FROM_EMAIL:
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Tests (${{ inputs.service }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: microservices/${{ inputs.service }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: microservices/${{ inputs.service }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      # Postgres, MongoDB, Redis and RabbitMQ come from testcontainers, using the runner's Docker.
+      - name: Integration tests
+        run: npm run test:integration
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL || 'onboarding@resend.dev' }}
+
+      - name: Build
+        run: npm run build
