@@ -21,7 +21,7 @@ describe("withRetries", () => {
 
     await expect(withRetries(operationFailing(Infinity), undefined, sleep)).rejects.toThrow();
 
-    expect(waits).toEqual([1000, 2000, 4000, 8000, 8000]);
+    expect(waits).toEqual([1000, 2000, 4000, 8000, 16000]);
   });
 
   it.each([
