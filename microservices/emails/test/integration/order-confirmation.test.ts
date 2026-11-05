@@ -3,12 +3,12 @@ import type { StartedRabbitMQContainer } from "@testcontainers/rabbitmq";
 import { startRabbitMq } from "../support/rabbitmq.js";
 import { connect, type ChannelModel } from "amqplib";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { connectToBroker } from "../../src/adapters/rabbitmq/connection.js";
-import { handleEvent, startConsumer } from "../../src/adapters/rabbitmq/consumer.js";
-import { orderConfirmedDataSchema } from "../../src/adapters/rabbitmq/order-confirmed.js";
-import { assertConsumerTopology } from "../../src/adapters/rabbitmq/topology.js";
-import { ResendMailer } from "../../src/adapters/resend/resend-mailer.js";
-import { sendOrderConfirmation } from "../../src/application/send-order-confirmation.js";
+import { connectToBroker } from "../../src/rabbitmq/connection.js";
+import { handleEvent, startConsumer } from "../../src/rabbitmq/consumer.js";
+import { orderConfirmedDataSchema } from "../../src/order-confirmation/order-confirmation-schema.js";
+import { assertConsumerTopology } from "../../src/rabbitmq/topology.js";
+import { ResendMailer } from "../../src/mailer/resend-mailer.js";
+import { sendOrderConfirmation } from "../../src/order-confirmation/order-confirmation-service.js";
 import { orderConfirmedEvent } from "../fixtures/order-confirmed.js";
 
 const apiKey = process.env.RESEND_API_KEY;

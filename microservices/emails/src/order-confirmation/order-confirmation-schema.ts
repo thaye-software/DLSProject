@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { OrderConfirmation } from "../../domain/order-confirmation.js";
+import type { OrderConfirmation } from "./order-confirmation-types.js";
 
 const moneySchema = z.object({
   amount_minor: z.number().int().min(0),

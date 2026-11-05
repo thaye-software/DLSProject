@@ -3,7 +3,7 @@ import { Ajv } from "ajv";
 import addFormats from "ajv-formats";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
-import { orderConfirmedDataSchema } from "../../src/adapters/rabbitmq/order-confirmed.js";
+import { orderConfirmedDataSchema } from "../../src/order-confirmation/order-confirmation-schema.js";
 import { orderConfirmedEvent } from "../fixtures/order-confirmed.js";
 
 const asyncApi = parse(readFileSync(new URL("../../../docs/contracts/asyncapi.yaml", import.meta.url), "utf8"));

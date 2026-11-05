@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { orderConfirmedDataSchema } from "../../src/adapters/rabbitmq/order-confirmed.js";
+import { orderConfirmedDataSchema } from "../../src/order-confirmation/order-confirmation-schema.js";
 import { orderConfirmedData } from "../fixtures/order-confirmed.js";
 
 function withItem(changes: Record<string, unknown>) {

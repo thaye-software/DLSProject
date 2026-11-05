@@ -1,4 +1,4 @@
-import type { Email } from "../../domain/email.js";
+import type { Email } from "../shared/email.js";
 
 export type OutgoingEmail = Email & {
   idempotencyKey?: string;

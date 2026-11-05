@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { FakeMailer } from "../../src/adapters/fake-mailer.js";
-import { sendContactMessage } from "../../src/application/send-contact-message.js";
-import { renderContactMessage } from "../../src/domain/contact-message.js";
+import { FakeMailer } from "../../src/mailer/fake-mailer.js";
+import { sendContactMessage } from "../../src/contact/contact-service.js";
+import { renderContactMessage } from "../../src/contact/contact-template.js";
 
 const contactMessage = {
   name: "Mette Jensen",

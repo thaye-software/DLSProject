@@ -1,11 +1,6 @@
-import type { Email } from "./email.js";
-import { escapeHtml } from "./html.js";
-
-export type ContactMessage = {
-  name: string;
-  email: string;
-  message: string;
-};
+import type { Email } from "../shared/email.js";
+import { escapeHtml } from "../shared/html.js";
+import type { ContactMessage } from "./contact-types.js";
 
 export function renderContactMessage({ name, email, message }: ContactMessage): Email {
   return {

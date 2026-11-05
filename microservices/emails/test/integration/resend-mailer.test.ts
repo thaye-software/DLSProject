@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { ResendMailer } from "../../src/adapters/resend/resend-mailer.js";
+import { ResendMailer } from "../../src/mailer/resend-mailer.js";
 
 const apiKey = process.env.RESEND_API_KEY;
 const fromEmail = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev";

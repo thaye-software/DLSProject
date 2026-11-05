@@ -1,7 +1,7 @@
 import type { StartedRabbitMQContainer } from "@testcontainers/rabbitmq";
 import { startRabbitMq } from "../support/rabbitmq.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { connectToBroker, type BrokerConnection } from "../../src/adapters/rabbitmq/connection.js";
+import { connectToBroker, type BrokerConnection } from "../../src/rabbitmq/connection.js";
 
 let container: StartedRabbitMQContainer;
 let connection: BrokerConnection | undefined;

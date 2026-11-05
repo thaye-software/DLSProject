@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { escapeHtml } from "../../src/domain/html.js";
+import { escapeHtml } from "../../src/shared/html.js";
 
 describe("escapeHtml", () => {
   it.each([

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { FakeMailer } from "../../src/adapters/fake-mailer.js";
-import { sendOrderConfirmation } from "../../src/application/send-order-confirmation.js";
-import { renderOrderConfirmation, type OrderConfirmation } from "../../src/domain/order-confirmation.js";
+import { FakeMailer } from "../../src/mailer/fake-mailer.js";
+import { sendOrderConfirmation } from "../../src/order-confirmation/order-confirmation-service.js";
+import { renderOrderConfirmation } from "../../src/order-confirmation/order-confirmation-template.js";
+import type { OrderConfirmation } from "../../src/order-confirmation/order-confirmation-types.js";
 import { orderConfirmedData } from "../fixtures/order-confirmed.js";
 
 function order(overrides: Partial<OrderConfirmation> = {}): OrderConfirmation {

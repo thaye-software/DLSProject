@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatMoney } from "../../src/domain/money.js";
+import { formatMoney } from "../../src/shared/money.js";
 
 describe("formatMoney", () => {
   it.each([

@@ -1,7 +1,7 @@
 import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { afterEach } from "vitest";
-import { createApp, type AppDependencies } from "../../src/adapters/http/app.js";
+import { createApp, type AppDependencies } from "../../src/app.js";
 
 const defaultDependencies: AppDependencies = {
   isBrokerConnected: () => true,

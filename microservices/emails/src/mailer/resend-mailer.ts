@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import type { Mailer, OutgoingEmail } from "../../application/ports/mailer.js";
+import type { Mailer, OutgoingEmail } from "./mailer.js";
 
 export type ResendMailerOptions = {
   apiKey: string;

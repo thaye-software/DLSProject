@@ -47,16 +47,30 @@ docker compose up --build rabbitmq notif
 
 ## Layout
 
+Package by feature, with each feature split into layers:
+
 ```
 src/
-  domain/          pure: email rendering, DKK formatting, HTML escaping
-  application/     use cases + ports/ (Mailer)
-  adapters/        http/ (Express), rabbitmq/ (consumer, retry, topology), resend/
+  contact/
+    contact-controller.ts            POST /contact (Express router + zod body validation)
+    contact-service.ts               sendContactMessage use case
+    contact-template.ts              renders the email
+    contact-types.ts
+  order-confirmation/
+    order-confirmation-listener.ts   order.events handlers (order_confirmed)
+    order-confirmation-schema.ts     zod schema for the event data
+    order-confirmation-service.ts    sendOrderConfirmation use case
+    order-confirmation-template.ts   renders the email
+    order-confirmation-types.ts
+  mailer/          Mailer interface, ResendMailer, FakeMailer
+  rabbitmq/        connection, consumer, retry, topology, CloudEvent parsing
+  shared/          Email type, HTML escaping, DKK formatting, problem+json responses
+  app.ts           Express app: /health + feature routers
   config.ts        env vars validated with zod at startup
-  main.ts          composition root
+  server.ts        entry point: wires config, broker, mailer, listeners and HTTP
 ```
 
-`domain` imports nothing, `application` imports only `domain`, adapters import inwards, and only `main.ts` knows the concrete adapters.
+Within a feature, controller/listener → service → template. Services depend only on the `Mailer` interface, and only `server.ts` picks the concrete mailer.
 
 ## Delivery
 

@@ -1,27 +1,8 @@
-import type { Email } from "./email.js";
-import { escapeHtml } from "./html.js";
-import { formatMoney, type Money } from "./money.js";
+import type { Email } from "../shared/email.js";
+import { escapeHtml } from "../shared/html.js";
+import { formatMoney } from "../shared/money.js";
+import type { OrderConfirmation } from "./order-confirmation-types.js";
 
-export type OrderConfirmation = {
-  order_id: string;
-  customer_email: string;
-  items: Array<{
-    product_name: string;
-    quantity: number;
-    thumbnail_url: string | null;
-  }>;
-  totals: {
-    subtotal: Money;
-    shipping: Money;
-    total: Money;
-  };
-  billing_address: {
-    first_name: string;
-    middle_name: string | null;
-    last_name: string;
-  };
-  confirmed_at: string;
-};
 
 const SHOP_TIME_ZONE = "Europe/Copenhagen";
 const ORDERS_PAGE_URL = "https://watches.thaulow.tech/orders";

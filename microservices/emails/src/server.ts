@@ -1,14 +1,13 @@
-import { FakeMailer } from "./adapters/fake-mailer.js";
-import { createApp } from "./adapters/http/app.js";
-import { connectToBroker } from "./adapters/rabbitmq/connection.js";
-import { handleEvent, startConsumer, type EventHandler } from "./adapters/rabbitmq/consumer.js";
-import { orderConfirmedDataSchema } from "./adapters/rabbitmq/order-confirmed.js";
-import { assertConsumerTopology } from "./adapters/rabbitmq/topology.js";
-import { ResendMailer } from "./adapters/resend/resend-mailer.js";
-import type { Mailer } from "./application/ports/mailer.js";
-import { sendContactMessage } from "./application/send-contact-message.js";
-import { sendOrderConfirmation } from "./application/send-order-confirmation.js";
+import { createApp } from "./app.js";
 import { loadConfig } from "./config.js";
+import { sendContactMessage } from "./contact/contact-service.js";
+import { FakeMailer } from "./mailer/fake-mailer.js";
+import type { Mailer } from "./mailer/mailer.js";
+import { ResendMailer } from "./mailer/resend-mailer.js";
+import { orderConfirmationListener } from "./order-confirmation/order-confirmation-listener.js";
+import { connectToBroker } from "./rabbitmq/connection.js";
+import { startConsumer } from "./rabbitmq/consumer.js";
+import { assertConsumerTopology } from "./rabbitmq/topology.js";
 
 const ORDER_EVENTS_EXCHANGE = "order.events";
 const ORDER_EVENTS_QUEUE = "notif.order.events";
@@ -26,9 +25,7 @@ broker.onUnexpectedClose((error) => {
 
 const mailer: Mailer = config.mailer.kind === "resend" ? new ResendMailer(config.mailer) : new FakeMailer();
 
-const orderEventHandlers: Record<string, EventHandler> = {
-  order_confirmed: handleEvent(orderConfirmedDataSchema, (order, event) => sendOrderConfirmation(order, event.id, mailer)),
-};
+const orderEventHandlers = orderConfirmationListener(mailer);
 
 await assertConsumerTopology(broker.channel, {
   exchange: ORDER_EVENTS_EXCHANGE,
