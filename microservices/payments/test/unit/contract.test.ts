@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { buildPaymentEvent, type PaymentEventData, type PaymentEventType } from "../../src/domain/payment-event.js";
-import { orderReferenceSchema, refundRequestedDataSchema } from "../../src/adapters/rabbitmq/order-events.js";
+import { buildPaymentEvent, type PaymentEventData, type PaymentEventType } from "../../src/shared/payment-event.js";
+import { orderReferenceSchema } from "../../src/cancel-payment/cancel-payment-schema.js";
+import { refundRequestedDataSchema } from "../../src/refund-payment/refund-payment-schema.js";
 import { asyncApi, contractSchema } from "../support/contract.js";
 import { ORDER_ID, paymentCompleteData, paymentFailedData, paymentRefundedData } from "../fixtures/payment-events.js";
 

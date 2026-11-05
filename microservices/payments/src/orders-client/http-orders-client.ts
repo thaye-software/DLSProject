@@ -1,6 +1,6 @@
 import { SignJWT } from "jose";
 import { z } from "zod";
-import type { OrdersClient, PaymentDetailsLookup } from "../../application/ports/orders-client.js";
+import type { OrdersClient, PaymentDetailsLookup } from "./orders-client.js";
 
 export type HttpOrdersClientOptions = {
   baseUrl: string;

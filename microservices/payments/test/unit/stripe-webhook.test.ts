@@ -1,10 +1,10 @@
 import Stripe from "stripe";
 import { describe, expect, it, vi } from "vitest";
-import { createStripeWebhookHandler } from "../../src/adapters/http/stripe-webhook.js";
-import { handlePaymentWebhook } from "../../src/application/handle-payment-webhook.js";
-import type { EventPublisher } from "../../src/application/ports/event-publisher.js";
-import type { PaymentProvider, RefundedPayment } from "../../src/application/ports/payment-provider.js";
-import type { PaymentEvent } from "../../src/domain/payment-event.js";
+import { paymentWebhookController } from "../../src/payment-webhook/payment-webhook-controller.js";
+import { handlePaymentWebhook } from "../../src/payment-webhook/payment-webhook-service.js";
+import type { EventPublisher } from "../../src/rabbitmq/event-publisher.js";
+import type { PaymentProvider, RefundedPayment } from "../../src/payment-provider/payment-provider.js";
+import type { PaymentEvent } from "../../src/shared/payment-event.js";
 import { serve } from "../support/serve.js";
 
 const WEBHOOK_SECRET = "whsec_unit_test_secret";
@@ -59,7 +59,7 @@ async function webhookServer({ publish, latestRefund }: Setup = {}) {
         return refundedPayment;
       }),
   };
-  const stripeWebhook = createStripeWebhookHandler({
+  const stripeWebhook = paymentWebhookController({
     webhookSecret: WEBHOOK_SECRET,
     payments,
     handlePaymentWebhook: (webhook) => handlePaymentWebhook(webhook, { publisher }),

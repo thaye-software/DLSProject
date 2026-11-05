@@ -22,3 +22,7 @@ export function sendProblem(response: Response, problem: Problem): void {
       }),
     );
 }
+
+export function sendValidationProblem(response: Response, instance: string, detail: string): void {
+  sendProblem(response, { code: "validation_error", title: "Invalid request", status: 422, detail, instance });
+}

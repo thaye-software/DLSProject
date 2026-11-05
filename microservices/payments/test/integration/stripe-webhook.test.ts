@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
 import Stripe from "stripe";
 import { describe, expect, it, vi } from "vitest";
-import { createStripeWebhookHandler } from "../../src/adapters/http/stripe-webhook.js";
-import { StripePaymentProvider } from "../../src/adapters/stripe/stripe-payment-provider.js";
-import { handlePaymentWebhook } from "../../src/application/handle-payment-webhook.js";
-import type { PaymentEvent } from "../../src/domain/payment-event.js";
+import { paymentWebhookController } from "../../src/payment-webhook/payment-webhook-controller.js";
+import { StripePaymentProvider } from "../../src/payment-provider/stripe-payment-provider.js";
+import { handlePaymentWebhook } from "../../src/payment-webhook/payment-webhook-service.js";
+import type { PaymentEvent } from "../../src/shared/payment-event.js";
 import { contractSchema } from "../support/contract.js";
 import { serve } from "../support/serve.js";
 
@@ -45,7 +45,7 @@ async function stripeEventFor(type: string, paymentIntentId: string, since: numb
 
 async function deliver(event: Stripe.Event, provider: StripePaymentProvider) {
   const published: PaymentEvent[] = [];
-  const stripeWebhook = createStripeWebhookHandler({
+  const stripeWebhook = paymentWebhookController({
     webhookSecret: WEBHOOK_SECRET,
     payments: provider,
     handlePaymentWebhook: (webhook) => handlePaymentWebhook(webhook, { publisher: { publish: async (e) => void published.push(e) } }),

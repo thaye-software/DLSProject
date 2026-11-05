@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { uuidV5 } from "../../src/domain/uuid-v5.js";
+import { uuidV5 } from "../../src/shared/uuid-v5.js";
 
 const DNS_NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
 

@@ -1,5 +1,5 @@
 import type { ConfirmChannel } from "amqplib";
-import type { EventPublisher } from "../../application/ports/event-publisher.js";
+import type { EventPublisher } from "./event-publisher.js";
 
 const EXCHANGE = "payment.events";
 const CONTENT_TYPE = "application/cloudevents+json";

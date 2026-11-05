@@ -2,11 +2,12 @@ import { randomUUID } from "node:crypto";
 import type { StartedRabbitMQContainer } from "@testcontainers/rabbitmq";
 import { connect, type Channel, type ChannelModel } from "amqplib";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { FakePaymentProvider } from "../../src/adapters/fake-payment-provider.js";
-import { connectToBroker, type BrokerConnection } from "../../src/adapters/rabbitmq/connection.js";
-import { startConsumer } from "../../src/adapters/rabbitmq/consumer.js";
-import { createOrderEventHandlers } from "../../src/adapters/rabbitmq/order-events.js";
-import { assertConsumerTopology } from "../../src/adapters/rabbitmq/topology.js";
+import { FakePaymentProvider } from "../../src/payment-provider/fake-payment-provider.js";
+import { connectToBroker, type BrokerConnection } from "../../src/rabbitmq/connection.js";
+import { startConsumer } from "../../src/rabbitmq/consumer.js";
+import { cancelPaymentListener } from "../../src/cancel-payment/cancel-payment-listener.js";
+import { refundPaymentListener } from "../../src/refund-payment/refund-payment-listener.js";
+import { assertConsumerTopology } from "../../src/rabbitmq/topology.js";
 import { startRabbitMq } from "../support/rabbitmq.js";
 
 const ORDER_EVENTS = "order.events";
@@ -27,7 +28,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   broker = await connectToBroker(container.getAmqpUrl());
-  const handlers = createOrderEventHandlers({ payments });
+  const handlers = { ...cancelPaymentListener({ payments }), ...refundPaymentListener({ payments }) };
   await assertConsumerTopology(broker.channel, { exchange: ORDER_EVENTS, queue: QUEUE, routingKeys: Object.keys(handlers) });
   await startConsumer(broker.channel, { queue: QUEUE, handlers, retryDelaysMs: [5] });
 });

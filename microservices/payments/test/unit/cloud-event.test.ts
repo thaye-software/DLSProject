@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseCloudEvent } from "../../src/adapters/rabbitmq/cloud-event.js";
+import { parseCloudEvent } from "../../src/rabbitmq/cloud-event.js";
 
 const validEvent = {
   specversion: "1.0",

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { FakePaymentProvider } from "../../src/adapters/fake-payment-provider.js";
-import { createPaymentSession } from "../../src/application/create-payment-session.js";
-import type { OrdersClient, PaymentDetails, PaymentDetailsLookup } from "../../src/application/ports/orders-client.js";
+import { FakePaymentProvider } from "../../src/payment-provider/fake-payment-provider.js";
+import { createPaymentSession } from "../../src/payment-session/payment-session-service.js";
+import type { OrdersClient, PaymentDetails, PaymentDetailsLookup } from "../../src/orders-client/orders-client.js";
 
 const ORDER_ID = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
 const OWNER = "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11";

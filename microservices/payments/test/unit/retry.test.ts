@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { withRetries } from "../../src/adapters/rabbitmq/retry.js";
+import { withRetries } from "../../src/rabbitmq/retry.js";
 
 function operationFailing(times: number) {
   let calls = 0;

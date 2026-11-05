@@ -1,36 +1,17 @@
-import express, { type ErrorRequestHandler, type Express, type RequestHandler, type Response } from "express";
+import express, { type Router } from "express";
 import { z } from "zod";
-import type { CreatePaymentSessionResult } from "../../application/create-payment-session.js";
-import { sendProblem } from "./problem.js";
-
-export type AppDependencies = {
-  isBrokerConnected: () => boolean;
-  createPaymentSession: (request: { orderId: string; userId: string }) => Promise<CreatePaymentSessionResult>;
-  stripeWebhook?: RequestHandler;
-};
+import { sendProblem, sendValidationProblem } from "../shared/problem.js";
+import type { CreatePaymentSessionResult } from "./payment-session-types.js";
 
 const createPaymentRequestSchema = z.strictObject({ order_id: z.uuid() });
 const userIdSchema = z.uuid();
 
-export function createApp({ isBrokerConnected, createPaymentSession, stripeWebhook }: AppDependencies): Express {
-  const app = express();
-  app.disable("x-powered-by");
+export function paymentSessionController(
+  createPaymentSession: (request: { orderId: string; userId: string }) => Promise<CreatePaymentSessionResult>,
+): Router {
+  const router = express.Router();
 
-  app.get("/health", (request, response) => {
-    if (isBrokerConnected()) {
-      response.json({ status: "ok" });
-      return;
-    }
-    sendProblem(response, {
-      code: "broker_unavailable",
-      title: "Message broker unavailable",
-      status: 503,
-      detail: "The RabbitMQ channel is closed.",
-      instance: request.path,
-    });
-  });
-
-  app.post("/payments", express.json(), async (request, response) => {
+  router.post("/payments", express.json(), async (request, response) => {
     const instance = request.path;
 
     const userId = userIdSchema.safeParse(request.get("x-user-id"));
@@ -88,23 +69,5 @@ export function createApp({ isBrokerConnected, createPaymentSession, stripeWebho
     }
   });
 
-  if (stripeWebhook) {
-    app.post("/webhooks/stripe", express.raw({ type: "application/json" }), stripeWebhook);
-  }
-
-  app.use(invalidJsonHandler);
-
-  return app;
+  return router;
 }
-
-function sendValidationProblem(response: Response, instance: string, detail: string): void {
-  sendProblem(response, { code: "validation_error", title: "Invalid request", status: 422, detail, instance });
-}
-
-const invalidJsonHandler: ErrorRequestHandler = (error, request, response, next) => {
-  if (error?.type !== "entity.parse.failed") {
-    next(error);
-    return;
-  }
-  sendValidationProblem(response, request.path, "Request body must be valid JSON.");
-};

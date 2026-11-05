@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildPaymentEvent } from "../../src/domain/payment-event.js";
+import { buildPaymentEvent } from "../../src/shared/payment-event.js";
 import { ORDER_ID, paymentCompleteData } from "../fixtures/payment-events.js";
 
 function build(stripeEventId: string) {

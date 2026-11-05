@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { CreatePaymentSessionResult } from "../../src/application/create-payment-session.js";
+import type { CreatePaymentSessionResult } from "../../src/payment-session/payment-session-types.js";
 import { serve } from "../support/serve.js";
 
 const ORDER_ID = "f47ac10b-58cc-4372-a567-0e02b2c3d479";

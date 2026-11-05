@@ -1,4 +1,4 @@
-import type { PaymentProvider } from "./ports/payment-provider.js";
+import type { PaymentProvider } from "../payment-provider/payment-provider.js";
 
 export type CancelPaymentOutcome = "no_intent" | "already_canceled" | "already_paid" | "cancelled" | "not_cancellable";
 

@@ -2,7 +2,7 @@ import { createServer, type IncomingMessage, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { jwtVerify } from "jose";
 import { afterEach, describe, expect, it } from "vitest";
-import { HttpOrdersClient } from "../../src/adapters/orders/http-orders-client.js";
+import { HttpOrdersClient } from "../../src/orders-client/http-orders-client.js";
 
 const ORDER_ID = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
 const JWT_SECRET = "orders-and-payment-share-this-32-char-secret";

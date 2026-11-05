@@ -4,9 +4,9 @@ import { startRabbitMq } from "../support/rabbitmq.js";
 import { connect, type Channel, type ChannelModel } from "amqplib";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { connectToBroker, type BrokerConnection } from "../../src/adapters/rabbitmq/connection.js";
-import { handleEvent, startConsumer, type Consumer, type EventHandler } from "../../src/adapters/rabbitmq/consumer.js";
-import { assertConsumerTopology } from "../../src/adapters/rabbitmq/topology.js";
+import { connectToBroker, type BrokerConnection } from "../../src/rabbitmq/connection.js";
+import { handleEvent, startConsumer, type Consumer, type EventHandler } from "../../src/rabbitmq/consumer.js";
+import { assertConsumerTopology } from "../../src/rabbitmq/topology.js";
 
 const ORDER_EVENTS = "order.events";
 const FAST_RETRIES = [5, 5, 5, 5, 5];

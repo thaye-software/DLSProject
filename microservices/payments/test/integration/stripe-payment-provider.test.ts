@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import Stripe from "stripe";
 import { afterAll, describe, expect, it } from "vitest";
-import { StripePaymentProvider } from "../../src/adapters/stripe/stripe-payment-provider.js";
+import { StripePaymentProvider } from "../../src/payment-provider/stripe-payment-provider.js";
 
 const secretKey = process.env.STRIPE_SECRET_KEY;
 const isTestModeKey = secretKey?.startsWith("sk_test_") ?? false;

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { FakePaymentProvider } from "../../src/adapters/fake-payment-provider.js";
-import { refundPayment } from "../../src/application/refund-payment.js";
+import { FakePaymentProvider } from "../../src/payment-provider/fake-payment-provider.js";
+import { refundPayment } from "../../src/refund-payment/refund-payment-service.js";
 
 const ORDER_ID = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
 const USER_ID = "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11";

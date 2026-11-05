@@ -1,4 +1,4 @@
-import type { PaymentEventData } from "../../src/domain/payment-event.js";
+import type { PaymentEventData } from "../../src/shared/payment-event.js";
 
 export const ORDER_ID = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
 export const USER_ID = "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11";

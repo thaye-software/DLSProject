@@ -1,11 +1,5 @@
-import type { Money } from "../domain/money.js";
-import type { CreatedRefund, PaymentProvider } from "./ports/payment-provider.js";
-
-export type RefundRequest = {
-  refundRequestId: string;
-  orderId: string;
-  amount: Money;
-};
+import type { CreatedRefund, PaymentProvider } from "../payment-provider/payment-provider.js";
+import type { RefundRequest } from "./refund-payment-types.js";
 
 export async function refundPayment(
   { refundRequestId, orderId, amount }: RefundRequest,

@@ -1,10 +1,10 @@
-import type { RequestHandler } from "express";
+import express, { type Router } from "express";
 import Stripe from "stripe";
-import type { PaymentWebhook } from "../../application/handle-payment-webhook.js";
-import type { PaymentProvider } from "../../application/ports/payment-provider.js";
-import type { Money } from "../../domain/money.js";
-import { orderOwnerFrom } from "../stripe/order-metadata.js";
-import { sendProblem } from "./problem.js";
+import { orderOwnerFrom } from "../payment-provider/order-metadata.js";
+import type { PaymentProvider } from "../payment-provider/payment-provider.js";
+import type { Money } from "../shared/money.js";
+import { sendProblem } from "../shared/problem.js";
+import type { PaymentWebhook } from "./payment-webhook-types.js";
 
 export type StripeWebhookDependencies = {
   webhookSecret: string;
@@ -12,12 +12,15 @@ export type StripeWebhookDependencies = {
   handlePaymentWebhook: (webhook: PaymentWebhook) => Promise<void>;
 };
 
-export function createStripeWebhookHandler({
+export function paymentWebhookController({
   webhookSecret,
   payments,
   handlePaymentWebhook,
-}: StripeWebhookDependencies): RequestHandler {
-  return async (request, response) => {
+}: StripeWebhookDependencies): Router {
+  const router = express.Router();
+
+  // Stripe signs the raw body, so this route parses it with express.raw, not express.json.
+  router.post("/webhooks/stripe", express.raw({ type: "application/json" }), async (request, response) => {
     const instance = request.path;
 
     let event: Stripe.Event;
@@ -50,7 +53,9 @@ export function createStripeWebhookHandler({
     }
 
     response.json({ received: true });
-  };
+  });
+
+  return router;
 }
 
 async function toPaymentWebhook(

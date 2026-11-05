@@ -1,4 +1,4 @@
-import type { PaymentEvent } from "../../domain/payment-event.js";
+import type { PaymentEvent } from "../shared/payment-event.js";
 
 export type EventPublisher = {
   publish(event: PaymentEvent): Promise<void>;

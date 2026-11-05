@@ -58,14 +58,37 @@ docker compose up --build rabbitmq notif payment
 
 ## Layout
 
+Package by feature, with each feature split into layers:
+
 ```
 src/
-  domain/          pure: CloudEvent building, Stripe status rules
-  application/     use cases + ports/ (PaymentProvider, OrdersClient, EventPublisher)
-  adapters/        http/ (Express, Stripe webhook), rabbitmq/, stripe/, orders/
-  config.ts        env vars validated with zod at startup
-  main.ts          composition root
+  payment-session/     POST /payments
+    payment-session-controller.ts   route + X-User-Id/body validation
+    payment-session-service.ts      createPaymentSession (Orders lookup, Stripe intent)
+    payment-session-types.ts
+  payment-webhook/     POST /webhooks/stripe
+    payment-webhook-controller.ts   signature check, Stripe event -> PaymentWebhook
+    payment-webhook-service.ts      handlePaymentWebhook (publishes to payment.events)
+    payment-webhook-types.ts
+  cancel-payment/      order_cancelled, order_expired
+    cancel-payment-listener.ts
+    cancel-payment-schema.ts
+    cancel-payment-service.ts
+  refund-payment/      refund_requested
+    refund-payment-listener.ts
+    refund-payment-schema.ts
+    refund-payment-service.ts
+    refund-payment-types.ts
+  payment-provider/    PaymentProvider interface, Stripe + fake implementations, order metadata
+  orders-client/       OrdersClient interface, HTTP client (service JWT)
+  rabbitmq/            connection, consumer, publisher + EventPublisher interface, retry, topology, CloudEvent parsing
+  shared/              Money, payment CloudEvent builder, UUIDv5, problem+json responses
+  app.ts               Express app: /health + feature routers
+  config.ts            env vars validated with zod at startup
+  server.ts            entry point: wires config, broker, providers, listeners and HTTP
 ```
+
+Within a feature, controller/listener -> service -> types. Services depend only on the `PaymentProvider`, `OrdersClient` and `EventPublisher` interfaces, and only `server.ts` picks the concrete implementations.
 
 ## Order of events
 

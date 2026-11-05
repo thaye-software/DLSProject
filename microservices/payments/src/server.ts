@@ -1,17 +1,18 @@
-import { FakePaymentProvider } from "./adapters/fake-payment-provider.js";
-import { createApp } from "./adapters/http/app.js";
-import { createStripeWebhookHandler } from "./adapters/http/stripe-webhook.js";
-import { HttpOrdersClient } from "./adapters/orders/http-orders-client.js";
-import { connectToBroker } from "./adapters/rabbitmq/connection.js";
-import { startConsumer } from "./adapters/rabbitmq/consumer.js";
-import { createOrderEventHandlers } from "./adapters/rabbitmq/order-events.js";
-import { createEventPublisher } from "./adapters/rabbitmq/publisher.js";
-import { assertConsumerTopology } from "./adapters/rabbitmq/topology.js";
-import { StripePaymentProvider } from "./adapters/stripe/stripe-payment-provider.js";
-import { createPaymentSession } from "./application/create-payment-session.js";
-import { handlePaymentWebhook } from "./application/handle-payment-webhook.js";
-import type { PaymentProvider } from "./application/ports/payment-provider.js";
+import { createApp } from "./app.js";
+import { cancelPaymentListener } from "./cancel-payment/cancel-payment-listener.js";
 import { loadConfig } from "./config.js";
+import { HttpOrdersClient } from "./orders-client/http-orders-client.js";
+import { FakePaymentProvider } from "./payment-provider/fake-payment-provider.js";
+import type { PaymentProvider } from "./payment-provider/payment-provider.js";
+import { StripePaymentProvider } from "./payment-provider/stripe-payment-provider.js";
+import { createPaymentSession } from "./payment-session/payment-session-service.js";
+import { paymentWebhookController } from "./payment-webhook/payment-webhook-controller.js";
+import { handlePaymentWebhook } from "./payment-webhook/payment-webhook-service.js";
+import { connectToBroker } from "./rabbitmq/connection.js";
+import { startConsumer } from "./rabbitmq/consumer.js";
+import { createEventPublisher } from "./rabbitmq/publisher.js";
+import { assertConsumerTopology } from "./rabbitmq/topology.js";
+import { refundPaymentListener } from "./refund-payment/refund-payment-listener.js";
 
 const ORDER_EVENTS_EXCHANGE = "order.events";
 const ORDER_EVENTS_QUEUE = "payment.order.events";
@@ -34,7 +35,10 @@ const payments: PaymentProvider =
     ? new StripePaymentProvider(config.paymentProvider.secretKey)
     : new FakePaymentProvider();
 
-const orderEventHandlers = createOrderEventHandlers({ payments });
+const orderEventHandlers = {
+  ...cancelPaymentListener({ payments }),
+  ...refundPaymentListener({ payments }),
+};
 await assertConsumerTopology(broker.channel, {
   exchange: ORDER_EVENTS_EXCHANGE,
   queue: ORDER_EVENTS_QUEUE,
@@ -50,7 +54,7 @@ const app = createApp({
   createPaymentSession: (request) => createPaymentSession(request, { orders, payments, now: () => new Date() }),
   stripeWebhook:
     config.paymentProvider.kind === "stripe"
-      ? createStripeWebhookHandler({
+      ? paymentWebhookController({
           webhookSecret: config.paymentProvider.webhookSecret,
           payments,
           handlePaymentWebhook: (webhook) => handlePaymentWebhook(webhook, { publisher }),

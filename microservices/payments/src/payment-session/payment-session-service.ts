@@ -1,19 +1,6 @@
-import type { Money } from "../domain/money.js";
-import type { OrdersClient } from "./ports/orders-client.js";
-import type { PaymentProvider } from "./ports/payment-provider.js";
-
-export type PaymentSession = {
-  payment_intent_id: string;
-  order_id: string;
-  amount: Money;
-  client_secret: string;
-  expires_at: string;
-};
-
-export type CreatePaymentSessionResult =
-  | { outcome: "created"; session: PaymentSession }
-  | { outcome: "not_found" }
-  | { outcome: "not_payable" };
+import type { OrdersClient } from "../orders-client/orders-client.js";
+import type { PaymentProvider } from "../payment-provider/payment-provider.js";
+import type { CreatePaymentSessionResult } from "./payment-session-types.js";
 
 export type CreatePaymentSessionDependencies = {
   orders: OrdersClient;

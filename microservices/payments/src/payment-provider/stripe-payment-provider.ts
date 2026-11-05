@@ -9,7 +9,7 @@ import type {
   NewPaymentIntent,
   PaymentProvider,
   RefundedPayment,
-} from "../../application/ports/payment-provider.js";
+} from "./payment-provider.js";
 import { orderOwnerFrom, toOrderMetadata } from "./order-metadata.js";
 
 const refundRequestIdSchema = z.uuid();

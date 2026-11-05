@@ -1,10 +1,10 @@
 import type { StartedRabbitMQContainer } from "@testcontainers/rabbitmq";
 import { connect, type ChannelModel, type GetMessage } from "amqplib";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { connectToBroker, type BrokerConnection } from "../../src/adapters/rabbitmq/connection.js";
-import { createEventPublisher } from "../../src/adapters/rabbitmq/publisher.js";
-import type { EventPublisher } from "../../src/application/ports/event-publisher.js";
-import { buildPaymentEvent } from "../../src/domain/payment-event.js";
+import { connectToBroker, type BrokerConnection } from "../../src/rabbitmq/connection.js";
+import { createEventPublisher } from "../../src/rabbitmq/publisher.js";
+import type { EventPublisher } from "../../src/rabbitmq/event-publisher.js";
+import { buildPaymentEvent } from "../../src/shared/payment-event.js";
 import { ORDER_ID, paymentCompleteData, paymentFailedData } from "../fixtures/payment-events.js";
 import { startRabbitMq } from "../support/rabbitmq.js";
 

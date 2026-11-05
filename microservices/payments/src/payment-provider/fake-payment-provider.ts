@@ -7,7 +7,7 @@ import type {
   NewRefund,
   PaymentProvider,
   RefundedPayment,
-} from "../application/ports/payment-provider.js";
+} from "./payment-provider.js";
 
 type FakeIntent = CreatedPaymentIntent & { userId: string; status: string };
 type FakeRefund = CreatedRefund & Omit<NewRefund, "refundRequestId">;
