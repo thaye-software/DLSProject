@@ -5,6 +5,7 @@ import type { Product } from "../../domain/product.js";
 import { productSummaryJson } from "./product-json.js";
 import { reservationJson } from "./reservation-json.js";
 import { sendProblem } from "./problem.js";
+import { notFoundHandler, securityHeaders } from "./http-security.js";
 import { requireServiceJwt } from "./service-auth.js";
 
 const productIdSchema = z.uuid();
@@ -44,6 +45,7 @@ export function createApp({
 }: AppDependencies): Express {
   const app = express();
   app.disable("x-powered-by");
+  app.use(securityHeaders);
   const ordersOnly = requireServiceJwt({ secret: internalJwtSecret, audience: CATALOG_AUDIENCE, issuers: [ORDERS_ISSUER] });
 
   app.get("/health", async (request, response) => {
@@ -129,6 +131,7 @@ export function createApp({
     response.status(204).end();
   });
 
+  app.use(notFoundHandler);
   app.use(invalidJsonHandler);
   app.use(unexpectedErrorHandler);
   return app;

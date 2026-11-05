@@ -1,6 +1,7 @@
 import express, { type ErrorRequestHandler, type Express, type Router } from "express";
 import { paymentSessionController } from "./payment-session/payment-session-controller.js";
 import type { CreatePaymentSessionResult } from "./payment-session/payment-session-types.js";
+import { notFoundHandler, securityHeaders } from "./shared/http-security.js";
 import { sendProblem, sendValidationProblem } from "./shared/problem.js";
 
 export type AppDependencies = {
@@ -13,6 +14,7 @@ export type AppDependencies = {
 export function createApp({ isBrokerConnected, createPaymentSession, stripeWebhook }: AppDependencies): Express {
   const app = express();
   app.disable("x-powered-by");
+  app.use(securityHeaders);
 
   app.get("/health", (request, response) => {
     if (isBrokerConnected()) {
@@ -31,6 +33,7 @@ export function createApp({ isBrokerConnected, createPaymentSession, stripeWebho
   app.use(paymentSessionController(createPaymentSession));
   if (stripeWebhook) app.use(stripeWebhook);
 
+  app.use(notFoundHandler);
   app.use(invalidJsonHandler);
 
   return app;

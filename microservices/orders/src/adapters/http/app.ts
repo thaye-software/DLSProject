@@ -16,6 +16,7 @@ import {
   updateOrderStatusRequestSchema,
 } from "./order-json.js";
 import { sendProblem } from "./problem.js";
+import { notFoundHandler, securityHeaders } from "./http-security.js";
 import { requireServiceJwt } from "./service-auth.js";
 
 export type AppDependencies = {
@@ -62,6 +63,7 @@ export function createApp({
 }: AppDependencies): Express {
   const app = express();
   app.disable("x-powered-by");
+  app.use(securityHeaders);
 
   app.get("/health", async (request, response) => {
     if (!isBrokerConnected()) {
@@ -283,6 +285,7 @@ export function createApp({
     },
   );
 
+  app.use(notFoundHandler);
   app.use(invalidJsonHandler);
   app.use(unexpectedErrorHandler);
 

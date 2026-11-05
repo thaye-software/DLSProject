@@ -1,6 +1,7 @@
 import express, { type ErrorRequestHandler, type Express } from "express";
 import type { SearchQuery, SearchResult } from "../../domain/listing.js";
 import { sendProblem } from "./problem.js";
+import { notFoundHandler, securityHeaders } from "./http-security.js";
 import { searchQuerySchema, searchResultsJson } from "./search-json.js";
 
 export type AppDependencies = {
@@ -12,6 +13,7 @@ export type AppDependencies = {
 export function createApp({ isBrokerConnected, isDatabaseReachable, search }: AppDependencies): Express {
   const app = express();
   app.disable("x-powered-by");
+  app.use(securityHeaders);
 
   // Redis is not checked: without it searches still work, just uncached.
   app.get("/health", async (request, response) => {
@@ -50,6 +52,7 @@ export function createApp({ isBrokerConnected, isDatabaseReachable, search }: Ap
     response.json(searchResultsJson(await search(query.data), query.data));
   });
 
+  app.use(notFoundHandler);
   app.use(unexpectedErrorHandler);
 
   return app;
