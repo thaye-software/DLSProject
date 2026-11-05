@@ -5,31 +5,28 @@ on:
     branches: [dev, main]
     paths:
       - "microservices/emails/**"
+      - "microservices/docs/contracts/**"
       - ".github/workflows/emails.yml"
+      - ".github/workflows/_node-service.yml"
   pull_request:
     paths:
       - "microservices/emails/**"
+      - "microservices/docs/contracts/**"
       - ".github/workflows/emails.yml"
+      - ".github/workflows/_node-service.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: microservices/emails
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: microservices/emails/package-lock.json
-
-      - run: npm ci
-
-      - run: npm run typecheck --if-present
-
-      - name: Vitest
-        run: npm test
-
+    uses: ./.github/workflows/_node-service.yml
+    with:
+      service: emails
+    secrets:
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}

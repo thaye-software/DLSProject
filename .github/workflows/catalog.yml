@@ -5,26 +5,27 @@ on:
     branches: [dev, main]
     paths:
       - "microservices/catalog/**"
+      - "microservices/docker-compose.yml"
+      - "microservices/orders/docker-compose.yml"
       - ".github/workflows/catalog.yml"
+      - ".github/workflows/_node-service.yml"
   pull_request:
     paths:
       - "microservices/catalog/**"
+      - "microservices/docker-compose.yml"
+      - "microservices/orders/docker-compose.yml"
       - ".github/workflows/catalog.yml"
+      - ".github/workflows/_node-service.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up toolchain
-        run: echo "::warning title=catalog::Language and test framework not chosen yet"
-
-      - name: Install dependencies
-        run: echo "TODO install dependencies"
-
-      - name: Unit tests
-        run: echo "TODO run unit tests"
-
-      - name: Integration tests
-        run: echo "TODO run integration tests"
+    uses: ./.github/workflows/_node-service.yml
+    with:
+      service: catalog

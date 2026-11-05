@@ -9,27 +9,63 @@ permissions:
 jobs:
   baseline:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: microservices
+    env:
+      # Catalog, Orders and Payment sign and verify service JWTs with this shared secret.
+      INTERNAL_JWT_SECRET: ci-only-secret-0123456789abcdef0123456789
     steps:
       - uses: actions/checkout@v4
 
       - name: Configure services with fake providers
         run: |
-          cat > payments/.env <<'EOF'
+          cat > catalog/.env <<EOF
+          INTERNAL_JWT_SECRET=$INTERNAL_JWT_SECRET
+          EOF
+          cat > orders/.env <<EOF
+          INTERNAL_JWT_SECRET=$INTERNAL_JWT_SECRET
+          EOF
+          cat > payments/.env <<EOF
           PAYMENT_PROVIDER=fake
           ORDERS_URL=http://orders:3000
-          INTERNAL_JWT_SECRET=ci-only-secret-0123456789abcdef0123456789
+          INTERNAL_JWT_SECRET=$INTERNAL_JWT_SECRET
           EOF
           cat > emails/.env <<'EOF'
           MAILER=fake
           EOF
 
       - name: Start stack
-        run: docker compose up --build --detach --wait --wait-timeout 180
+        run: docker compose up --build --detach --wait --wait-timeout 300
+
+      # Each scan runs even if an earlier one failed, so every service gets a report.
+      - name: ZAP Baseline Scan (orders)
+        if: ${{ !cancelled() }}
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: http://localhost:3000
+          allow_issue_writing: false
+          artifact_name: zap_scan_orders
+
+      - name: ZAP Baseline Scan (catalog)
+        if: ${{ !cancelled() }}
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: http://localhost:3002
+          allow_issue_writing: false
+          artifact_name: zap_scan_catalog
+
+      - name: ZAP Baseline Scan (search)
+        if: ${{ !cancelled() }}
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: http://localhost:3003
+          allow_issue_writing: false
+          artifact_name: zap_scan_search
 
       - name: ZAP Baseline Scan (payment)
+        if: ${{ !cancelled() }}
         uses: zaproxy/action-baseline@v0.15.0
         with:
           target: http://localhost:3006
