@@ -16,10 +16,13 @@ jobs:
       run:
         working-directory: microservices
     env:
+      # Every service in the compose files sits behind profiles: ["${START_X:-true}"].
+      # Locally microservices/.env (from .env.example) sets this; without it only rabbitmq starts.
+      COMPOSE_PROFILES: "true"
       # Catalog, Orders and Payment sign and verify service JWTs with this shared secret.
       INTERNAL_JWT_SECRET: ci-only-secret-0123456789abcdef0123456789
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Configure services with fake providers
         run: |
@@ -41,9 +44,20 @@ jobs:
       - name: Start stack
         run: docker compose up --build --detach --wait --wait-timeout 300
 
-      # Each scan runs even if an earlier one failed, so every service gets a report.
+      # --wait only covers the containers that were created, so check every scan target answers.
+      - name: Check services are up
+        id: up
+        run: |
+          docker compose ps
+          for port in 3000 3002 3003 3006 3007; do
+            curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 3 \
+              "http://localhost:$port/health" > /dev/null
+            echo "port $port healthy"
+          done
+
+      # Each scan runs even if an earlier scan failed, so every service gets a report.
       - name: ZAP Baseline Scan (orders)
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.up.outcome == 'success' }}
         uses: zaproxy/action-baseline@v0.15.0
         with:
           target: http://localhost:3000
@@ -51,7 +65,7 @@ jobs:
           artifact_name: zap_scan_orders
 
       - name: ZAP Baseline Scan (catalog)
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.up.outcome == 'success' }}
         uses: zaproxy/action-baseline@v0.15.0
         with:
           target: http://localhost:3002
@@ -59,7 +73,7 @@ jobs:
           artifact_name: zap_scan_catalog
 
       - name: ZAP Baseline Scan (search)
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.up.outcome == 'success' }}
         uses: zaproxy/action-baseline@v0.15.0
         with:
           target: http://localhost:3003
@@ -67,7 +81,7 @@ jobs:
           artifact_name: zap_scan_search
 
       - name: ZAP Baseline Scan (payment)
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.up.outcome == 'success' }}
         uses: zaproxy/action-baseline@v0.15.0
         with:
           target: http://localhost:3006
@@ -75,7 +89,7 @@ jobs:
           artifact_name: zap_scan_payment
 
       - name: ZAP Baseline Scan (notif)
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.up.outcome == 'success' }}
         uses: zaproxy/action-baseline@v0.15.0
         with:
           target: http://localhost:3007
