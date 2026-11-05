@@ -26,6 +26,9 @@ concurrency:
 
 jobs:
   test:
+    permissions:
+      contents: read
+      packages: write # for the publish job in _node-service.yml
     uses: ./.github/workflows/_node-service.yml
     with:
       service: catalog
