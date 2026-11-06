@@ -80,7 +80,8 @@ kubectl version --client
 Expected: Client Version: v1.36.1
 
 Permanent, when the first path is Chocolatey.
-Open PowerShell as Administrator and run:
+A normal window cannot upgrade this package. Open PowerShell as Administrator
+(the prompt is PS C:\WINDOWS\system32>) and run:
 choco upgrade kubernetes-cli --version=1.36.1 -y
 
 If Chocolatey has no kubectl package yet, use install instead of upgrade:
@@ -102,7 +103,7 @@ That puts Docker's bin first on the user Path and removes the AppData\Local\kube
 Putting Docker's bin on the user Path is not enough when Chocolatey is installed. A new window still ran v1.27.3 from C:\ProgramData\chocolatey\bin\kubectl.exe until kubernetes-cli itself was upgraded.
 
 
----------- 3. Done ----------
+---------- 3. check kubectl works ----------
 
 All of these are true:
 
@@ -117,3 +118,21 @@ kubectl config current-context
 
 kubectl get nodes
     docker-desktop   Ready   control-plane   v1.36.1
+
+Verified on 2026-11-06 from an Administrator PowerShell after
+choco upgrade kubernetes-cli --version=1.36.1 -y:
+
+kubectl version --client
+Client Version: v1.36.1
+Kustomize Version: v5.8.1
+
+kubectl config current-context
+docker-desktop
+
+kubectl get nodes
+NAME             STATUS   ROLES           AGE   VERSION
+docker-desktop   Ready    control-plane   57m   v1.36.1
+
+Close the Administrator window after this. Later commands belong in a normal PowerShell.
+
+-----------------------------
