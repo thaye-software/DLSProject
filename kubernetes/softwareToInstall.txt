@@ -1,0 +1,58 @@
+
+minimum software versions,
+
+Assuming windows 10 64 bit:
+
+
+WSL	2.1.5
+check with  wsl -v
+
+Docker Desktop	4.80.0
+check with docker version
+
+
+kubectl	1.36.1
+check with
+kubectl version --client
+kubectl config current-context
+kubectl cluster-info
+kubectl get nodes
+
+
+Docker Compose	2.20
+check with docker compose version
+
+
+
+if kubectl config current-context
+shows that nu clusters are configured, do the following:
+
+---------- turn on kubernetes in docker desktop -----
+
+Open Docker Desktop and wait until it says the engine is running.
+Go to Settings → Kubernetes.
+Check Enable Kubernetes, and then selec Kubeadm instead of kind.
+Click Apply & Restart
+ (or apply and install)
+ and wait until the Kubernetes indicator is green. The first start can take several minutes while it pulls cluster images.
+When that indicator is green, run these one at a time:
+
+kubectl config current-context
+
+kubectl get nodes
+
+you should ge something like this:
+docker-desktop
+NAME             STATUS   ROLES           AGE     VERSION
+docker-desktop   Ready    control-plane   6m35s   v1.36.1
+
+------------------------
+
+reopen powershell as administrator and run:
+choco upgrade kubernetes-cli --version=1.36.1 -y
+
+and then:
+kubectl version --client
+
+
+--------------------------------

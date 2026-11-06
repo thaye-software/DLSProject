@@ -1,0 +1,25 @@
+Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version
+
+$PSVersionTable.PSVersion
+
+wsl -v
+
+wsl --status
+
+docker version
+
+docker info --format "ServerVersion={{.ServerVersion}}"
+
+docker compose version
+
+kubectl version --client
+
+kubectl config current-context
+
+kubectl cluster-info
+
+kubectl get nodes
+
+helm version --short
+
+Get-Command lens -ErrorAction SilentlyContinue; Test-Path "$env:LOCALAPPDATA\Programs\Lens\Lens.exe"
