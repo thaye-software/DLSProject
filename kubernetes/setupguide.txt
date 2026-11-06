@@ -144,5 +144,52 @@ docker build -t dls/orders:local microservices/orders
 kubectl delete pod -l app=orders
 
 
+---------- Payment (2026-11-06) ----------
+
+Do this after RabbitMQ and Orders are ready. Payment has no database.
+It calls Orders at http://orders:3000 and publishes payment.events on RabbitMQ.
+The local cluster uses the fake provider, so no Stripe key is required.
+
+From the repo root. The source folder is microservices/payments:
+
+docker build -t dls/payment:local microservices/payments
+
+Files:
+kubernetes/payment/secret.yaml
+kubernetes/payment/deployment.yaml
+kubernetes/payment/service.yaml
+
+secret.yaml holds INTERNAL_JWT_SECRET, the same placeholder already used by Catalog and Orders:
+replace-with-at-least-32-random-characters
+
+PAYMENT_PROVIDER is fake. The example file microservices/payments/.env.example says stripe.
+That needs Stripe keys, which this local cluster does not use.
+
+Ports:
+Payment health from the laptop: http://localhost:30006/health
+Payment from another pod: http://payment:3006
+
+deployment.yaml waits until rabbitmq:5672 and orders:3000 accept connections,
+then runs dls/payment:local. imagePullPolicy is Never.
+
+From the repo root, in a normal PowerShell:
+
+kubectl apply -f kubernetes/payment
+kubectl rollout status deployment/payment
+kubectl get pods -l app=payment
+kubectl get svc payment
+
+Payment is up when its pod is 1/1 Running and this returns {"status":"ok"}:
+
+curl.exe http://localhost:30006/health
+
+The pod log should contain: payment listening on port 3006 (payment provider: fake)
+
+If the pod stays at ErrImageNeverPull, rebuild the image and delete the pod:
+
+docker build -t dls/payment:local microservices/payments
+kubectl delete pod -l app=payment
+
+
 
 
