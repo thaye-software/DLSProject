@@ -191,5 +191,47 @@ docker build -t dls/payment:local microservices/payments
 kubectl delete pod -l app=payment
 
 
+---------- Notif (2026-11-06) ----------
+
+Do this after RabbitMQ is ready. Notif sends the order confirmation and the contact message.
+It has no database. The local cluster uses the fake mailer, so no Resend key is required.
+
+From the repo root. The source folder is microservices/emails:
+
+docker build -t dls/notif:local microservices/emails
+
+Files:
+kubernetes/notif/deployment.yaml
+kubernetes/notif/service.yaml
+
+MAILER is fake. The example file microservices/emails/.env.example says resend.
+That needs a Resend API key, which this local cluster does not use.
+
+Ports:
+Notif health from the laptop: http://localhost:30007/health
+Notif from another pod: http://notif:3007
+
+deployment.yaml waits until rabbitmq:5672 accepts connections, then runs dls/notif:local.
+imagePullPolicy is Never. It consumes order.events on the queue notif.order.events.
+
+From the repo root, in a normal PowerShell:
+
+kubectl apply -f kubernetes/notif
+kubectl rollout status deployment/notif
+kubectl get pods -l app=notif
+kubectl get svc notif
+
+Notif is up when its pod is 1/1 Running and this returns {"status":"ok"}:
+
+curl.exe http://localhost:30007/health
+
+The pod log should contain: notif listening on port 3007 (mailer: fake)
+
+If the pod stays at ErrImageNeverPull, rebuild the image and delete the pod:
+
+docker build -t dls/notif:local microservices/emails
+kubectl delete pod -l app=notif
+
+
 
 
