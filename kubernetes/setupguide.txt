@@ -33,5 +33,63 @@ A ready pod and a Service with ports 30672 and 31672 means it is up.
 Open http://localhost:31672 and sign in as guest / guest.
 
 
+---------- Catalog and its database (2026-11-06) ----------
+
+Do this after RabbitMQ is ready. Catalog keeps products, stock, and reservations in PostgreSQL.
+Other services call it over HTTP. It publishes catalog.events on RabbitMQ.
+
+From the repo root, build the image into Docker Desktop's local image store.
+The cluster uses that image. It is not pushed to a registry.
+
+docker build -t dls/catalog:local microservices/catalog
+
+Files:
+kubernetes/catalog/secret.yaml
+kubernetes/catalog/catalog-db-pvc.yaml
+kubernetes/catalog/catalog-db-deployment.yaml
+kubernetes/catalog/catalog-db-service.yaml
+kubernetes/catalog/deployment.yaml
+kubernetes/catalog/service.yaml
+
+secret.yaml holds the database password and INTERNAL_JWT_SECRET.
+The secret is the local placeholder from microservices/orders/.env.example:
+replace-with-at-least-32-random-characters
+Orders and Payment must use this same value when they are deployed.
+
+catalog-db-pvc.yaml asks for 1Gi. Docker Desktop's default storage class creates the volume.
+A separate PersistentVolume file is not required on this cluster.
+
+catalog-db-deployment.yaml runs postgres:17-alpine, the same image as microservices/catalog/docker-compose.yml.
+Database name, user, and password are catalog / catalog / catalog.
+
+Ports:
+Postgres from the laptop:  localhost:30434
+Postgres from Catalog:     catalog-db:5432
+Catalog health from the laptop: http://localhost:30002/health
+Catalog from another pod:  http://catalog:3002
+
+deployment.yaml waits until catalog-db:5432 and rabbitmq:5672 accept connections,
+then runs the image. The image applies Prisma migrations before it listens.
+imagePullPolicy is Never, so Kubernetes uses dls/catalog:local and does not try Docker Hub.
+
+From the repo root, in a normal PowerShell:
+
+kubectl apply -f kubernetes/catalog
+kubectl rollout status deployment/catalog-db
+kubectl rollout status deployment/catalog
+kubectl get pods -l 'app in (catalog,catalog-db)'
+kubectl get svc catalog catalog-db
+
+Catalog is up when its pod is 1/1 Running and this returns {"status":"ok"}:
+
+curl.exe http://localhost:30002/health
+
+If the Catalog pod stays at ErrImageNeverPull, the image was built in Docker but Kubernetes cannot see it.
+In Docker Desktop: Settings, General, enable "Use containerd for pulling and storing images",
+apply, then run the docker build command again and:
+
+kubectl delete pod -l app=catalog
+
+
 
 
