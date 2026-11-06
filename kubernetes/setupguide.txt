@@ -91,5 +91,58 @@ apply, then run the docker build command again and:
 kubectl delete pod -l app=catalog
 
 
+---------- Orders and its database (2026-11-06) ----------
+
+Do this after RabbitMQ and Catalog are ready. Orders stores reserved orders in its own PostgreSQL database.
+It calls Catalog at http://catalog:3002 and uses the same INTERNAL_JWT_SECRET.
+
+From the repo root:
+
+docker build -t dls/orders:local microservices/orders
+
+Files:
+kubernetes/orders/secret.yaml
+kubernetes/orders/orders-db-pvc.yaml
+kubernetes/orders/orders-db-deployment.yaml
+kubernetes/orders/orders-db-service.yaml
+kubernetes/orders/deployment.yaml
+kubernetes/orders/service.yaml
+
+secret.yaml uses database user, password, and database name orders / orders / orders.
+INTERNAL_JWT_SECRET is the same placeholder already stored in catalog-secret:
+replace-with-at-least-32-random-characters
+
+orders-db-pvc.yaml asks for 1Gi. Docker Desktop's default storage class creates the volume.
+
+The shipping price is 300 DKK (30000 in ore), from microservices/orders/.env.example.
+
+Ports:
+Postgres from the laptop: localhost:30433
+Postgres from Orders:    orders-db:5432
+Orders health from the laptop: http://localhost:30000/health
+Orders from another pod: http://orders:3000
+
+deployment.yaml waits until orders-db:5432, rabbitmq:5672, and catalog:3002 accept connections,
+then runs dls/orders:local. The image applies Prisma migrations before it listens.
+imagePullPolicy is Never.
+
+From the repo root, in a normal PowerShell:
+
+kubectl apply -f kubernetes/orders
+kubectl rollout status deployment/orders-db
+kubectl rollout status deployment/orders
+kubectl get pods -l "app in (orders,orders-db)"
+kubectl get svc orders orders-db
+
+Orders is up when its pod is 1/1 Running and this returns {"status":"ok"}:
+
+curl.exe http://localhost:30000/health
+
+If the Orders pod stays at ErrImageNeverPull, rebuild the image and delete the pod:
+
+docker build -t dls/orders:local microservices/orders
+kubectl delete pod -l app=orders
+
+
 
 
