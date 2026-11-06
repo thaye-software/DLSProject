@@ -233,5 +233,68 @@ docker build -t dls/notif:local microservices/emails
 kubectl delete pod -l app=notif
 
 
+---------- Search, MongoDB, and Redis (2026-11-06) ----------
+
+Do this after RabbitMQ is ready. Search keeps a read model of products in MongoDB and a cache in Redis.
+It consumes catalog.events from RabbitMQ. It does not call Catalog over HTTP.
+
+From the repo root:
+
+docker build -t dls/search:local microservices/search
+
+Files:
+kubernetes/search/search-db-pvc.yaml
+kubernetes/search/search-db-deployment.yaml
+kubernetes/search/search-db-service.yaml
+kubernetes/search/search-cache-deployment.yaml
+kubernetes/search/search-cache-service.yaml
+kubernetes/search/deployment.yaml
+kubernetes/search/service.yaml
+
+search-db-deployment.yaml runs mongo:7 with no username or password, matching microservices/search/docker-compose.yml.
+The first pull of mongo:7 can take several minutes. The pod stays ContainerCreating until that pull finishes.
+search-db-pvc.yaml asks for 1Gi. Docker Desktop's default storage class creates the volume.
+Redis is a cache only, so search-cache has no volume. A restart empties the cache. Searches still work.
+
+Ports:
+MongoDB from the laptop: localhost:30018
+MongoDB from Search:    search-db:27017
+Redis from the laptop:   localhost:30380
+Redis from Search:       search-cache:6379
+Search health from the laptop: http://localhost:30003/health
+Search from another pod: http://search:3003
+
+deployment.yaml waits until search-db:27017, search-cache:6379, and rabbitmq:5672 accept connections,
+then runs dls/search:local. imagePullPolicy is Never.
+It consumes catalog.events on the queue search.catalog.events.
+
+The index stays empty until Catalog publishes product_created. An empty search result is expected
+until that happens. See DECISIONS.md.
+
+From the repo root, in a normal PowerShell:
+
+kubectl apply -f kubernetes/search
+kubectl rollout status deployment/search-db
+kubectl rollout status deployment/search-cache
+kubectl rollout status deployment/search
+kubectl get pods -l "app in (search,search-db,search-cache)"
+kubectl get svc search search-db search-cache
+
+Search is up when its pod is 1/1 Running and this returns {"status":"ok"}:
+
+curl.exe http://localhost:30003/health
+
+A search with no products yet still answers. The items list is empty:
+
+curl.exe http://localhost:30003/search
+
+The pod log should contain: search listening on port 3003 (cache: redis)
+
+If the Search pod stays at ErrImageNeverPull, rebuild the image and delete the pod:
+
+docker build -t dls/search:local microservices/search
+kubectl delete pod -l app=search
+
+
 
 
