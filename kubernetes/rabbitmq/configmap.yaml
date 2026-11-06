@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rabbitmq-config
+  labels:
+    app: rabbitmq
+data:
+  # guest/guest is what Catalog, Orders, Search, Payment, and Notif use.
+  # RabbitMQ otherwise accepts guest only from inside this container.
+  rabbitmq.conf: |
+    loopback_users.guest = false

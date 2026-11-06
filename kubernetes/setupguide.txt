@@ -1,0 +1,37 @@
+
+
+
+
+---------- RabbitMQ, first workload (2026-11-06) ----------
+
+Software setup is in softwareToInstall.txt. This is the first thing that runs on the cluster.
+RabbitMQ is the broker in microservices/docker-compose.yml. Catalog, Orders, Search, Payment, and Notif
+connect with amqp://guest:guest@rabbitmq:5672. The image rabbitmq:4-management is public, so nothing is built or pushed.
+
+Files:
+kubernetes/rabbitmq/configmap.yaml
+kubernetes/rabbitmq/deployment.yaml
+kubernetes/rabbitmq/service.yaml
+
+configmap.yaml sets loopback_users.guest = false. Without that, guest is accepted only from inside
+the RabbitMQ container, and the other services cannot log in through the Service.
+
+The Service is a NodePort:
+AMQP from the laptop:        localhost:30672
+Management UI from the laptop: http://localhost:31672
+AMQP from another pod:       rabbitmq:5672
+Login: guest / guest
+
+From the repo root, in a normal PowerShell:
+
+kubectl apply -f kubernetes/rabbitmq
+kubectl rollout status deployment/rabbitmq
+kubectl get pods -l app=rabbitmq
+kubectl get svc rabbitmq
+
+A ready pod and a Service with ports 30672 and 31672 means it is up.
+Open http://localhost:31672 and sign in as guest / guest.
+
+
+
+
