@@ -1,175 +1,79 @@
-# Contracts: Messaging (draft)
+# Contract: Messaging
 
-**Status:** Draft for team approval. Based on Architecture v3. Exact endpoints and payloads must be checked against the old monolith and existing contracts.
+Website chat: a customer asks the shop about a product. Authoritative HTTP: `docs/contracts/openapi.yaml`. `user_deleted`: `docs/contracts/asyncapi.yaml`.
 
-## Event envelope (all RabbitMQ messages)
+Architecture v3: MongoDB is the source of truth; Messaging broadcasts live updates on **Supabase Realtime**. The frontend keeps a WebSocket to Realtime, not to this service. Chat is never published on RabbitMQ.
 
-Messaging uses the shared CloudEvents 1.0 envelope defined in `docs/contracts/asyncapi.yaml`.
+## Envelope (CloudEvents, every RabbitMQ message)
 
-```json
-{
-  "specversion": "1.0",
-  "id": "uuid",
-  "source": "users",
-  "type": "user_deleted",
-  "time": "2026-10-15T10:00:00Z",
-  "datacontenttype": "application/json",
-  "data": {
-    "user_id": "uuid",
-    "deleted_at": "2026-10-15T10:00:00Z"
-  }
-}
-```
+| Field | Meaning |
+|---|---|
+| `specversion` | `"1.0"` |
+| `id` | uuid, idempotency key (dedupe on it) |
+| `source` | `/services/<publisher>` |
+| `type` | event name, also the routing key |
+| `time` | timestamp |
+| `datacontenttype` | `"application/json"` |
+| `subject` | id of the aggregate |
+| `dataversion` | schema version of `data` |
+| `correlationid` | flow id |
+| `causationid` | uuid?, the triggering event |
+| `data` | the card for the event |
 
-The exact `source`, `type`, and `data` fields must match the shared AsyncAPI schema.
-
-Consumers dedupe on CloudEvents `id` (RabbitMQ can deliver messages more than once).
+Queue: `<consumer>.<exchange>`, with a dead-letter queue `.dlq`.
 
 ## Messaging
 
-### Consumes
+### Consumes from `user.events`
 
-| Event | From | `data` |
-|---|---|---|
-| `user_deleted` | Users | `user_id`, `deleted_at` (proposed fields) |
+| Event | Subject | `data` | Messaging does |
+|---|---|---|---|
+| `user_deleted` | `user_id` | `user_id`, `version`, `deleted_at` | set `customer_display_name` to `"Deleted User"`; keep conversations, messages and ids |
 
-On `user_deleted`, Messaging handles the deleted user's conversations and messages according to the agreed deletion policy.
-
-RabbitMQ configuration:
-
-- Exchange: `user.events`
-- Routing key: `user_deleted`
-- Queue: `messaging.user.events`
-- Dead-letter queue: `messaging.user.events.dlq`
-
-Messages are processed idempotently using the MongoDB inbox.
+Inbox: CloudEvent `id` in `processed_events`. Duplicate deliveries are skipped.
 
 ### Publishes
 
-Nothing to RabbitMQ.
-
-New chat messages are broadcast through Supabase Realtime.
+Nothing to RabbitMQ. New chat messages are broadcast through Supabase Realtime.
 
 ### HTTP (via gateway)
 
-Proposed endpoints:
+See `docs/contracts/openapi.yaml`. Identity from `X-User-Id` and `X-User-Role` (`admin` or customer). Sender is never taken from the body.
 
-- `POST /conversations` body `{product_id}`. Creates or retrieves a conversation between a buyer and the product's seller.
-- `GET /conversations` returns the authenticated user's conversations.
-- `GET /conversations/{id}/messages?before=&limit=50` returns paginated message history.
-- `POST /conversations/{id}/messages` body `{content}`. Sends a message to another participant.
+| Call | Who |
+|---|---|
+| `POST /conversations` `{product_id}` | Customer. Create or return the thread for that product. Catalog `GET /products/{product_id}`; snapshot name and thumbnail. |
+| `GET /conversations` | Customer: own. Admin: all. Newest `updated_at` first. |
+| `GET /conversations/{id}/messages?before=&limit=50` | Participant or admin. Chronological page; `next_cursor` loads older. |
+| `POST /conversations/{id}/messages` `{content}` | Participant or admin. `Idempotency-Key` required (UUID). Persist, then Realtime `message_created`. A repeat returns the first message and does not broadcast again. Max 2000 characters. |
+| `POST /conversations/{id}/read` | Participant or admin. Clears this viewer's unread count. |
 
-Example message response:
-
-```json
-{
-  "message_id": "uuid",
-  "conversation_id": "uuid",
-  "sender_user_id": "uuid",
-  "content": "Is this watch still available?",
-  "created_at": "2026-10-15T10:00:00Z"
-}
-```
-
-Example message history response:
-
-```json
-{
-  "items": [
-    {
-      "message_id": "uuid",
-      "conversation_id": "uuid",
-      "sender_user_id": "uuid",
-      "content": "Is this watch still available?",
-      "created_at": "2026-10-15T10:00:00Z"
-    }
-  ],
-  "next_cursor": null
-}
-```
-
-The API Gateway verifies the Supabase JWT and forwards the authenticated user identity.
-
-Only conversation participants can retrieve messages or send new ones. The sender ID comes from the authenticated context, never from the request body.
-
-HTTP errors follow RFC 9457 `application/problem+json`.
+One conversation per `(customer_user_id, product_id)`. Admins do not open conversations; they reply on existing ones. Errors: RFC 9457 `application/problem+json`.
 
 ### Outbound HTTP
 
-Catalog `GET /products/{id}` is the specified integration point.
-
-Messaging needs product information to identify the seller and associate conversations with products.
-
-Proposed required response fields:
-
-`{id, seller_user_id, name, ...}`
-
-**Note:** Confirm `seller_user_id` in the Catalog contract. Architecture v3 also requires service-to-service calls to use `/internal/*` with a service JWT; the exact internal Catalog route must be agreed.
+Catalog `GET /products/{product_id}` (`ProductSummary`: `product_id`, `name`, `thumbnail_url`, …). No `seller_user_id`: this is a single shop.
 
 ### Supabase Realtime
 
-Messaging uses Supabase Realtime to broadcast messages to connected users.
-
-Proposed channel: `conversation:{conversation_id}`
+Channel: `conversation:{conversation_id}`
 
 Event: `message_created`
 
-```json
-{
-  "message_id": "uuid",
-  "conversation_id": "uuid",
-  "sender_user_id": "uuid",
-  "content": "Is this watch still available?",
-  "created_at": "2026-10-15T10:00:00Z"
-}
+Payload: `ChatMessage` (`message_id`, `conversation_id`, `sender_user_id`, `content`, `created_at`).
+
+Flow: frontend POST via gateway → Messaging stores in MongoDB → Broadcast HTTP API → connected clients. A Realtime failure does not fail the POST; missed messages come from HTTP history. The server uses the Broadcast REST API so it does not hold a WebSocket of its own.
+
+Frontend subscribe (private channel is a later hardening):
+
+```ts
+supabase.channel(`conversation:${conversationId}`).on("broadcast", { event: "message_created" }, handler).subscribe();
 ```
 
-Message flow:
+## Data model (MongoDB)
 
-1. Frontend sends a message through API Gateway.
-2. Messaging verifies the sender belongs to the conversation.
-3. Message is persisted in MongoDB.
-4. Messaging broadcasts `message_created` through Supabase Realtime.
-5. Connected participants receive the update over WebSocket.
+`conversations`, `_id` = `conversation_id`: `customer_user_id`, `customer_display_name`, `product_id`, `product_name`, `thumbnail_url`, `last_message`, `customer_unread_count`, `shop_unread_count`, `customer_last_read_at`, `shop_last_read_at`, `created_at`, `updated_at`. Unique `(customer_user_id, product_id)`.
 
-MongoDB is the source of truth. Supabase Realtime handles live delivery.
+`messages`, `_id` = `message_id` (UUIDv5 of conversation, sender and Idempotency-Key): `conversation_id`, `sender_user_id`, `content`, `idempotency_key`, `created_at`. Unique `(conversation_id, sender_user_id, idempotency_key)`. Index `(conversation_id, created_at)`.
 
-Realtime channel access must be restricted to conversation participants. Missed messages can be retrieved through HTTP.
-
-### MongoDB
-
-Proposed collections:
-
-**Conversations**
-
-`conversation_id`, `product_id`, `buyer_user_id`, `seller_user_id`, `created_at`, `updated_at`
-
-**Messages**
-
-`message_id`, `conversation_id`, `sender_user_id`, `content`, `created_at`
-
-**Inbox**
-
-Processed CloudEvents IDs for idempotent event handling.
-
-Index messages by `conversation_id` and `created_at` for efficient message history retrieval.
-
-## Open points to agree with other teams
-
-1. **Existing functionality.** Confirm how conversations and chat work in the old monolith. Only existing functionality should be migrated.
-
-2. **Catalog integration.** Confirm that Catalog exposes the seller's user ID and agree on the internal HTTP route.
-
-3. **User deletion.** Should messages be permanently deleted, anonymized, or retained when a user is deleted?
-
-4. **Conversation creation.** Can a buyer open multiple conversations about the same product? Can sellers initiate conversations?
-
-5. **Product availability.** Should conversations remain active after a product is sold or deleted?
-
-6. **Realtime authorization.** How are Supabase Realtime subscriptions restricted to authorized participants?
-
-7. **Delivery failures.** What happens when a message is stored in MongoDB but the Supabase broadcast fails? Define retry and duplicate-handling behavior.
-
-8. **Existing contracts.** Confirm exact endpoint names, payloads, and event schemas against `docs/contracts/openapi.yaml` and `asyncapi.yaml`.
-
-All agreed contract changes must be made in `microservices/docs/contracts/` before implementation.
+`processed_events` (`_id` = event id, `type`, `processed_at`, 14 day TTL): inbox. Messaging publishes nothing, so it has no outbox.

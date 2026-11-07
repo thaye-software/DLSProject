@@ -15,6 +15,7 @@ tags:
   - name: Users
   - name: Notif
   - name: Search
+  - name: Messaging
 paths:
   /orders:
     servers:
@@ -1136,6 +1137,307 @@ paths:
                 status: 422
                 detail: Invalid request.
                 instance: /search
+  /conversations:
+    servers:
+      - url: "https://api.limitedwatches.dk"
+        description: "Public, via API Gateway → messaging"
+    post:
+      tags:
+        - Messaging
+      operationId: openConversation
+      summary: Open or return the customer's conversation about a product
+      description: "One conversation per customer and product. Messaging calls Catalog GET /products/{product_id} and snapshots the name and thumbnail. Admins cannot open conversations."
+      security:
+        - userJwt: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/OpenConversationRequest"
+            example:
+              product_id: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+      responses:
+        "200":
+          description: Existing conversation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Conversation"
+              example:
+                conversation_id: "3e4f5a6b-7c8d-4e9f-a0b1-c2d3e4f5a6b7"
+                customer_user_id: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+                customer_display_name: mette
+                product_id: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+                product_name: Rolex Submariner Date 126610LN
+                thumbnail_url: "https://cdn.example.com/products/126610ln-1.jpg"
+                last_message: null
+                unread_count: 0
+                created_at: "2026-10-15T10:00:00.000Z"
+                updated_at: "2026-10-15T10:00:00.000Z"
+        "201":
+          description: Conversation created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Conversation"
+              example:
+                conversation_id: "3e4f5a6b-7c8d-4e9f-a0b1-c2d3e4f5a6b7"
+                customer_user_id: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+                customer_display_name: mette
+                product_id: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+                product_name: Rolex Submariner Date 126610LN
+                thumbnail_url: "https://cdn.example.com/products/126610ln-1.jpg"
+                last_message: null
+                unread_count: 0
+                created_at: "2026-10-15T10:00:00.000Z"
+                updated_at: "2026-10-15T10:00:00.000Z"
+        "401":
+          description: Missing gateway identity
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "403":
+          description: Admins cannot open conversations
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "404":
+          description: Product not found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "422":
+          description: Invalid request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "502":
+          description: Catalog unavailable
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+    get:
+      tags:
+        - Messaging
+      operationId: listConversations
+      summary: List the caller's conversations
+      description: "A customer gets their own threads. An admin gets every thread. Newest updated_at first."
+      security:
+        - userJwt: []
+      responses:
+        "200":
+          description: Conversations
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ConversationList"
+              example:
+                items:
+                  - conversation_id: "3e4f5a6b-7c8d-4e9f-a0b1-c2d3e4f5a6b7"
+                    customer_user_id: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+                    customer_display_name: mette
+                    product_id: "8d1d4c2a-77a5-4a2f-b0f4-2f3d0e7b9c55"
+                    product_name: Rolex Submariner Date 126610LN
+                    thumbnail_url: "https://cdn.example.com/products/126610ln-1.jpg"
+                    last_message:
+                      message_id: "7a8b9c0d-1e2f-4a3b-8c9d-0e1f2a3b4c5d"
+                      conversation_id: "3e4f5a6b-7c8d-4e9f-a0b1-c2d3e4f5a6b7"
+                      sender_user_id: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+                      content: "Is this watch still available?"
+                      created_at: "2026-10-15T10:01:00.000Z"
+                    unread_count: 0
+                    created_at: "2026-10-15T10:00:00.000Z"
+                    updated_at: "2026-10-15T10:01:00.000Z"
+        "401":
+          description: Missing gateway identity
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+  /conversations/{conversation_id}/messages:
+    servers:
+      - url: "https://api.limitedwatches.dk"
+        description: "Public, via API Gateway → messaging"
+    get:
+      tags:
+        - Messaging
+      operationId: listMessages
+      summary: Paginated message history
+      description: "Newest page, items in chronological order. `before` is the next_cursor from the previous page. Participant or admin only."
+      security:
+        - userJwt: []
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: before
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        "200":
+          description: One page of messages
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MessagePage"
+              example:
+                items:
+                  - message_id: "7a8b9c0d-1e2f-4a3b-8c9d-0e1f2a3b4c5d"
+                    conversation_id: "3e4f5a6b-7c8d-4e9f-a0b1-c2d3e4f5a6b7"
+                    sender_user_id: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+                    content: "Is this watch still available?"
+                    created_at: "2026-10-15T10:01:00.000Z"
+                next_cursor: null
+        "401":
+          description: Missing gateway identity
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "403":
+          description: Not a participant
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "404":
+          description: Conversation not found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "422":
+          description: Invalid request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+    post:
+      tags:
+        - Messaging
+      operationId: sendMessage
+      summary: Send a message
+      description: "Persists in MongoDB then broadcasts message_created on Supabase Realtime channel conversation:{conversation_id}. Sender comes from the gateway headers, never the body. Idempotency-Key is required: a repeat returns the first message (201) and does not broadcast again. A Realtime failure does not fail the request."
+      security:
+        - userJwt: []
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: "Client-generated; repeating the request with the same key returns the first message"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/SendMessageRequest"
+            example:
+              content: "Is this watch still available?"
+      responses:
+        "201":
+          description: Message stored
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ChatMessage"
+              example:
+                message_id: "7a8b9c0d-1e2f-4a3b-8c9d-0e1f2a3b4c5d"
+                conversation_id: "3e4f5a6b-7c8d-4e9f-a0b1-c2d3e4f5a6b7"
+                sender_user_id: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+                content: "Is this watch still available?"
+                created_at: "2026-10-15T10:01:00.000Z"
+        "401":
+          description: Missing gateway identity
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "403":
+          description: Not a participant
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "404":
+          description: Conversation not found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "422":
+          description: Invalid request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+  /conversations/{conversation_id}/read:
+    servers:
+      - url: "https://api.limitedwatches.dk"
+        description: "Public, via API Gateway → messaging"
+    post:
+      tags:
+        - Messaging
+      operationId: markConversationRead
+      summary: Mark the conversation read for the caller
+      description: "Sets this viewer's last_read_at and clears their unread_count. Participant or admin only."
+      security:
+        - userJwt: []
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Marked read
+        "401":
+          description: Missing gateway identity
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "403":
+          description: Not a participant
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "404":
+          description: Conversation not found
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
 components:
   schemas:
     Money:
@@ -1665,6 +1967,120 @@ components:
         - page
         - page_size
         - total
+    OpenConversationRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        product_id:
+          type: string
+          format: uuid
+      required:
+        - product_id
+    SendMessageRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        content:
+          type: string
+          minLength: 1
+          maxLength: 2000
+      required:
+        - content
+    ChatMessage:
+      type: object
+      additionalProperties: false
+      properties:
+        message_id:
+          type: string
+          format: uuid
+        conversation_id:
+          type: string
+          format: uuid
+        sender_user_id:
+          type: string
+          format: uuid
+        content:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - message_id
+        - conversation_id
+        - sender_user_id
+        - content
+        - created_at
+    MessagePage:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ChatMessage"
+        next_cursor:
+          type:
+            - string
+            - "null"
+      required:
+        - items
+        - next_cursor
+    Conversation:
+      type: object
+      additionalProperties: false
+      properties:
+        conversation_id:
+          type: string
+          format: uuid
+        customer_user_id:
+          type: string
+          format: uuid
+        customer_display_name:
+          type: string
+        product_id:
+          type: string
+          format: uuid
+        product_name:
+          type: string
+        thumbnail_url:
+          type:
+            - string
+            - "null"
+          format: uri
+        last_message:
+          anyOf:
+            - "$ref": "#/components/schemas/ChatMessage"
+            - type: "null"
+        unread_count:
+          type: integer
+          minimum: 0
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - conversation_id
+        - customer_user_id
+        - customer_display_name
+        - product_id
+        - product_name
+        - thumbnail_url
+        - last_message
+        - unread_count
+        - created_at
+        - updated_at
+    ConversationList:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Conversation"
+      required:
+        - items
     StripeEvent:
       type: object
       description: "Stripe Event object (owned by Stripe, see https://docs.stripe.com/api/events/object)"

@@ -1,0 +1,40 @@
+services:
+  messaging-db:
+    profiles: ["${START_MESSAGING:-true}"]
+    image: mongo:7
+    ports:
+      - "27019:27017"
+    volumes:
+      - messaging-db-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  messaging:
+    profiles: ["${START_MESSAGING:-true}"]
+    build: .
+    env_file:
+      - path: ./.env
+        required: false
+    environment:
+      MONGODB_URL: mongodb://messaging-db:27017/messaging
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      CATALOG_URL: http://catalog:3002
+    ports:
+      - "3004:3004"
+    depends_on:
+      messaging-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3004/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  messaging-db-data:
