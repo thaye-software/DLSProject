@@ -1,5 +1,63 @@
 
 
+---------- Everyday setup start ----------
+
+The workloads below are already applied. After a shutdown, bring Docker back and check that they are running.
+Do this in a normal PowerShell, from the repo root. Software install is in softwareToInstall.txt.
+
+1. Open Docker Desktop and wait until the engine is running and the Kubernetes indicator is green.
+
+2. Check the client, the context, and the node:
+
+kubectl version --client
+kubectl config current-context
+kubectl get nodes
+
+Expected: Client Version v1.36.1, context docker-desktop, node docker-desktop Ready and v1.36.1.
+If the client is older than v1.36.1, follow softwareToInstall.txt before continuing.
+
+3. Check the pods:
+
+kubectl get pods
+
+Expected, each 1/1 Running: rabbitmq, catalog-db, catalog, orders-db, orders, payment, notif, search-db, search-cache, search.
+search-db can stay ContainerCreating for several minutes the first time mongo:7 is pulled. After that it should already be on disk.
+
+4. Check health:
+
+curl.exe http://localhost:30002/health
+curl.exe http://localhost:30000/health
+curl.exe http://localhost:30006/health
+curl.exe http://localhost:30007/health
+curl.exe http://localhost:30003/health
+
+Each line should be {"status":"ok"}.
+RabbitMQ management UI: http://localhost:31672  guest / guest
+
+5. If a pod is ErrImageNeverPull, that local image is missing. Rebuild only the one that failed, then delete its pod:
+
+docker build -t dls/catalog:local microservices/catalog
+docker build -t dls/orders:local microservices/orders
+docker build -t dls/payment:local microservices/payments
+docker build -t dls/notif:local microservices/emails
+docker build -t dls/search:local microservices/search
+
+kubectl delete pod -l app=catalog
+kubectl delete pod -l app=orders
+kubectl delete pod -l app=payment
+kubectl delete pod -l app=notif
+kubectl delete pod -l app=search
+
+6. If kubectl get pods lists nothing, the cluster was reset. Apply again in this order:
+
+kubectl apply -f kubernetes/rabbitmq
+kubectl apply -f kubernetes/catalog
+kubectl apply -f kubernetes/orders
+kubectl apply -f kubernetes/payment
+kubectl apply -f kubernetes/notif
+kubectl apply -f kubernetes/search
+
+Then repeat steps 3 and 4. Details for each service are in the sections below.
 
 
 ---------- RabbitMQ, first workload (2026-11-06) ----------
