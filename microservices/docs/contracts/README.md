@@ -147,6 +147,11 @@ Notif only sends the emails the monolith sends today: the order confirmation (fr
 | Product summary | `GET /products/{product_id}` | Catalog | Public, and internal for Messaging, Editorial and Auctions |
 | Contact form | `POST /contact` | Notif | Public, via gateway, no login (as in the monolith) |
 | Search products | `GET /search` | Search | Public, via gateway, no login |
+| Open conversation | `POST /conversations` | Messaging | Public, via gateway, user JWT (customer) |
+| List conversations | `GET /conversations` | Messaging | Public, via gateway, user JWT (own; admin: all) |
+| Message history | `GET /conversations/{id}/messages` | Messaging | Public, via gateway, user JWT (participant or admin) |
+| Send message | `POST /conversations/{id}/messages` (`Idempotency-Key`) | Messaging | Public, via gateway, user JWT (participant or admin). Broadcasts on Supabase Realtime. A repeat of the key returns the first message |
+| Mark read | `POST /conversations/{id}/read` | Messaging | Public, via gateway, user JWT (participant or admin) |
 
 How identity and auth work across the gateway:
 

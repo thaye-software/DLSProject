@@ -27,9 +27,6 @@ Catalog's contract says the HTTP that creates, updates or deletes a product or b
 
 ## Cross-team
 
-### 7. `messaging/contract.md` envelope
-It shows `"source": "users"` and leaves out `subject`, `dataversion`, `correlationid` and `causationid`. That doesn't match the CloudEvents envelope in `asyncapi.yaml` (`source: /services/<publisher>`).
-
 ### 8. Auctions vs. normal sales
 A watch on auction should not be sellable through checkout at the same time. Either Auctions reserves it in Catalog when the auction starts, or Catalog marks it `hidden`. Needs one more contract once decided. (Moved from the contracts README.)
 

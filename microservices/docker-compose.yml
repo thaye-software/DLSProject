@@ -4,6 +4,7 @@ include:
   - payments/docker-compose.yml
   - emails/docker-compose.yml
   - search/docker-compose.yml
+  - messaging/docker-compose.yml
 
 services:
   rabbitmq:
