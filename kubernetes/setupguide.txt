@@ -206,6 +206,7 @@ The log should include: search listening on port 3003 (cache: redis)
 ---------- Check the whole stack ----------
 
 Run this after Search is up.
+Or paste kubernetes/verifykubernetes.txt into PowerShell. The last line says ALL OK when the yaml workloads are running.
 
 kubectl get pods
 
