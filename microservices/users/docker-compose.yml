@@ -1,0 +1,43 @@
+services:
+  users-db:
+    profiles: ["${START_USERS:-true}"]
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: users
+      POSTGRES_PASSWORD: users
+      POSTGRES_DB: users
+    ports:
+      - "5435:5432"
+    volumes:
+      - users-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "users", "-d", "users"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  users:
+    profiles: ["${START_USERS:-true}"]
+    build: .
+    env_file:
+      - path: ./.env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://users:users@users-db:5432/users
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    ports:
+      - "3005:3005"
+    depends_on:
+      users-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3005/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  users-db-data:

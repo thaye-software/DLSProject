@@ -144,6 +144,14 @@ Notif only sends the emails the monolith sends today: the order confirmation (fr
 | Amount due | `GET /internal/orders/{order_id}/payment-details` | Orders | Internal, service JWT |
 | Stripe webhook | `POST /webhooks/stripe` (`Stripe-Signature`) | Payment | Public, signature-verified |
 | Email confirmed | `POST /webhooks/supabase/email-confirmed` (`x-supabasewebhook-secret`) | Users | Public, shared secret |
+| Create profile | `POST /users` | Users | Public, via gateway, user JWT. Called right after Supabase `signUp`; id and email come from the gateway headers. Repeating it returns the existing user |
+| Username free? | `GET /users/username-available?username=` | Users | Public, via gateway, no login (checked before `signUp`) |
+| Own profile | `GET /users/me`, `PATCH /users/me` | Users | Public, via gateway, user JWT. Email and password are changed through Supabase Auth directly |
+| Billing address | `PUT /users/me/address`, `DELETE /users/me/address` | Users | Public, via gateway, user JWT |
+| Avatar | `PUT /users/me/avatar` (raw JPEG/PNG, at most 5 MB) | Users | Public, via gateway, user JWT. Users uploads it to Supabase Storage |
+| Delete account | `DELETE /users/me` | Users | Public, via gateway, user JWT. Publishes `user_deleted` |
+| Role lookup | `GET /internal/users/{user_id}` | Users | Internal, service JWT (`iss` auth) |
+| Forward-auth check | `GET /verify` (`Authorization`, `X-Forwarded-Method`, `X-Forwarded-Uri`) | Auth | Internal, called by the gateway before every protected request; answers the user headers |
 | Product summary | `GET /products/{product_id}` | Catalog | Public, and internal for Messaging, Editorial and Auctions |
 | Contact form | `POST /contact` | Notif | Public, via gateway, no login (as in the monolith) |
 | Search products | `GET /search` | Search | Public, via gateway, no login |
@@ -155,7 +163,18 @@ Notif only sends the emails the monolith sends today: the order confirmation (fr
 
 How identity and auth work across the gateway:
 
-- **Gateway → services:** the gateway verifies the Supabase JWT (cached signing keys) and forwards `X-User-Id`, `X-User-Role` (`admin` or `customer`, the monolith's `users.role`), `X-User-Email` and `traceparent`. Services accept these headers only from the gateway.
+- **Gateway → services:** the gateway forwards `X-User-Id`, `X-User-Role` (`admin` or `customer`, the monolith's `users.role`), `X-User-Email` and `traceparent`. Services accept these headers only from the gateway.
+
+- **Gateway → Auth (forward-auth):** Supabase issues the user JWTs (login and refresh go from the frontend straight to Supabase Auth). The gateway doesn't check them itself. For every route except the public ones (`GET /search`, `GET /products/{id}`, `GET /users/username-available`, `POST /contact` and the webhooks), it sends the request's `Authorization` header, method and URI to Auth's `GET /verify`, as nginx `auth_request` or Traefik `ForwardAuth` do. It then:
+  - drops any `X-User-*` header the client sent;
+  - on `200`, copies Auth's `X-User-Id`, `X-User-Email` and `X-User-Role` onto the upstream request;
+  - on any other status, returns Auth's problem+json to the client.
+
+- **What Auth checks:**
+  - **The token:** Auth verifies the Supabase access token with the project's signing keys (its JWKS, cached by Auth; or the legacy HS256 secret). It checks `iss` (`<SUPABASE_URL>/auth/v1`), `aud` `authenticated`, `exp`, and `role` `authenticated`, which rejects anon and service-role keys.
+  - **The role:** as in the monolith, the role is not in the JWT. It is `users.role` in Users, which Auth gets from `GET /internal/users/{user_id}` (service JWT, `iss` = `auth`, `aud` = `users`) and caches for 30 s. A role change or deletion therefore takes up to 30 s to apply.
+  - **Deleted accounts:** a user with `deleted: true` gets `401`, even though their JWT stays valid until it expires.
+  - **No profile yet:** a user who signed up with Supabase but has no profile (404) may only call `POST /users`; anything else gets `403 profile_required`.
 
 - **Service → service:** calls go to `/internal/*` paths with a service JWT. The gateway does not route `/internal/*`.
 

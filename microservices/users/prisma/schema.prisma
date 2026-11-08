@@ -1,0 +1,61 @@
+// Users database, as in docs/microservice-erd.drawio.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  // The Supabase Auth user's id, so there is no default.
+  id            String    @id @db.Uuid
+  username      String    @unique @db.VarChar(255)
+  firstName     String?   @map("first_name") @db.VarChar(255)
+  middleName    String?   @map("middle_name") @db.VarChar(255)
+  lastName      String?   @map("last_name") @db.VarChar(255)
+  phone         String?   @db.VarChar(20)
+  // Copied from Supabase Auth: X-User-Email at creation, then the email-confirmed webhook.
+  email         String    @unique @db.VarChar(255)
+  avatarUrl     String?   @map("avatar_url")
+  // customer | admin; enforced by users_role_check in the migration.
+  role          String    @default("customer") @db.VarChar(50)
+  // ISO 3166-1 alpha-2; enforced by users_country_code_check. There is no countries table.
+  countryCode   String?   @map("country_code") @db.VarChar(2)
+  // Aggregate version, +1 on every change (user_deleted.data.version).
+  version       Int       @default(1)
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(3)
+  // Set once the Supabase Auth user and the avatar file of a deleted account are gone.
+  authDeletedAt DateTime? @map("auth_deleted_at") @db.Timestamptz(3)
+  address       Address?
+
+  @@map("users")
+}
+
+// The user's one saved billing address. The country is users.country_code.
+model Address {
+  id            String  @id @default(uuid()) @db.Uuid
+  userId        String  @unique @map("user_id") @db.Uuid
+  addressLine1  String  @map("address_line_1") @db.VarChar(255)
+  addressLine2  String? @map("address_line_2") @db.VarChar(255)
+  city          String  @db.VarChar(255)
+  zipCode       String  @map("zip_code") @db.VarChar(50)
+  stateProvince String? @map("state_province") @db.VarChar(255)
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("addresses")
+}
+
+// Transactional outbox: written in the same transaction as the state change, published by the relay.
+model OutboxEvent {
+  id          String    @id @db.Uuid // the CloudEvent id
+  type        String    @db.VarChar(64)
+  payload     Json      @db.JsonB // the full CloudEvent
+  createdAt   DateTime  @default(now()) @map("created_at")
+  publishedAt DateTime? @map("published_at")
+
+  @@index([publishedAt, createdAt])
+  @@map("outbox")
+}
