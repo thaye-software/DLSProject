@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: messaging-db
+  labels:
+    app: messaging-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: messaging-db
+  template:
+    metadata:
+      labels:
+        app: messaging-db
+    spec:
+      containers:
+        - name: mongo
+          image: mongo:7
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: mongo
+              containerPort: 27017
+          volumeMounts:
+            - name: data
+              mountPath: /data/db
+          readinessProbe:
+            exec:
+              command:
+                - mongosh
+                - --quiet
+                - --eval
+                - "quit(db.adminCommand('ping').ok ? 0 : 1)"
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 12
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: messaging-db-data
