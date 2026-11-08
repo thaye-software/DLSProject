@@ -147,7 +147,7 @@ asks for the free version: https://lenshq.io/
 Install it from that site (or the Lens installer it offers for Windows), sign in
 with the free account if it asks, then add the local cluster. Docker Desktop
 usually appears on its own as context docker-desktop, because Lens reads the
-same kubeconfig file kubectl uses (C:\Users\Bruger\.kube\config).
+same kubeconfig file kubectl uses (C:\Users\[USER]\.kube\config).
 
 Check: Lens shows the docker-desktop cluster, and the node docker-desktop is Ready.
 That is the same node `kubectl get nodes` already printed.
@@ -162,7 +162,7 @@ in this step:
 "step 2 local kubeconfigs"
 Click Watch files.
 out cluster should be stored in one file, not in a folder of configs. Point Lens at:
-     C:\Users\Bruger\.kube\config
+     C:\Users\[USER]\.kube\config
 
 "step 3 Ai tool"
 use your tool of choice or NO AI.

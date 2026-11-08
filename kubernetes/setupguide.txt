@@ -34,7 +34,14 @@ curl.exe http://localhost:30003/health
 Each line should be {"status":"ok"}.
 RabbitMQ management UI: http://localhost:31672  guest / guest
 
-5. If a pod is ErrImageNeverPull, that local image is missing. Rebuild only the one that failed, then delete its pod:
+5. Open Lens on the docker-desktop cluster (bottom status bar: docker-desktop (v1.36.1)):
+
+In the default namespace, Workloads should list the same ten pods as step 3.
+Network shows the NodePorts from the service sections below. Storage shows catalog-db-data, orders-db-data, and search-db-data, each Bound.
+The Overview metrics panel stays empty until metrics-server is installed. The apps do not need it.
+The warning "Node docker-desktop has been rebooted" is from the morning start. It is not a failed app pod.
+
+6. If a pod is ErrImageNeverPull, that local image is missing. Rebuild only the one that failed, then delete its pod:
 
 docker build -t dls/catalog:local microservices/catalog
 docker build -t dls/orders:local microservices/orders
@@ -48,7 +55,7 @@ kubectl delete pod -l app=payment
 kubectl delete pod -l app=notif
 kubectl delete pod -l app=search
 
-6. If kubectl get pods lists nothing, the cluster was reset. Apply again in this order:
+7. If kubectl get pods lists nothing, the cluster was reset. Apply again in this order:
 
 kubectl apply -f kubernetes/rabbitmq
 kubectl apply -f kubernetes/catalog
