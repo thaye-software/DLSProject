@@ -94,3 +94,4 @@ Leave both toggle switches off and continue.
 skip and continue
 
 The bottom bar should say docker-desktop (v1.36.1).
+Continue in setupguide.txt.
