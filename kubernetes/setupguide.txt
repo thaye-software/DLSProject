@@ -1,0 +1,229 @@
+---------- Everyday setup start ----------
+
+Use this section after the first deploy below has already succeeded.
+First install: softwareToInstall.txt is the previous step. Skip to First-time setup.
+
+Normal PowerShell, from the repo root.
+
+1. Open Docker Desktop. Wait until Kubernetes is green.
+
+2.
+kubectl version --client
+kubectl config current-context
+kubectl get nodes
+
+Expected: v1.36.1, context docker-desktop, node docker-desktop Ready.
+If the client is older, follow softwareToInstall.txt.
+
+3.
+kubectl get pods
+
+Expected, each 1/1 Running: rabbitmq, catalog-db, catalog, orders-db, orders, payment, notif, search-db, search-cache, search.
+The first time, search-db can stay ContainerCreating while mongo:7 downloads.
+
+4.
+curl.exe http://localhost:30002/health
+curl.exe http://localhost:30000/health
+curl.exe http://localhost:30006/health
+curl.exe http://localhost:30007/health
+curl.exe http://localhost:30003/health
+
+Each line should be {"status":"ok"}.
+RabbitMQ UI: http://localhost:31672  guest / guest
+
+5. Open Lens. Bottom bar: docker-desktop (v1.36.1).
+Namespace default. Workloads lists the same ten pods.
+An empty Overview metrics panel is normal.
+"Node docker-desktop has been rebooted" is from startup.
+
+6. If a pod is ErrImageNeverPull, rebuild that image, then delete its pod:
+
+docker build -t dls/catalog:local microservices/catalog
+docker build -t dls/orders:local microservices/orders
+docker build -t dls/payment:local microservices/payments
+docker build -t dls/notif:local microservices/emails
+docker build -t dls/search:local microservices/search
+
+kubectl delete pod -l app=catalog
+kubectl delete pod -l app=orders
+kubectl delete pod -l app=payment
+kubectl delete pod -l app=notif
+kubectl delete pod -l app=search
+
+If it stays ErrImageNeverPull: Docker Desktop, Settings, General, enable "Use containerd for pulling and storing images", Apply, then build and delete that pod again.
+
+7. If kubectl get pods lists nothing, apply again in this order:
+
+kubectl apply -f kubernetes/rabbitmq
+kubectl apply -f kubernetes/catalog
+kubectl apply -f kubernetes/orders
+kubectl apply -f kubernetes/payment
+kubectl apply -f kubernetes/notif
+kubectl apply -f kubernetes/search
+
+Then repeat steps 3 and 4.
+
+
+---------- First-time setup ----------
+
+softwareToInstall.txt is done. Do the rest once, in a normal PowerShell, from the repo root.
+Come back to Everyday setup start on the next morning.
+
+Open Docker Desktop and wait until Kubernetes is green.
+
+kubectl version --client
+kubectl config current-context
+kubectl get nodes
+
+Expected: v1.36.1, context docker-desktop, node docker-desktop Ready.
+
+This starts ten workloads, in this order:
+RabbitMQ, Catalog and its Postgres, Orders and its Postgres, Payment, Notif, then Search with MongoDB and Redis.
+
+Build each app image on this PC. Kubernetes uses the image you just built.
+Apply one folder at a time. The kubernetes folder also contains these text guides, so leave the folder itself out of kubectl apply.
+Usernames, passwords, the fake payment provider, and the fake mailer are already in the yaml files.
+
+If an app pod stays ErrImageNeverPull, Docker Desktop is not sharing its images with Kubernetes.
+Settings, General, enable "Use containerd for pulling and storing images", Apply, run that service's docker build again, then delete the pod:
+kubectl delete pod -l app=catalog
+
+Use the matching app name: catalog, orders, payment, notif, or search.
+Wait until the health check in that section prints {"status":"ok"} before you start the next section.
+
+
+---------- RabbitMQ ----------
+
+Start here. There is no image to build. The public image is rabbitmq:4-management.
+Catalog, Orders, Payment, Notif, and Search connect to rabbitmq:5672 with guest / guest.
+
+kubectl apply -f kubernetes/rabbitmq
+kubectl rollout status deployment/rabbitmq
+kubectl get pods -l app=rabbitmq
+
+The pod should be 1/1 Running.
+Open http://localhost:31672 and sign in as guest / guest.
+From this PC, AMQP is localhost:30672. Other pods use the name rabbitmq.
+
+
+---------- Catalog ----------
+
+Start after RabbitMQ is Running.
+Catalog keeps products, stock, and reservations in its own Postgres. Other services call it over HTTP.
+
+docker build -t dls/catalog:local microservices/catalog
+kubectl apply -f kubernetes/catalog
+kubectl rollout status deployment/catalog-db
+kubectl rollout status deployment/catalog
+
+The Catalog image applies its database migrations, then listens. The first start can take a minute.
+curl.exe http://localhost:30002/health
+
+Expected: {"status":"ok"}
+Postgres from this PC is localhost:30434. Other pods call http://catalog:3002.
+
+
+---------- Orders ----------
+
+Start after Catalog returns {"status":"ok"}.
+Orders keeps reserved orders in its own Postgres and calls Catalog at http://catalog:3002.
+The shipping price is 300 DKK.
+
+docker build -t dls/orders:local microservices/orders
+kubectl apply -f kubernetes/orders
+kubectl rollout status deployment/orders-db
+kubectl rollout status deployment/orders
+
+The Orders image applies its database migrations, then listens.
+curl.exe http://localhost:30000/health
+
+Expected: {"status":"ok"}
+Postgres from this PC is localhost:30433. Other pods call http://orders:3000.
+
+
+---------- Payment ----------
+
+Start after Orders returns {"status":"ok"}.
+Payment has no database. It calls Orders at http://orders:3000 and uses the fake provider, so this cluster needs no Stripe key.
+The source folder is microservices/payments.
+
+docker build -t dls/payment:local microservices/payments
+kubectl apply -f kubernetes/payment
+kubectl rollout status deployment/payment
+curl.exe http://localhost:30006/health
+
+Expected: {"status":"ok"}
+kubectl logs deployment/payment
+The log should include: payment listening on port 3006 (payment provider: fake)
+Other pods call http://payment:3006.
+
+
+---------- Notif ----------
+
+Start after Payment is up. Notif itself only waits for RabbitMQ.
+Notif has no database. It reads order events from RabbitMQ and uses the fake mailer, so this cluster needs no Resend key.
+The source folder is microservices/emails.
+
+docker build -t dls/notif:local microservices/emails
+kubectl apply -f kubernetes/notif
+kubectl rollout status deployment/notif
+curl.exe http://localhost:30007/health
+
+Expected: {"status":"ok"}
+kubectl logs deployment/notif
+The log should include: notif listening on port 3007 (mailer: fake)
+Other pods call http://notif:3007.
+
+
+---------- Search ----------
+
+Start after RabbitMQ is Running.
+Search fills its product read model from catalog events on RabbitMQ, and stores that model in MongoDB with a cache in Redis. The image is dls/search:local.
+Redis has no disk. A restart clears the cache, and searches still run.
+
+docker build -t dls/search:local microservices/search
+kubectl apply -f kubernetes/search
+kubectl rollout status deployment/search-db
+
+The first mongo:7 download can take about ten minutes. The pod stays ContainerCreating during that download.
+If rollout status stops waiting, the download is still going. Check again with:
+kubectl get pods -l app=search-db
+
+When search-db is 1/1 Running:
+kubectl rollout status deployment/search-cache
+kubectl rollout status deployment/search
+curl.exe http://localhost:30003/health
+curl.exe "http://localhost:30003/search"
+
+Health should be {"status":"ok"}.
+An empty list is expected. Catalog does not publish new products onto this queue yet. See DECISIONS.md.
+A typical body is {"items":[],"page":1,"page_size":20,"total":0}.
+Mongo from this PC is localhost:30018. Redis from this PC is localhost:30380. Other pods call http://search:3003.
+kubectl logs deployment/search
+The log should include: search listening on port 3003 (cache: redis)
+
+
+---------- Check the whole stack ----------
+
+Run this after Search is up.
+Or paste kubernetes/verifykubernetes.txt into PowerShell. The last line says ALL OK when the yaml workloads are running.
+
+kubectl get pods
+
+Expected, each 1/1 Running: rabbitmq, catalog-db, catalog, orders-db, orders, payment, notif, search-db, search-cache, search.
+
+curl.exe http://localhost:30002/health
+curl.exe http://localhost:30000/health
+curl.exe http://localhost:30006/health
+curl.exe http://localhost:30007/health
+curl.exe http://localhost:30003/health
+
+Each line should be {"status":"ok"}.
+RabbitMQ UI: http://localhost:31672  guest / guest
+
+Open Lens. The bottom bar should say docker-desktop (v1.36.1).
+In the default namespace, Workloads shows those ten pods.
+Network shows the NodePorts used above. Storage shows catalog-db-data, orders-db-data, and search-db-data, each Bound.
+An empty Overview metrics panel is normal. "Node docker-desktop has been rebooted" is from startup.
+
+The next morning, use Everyday setup start at the top of this file.

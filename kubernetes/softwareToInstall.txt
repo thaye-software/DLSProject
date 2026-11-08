@@ -1,0 +1,96 @@
+
+
+Windows 10 64-bit. PowerShell.
+
+Versions: WSL 2.1.5+, Docker Desktop 4.80+, Docker Compose 2.20+, kubectl 1.36.1.
+
+wsl -v
+wsl --status
+docker version
+docker compose version
+where.exe kubectl
+kubectl version --client
+
+The first path from where.exe must print Client Version: v1.36.1.
+
+
+---------- 1. Turn on Kubernetes ----------
+
+Open Docker Desktop and wait until it is running.
+
+In the left sidebar, open Kubernetes.
+Select Create cluster. Choose Kubeadm. Select Create.
+Wait until the Kubernetes indicator in the footer is green. The first start downloads images and can take several minutes.
+(This guide needs 4.80+, so update Docker Desktop if needed)
+
+kubectl config current-context
+kubectl get nodes
+
+Expected: context docker-desktop, node docker-desktop Ready, v1.36.1.
+
+If it never turns green:
+wsl --update
+Restart Docker Desktop and repeat this section.
+
+
+---------- 2. Make kubectl v1.36.1 the one that runs ----------
+
+where.exe kubectl
+kubectl version --client
+
+If the first path is C:\ProgramData\chocolatey\bin\kubectl.exe and the version is older, open PowerShell as Administrator:
+choco upgrade kubernetes-cli --version=1.36.1 -y
+
+If Chocolatey has no kubernetes-cli package yet:
+choco install kubernetes-cli --version=1.36.1 -y
+
+Close that window. Open a normal PowerShell.
+where.exe kubectl
+kubectl version --client
+
+Expected: Client Version: v1.36.1. The first path may still be the Chocolatey one.
+
+If the first path is %LOCALAPPDATA%\kubectl and Chocolatey is not installed, run this in a normal PowerShell:
+$dockerBin = 'C:\Program Files\Docker\Docker\resources\bin'; $old = "$env:LOCALAPPDATA\kubectl"; $parts = @([Environment]::GetEnvironmentVariable('Path','User') -split ';' | Where-Object { $_.Trim() -and ($_.TrimEnd('\') -ine $old.TrimEnd('\')) -and ($_.TrimEnd('\') -ine $dockerBin.TrimEnd('\')) }); [Environment]::SetEnvironmentVariable('Path', ((@($dockerBin) + $parts) -join ';'), 'User')
+
+Open a new PowerShell and run the two checks again.
+A Chocolatey install still wins over that user Path. Use the choco command above.
+
+
+---------- 3. Check kubectl ----------
+
+where.exe kubectl
+kubectl version --client
+kubectl config current-context
+kubectl get nodes
+
+Expected: v1.36.1, context docker-desktop, node docker-desktop Ready.
+Later commands belong in a normal PowerShell.
+
+
+---------- 4. Lens ----------
+
+Free app: https://lenshq.io/
+Install it. Sign in if it asks.
+
+After Lens is installed, you should set it up:
+in the first dialogue box,
+"Step 1 Kubenetes environments"
+you should do nothing. We run kubernetes locally, so we dont need any clouds.
+
+in this step:
+"step 2 local kubeconfigs"
+Click Watch files.
+out cluster should be stored in one file, not in a folder of configs. Point Lens at:
+     C:\Users\[USER]\.kube\config
+
+"step 3 Ai tool"
+use your tool of choice or NO AI.
+
+"step 4 AI tool access"
+Leave both toggle switches off and continue.
+
+"Step 5 Git ops"
+skip and continue
+
+The bottom bar should say docker-desktop (v1.36.1).
