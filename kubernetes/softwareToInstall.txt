@@ -17,8 +17,11 @@ The first path from where.exe must print Client Version: v1.36.1.
 ---------- 1. Turn on Kubernetes ----------
 
 Open Docker Desktop and wait until it is running.
-Settings, Kubernetes. Enable Kubernetes. Choose Kubeadm. Apply & Restart.
-Wait until the Kubernetes indicator is green.
+
+In the left sidebar, open Kubernetes.
+Select Create cluster. Choose Kubeadm. Select Create.
+Wait until the Kubernetes indicator in the footer is green. The first start downloads images and can take several minutes.
+(This guide needs 4.80+, so update Docker Desktop if needed)
 
 kubectl config current-context
 kubectl get nodes
