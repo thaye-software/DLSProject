@@ -1,157 +1,74 @@
 
-minimum software versions,
 
-Assuming windows 10 64 bit:
+Windows 10 64-bit. PowerShell.
 
-WSL 2.1.5 or newer
+Versions: WSL 2.1.5+, Docker Desktop 4.80+, Docker Compose 2.20+, kubectl 1.36.1.
+
 wsl -v
 wsl --status
-
-Docker Desktop 4.80.0 or newer
 docker version
-docker info --format "ServerVersion={{.ServerVersion}}"
-
-Docker Compose 2.20 or newer
 docker compose version
-
-kubectl 1.36.1
 where.exe kubectl
 kubectl version --client
 
-The first path from where.exe is the kubectl PowerShell runs.
-It must print: Client Version: v1.36.1
+The first path from where.exe must print Client Version: v1.36.1.
 
 
----------- 1. Turn on Kubernetes in Docker Desktop ----------
+---------- 1. Turn on Kubernetes ----------
 
-Run:
-kubectl config current-context
+Open Docker Desktop and wait until it is running.
+Settings, Kubernetes. Enable Kubernetes. Choose Kubeadm. Apply & Restart.
+Wait until the Kubernetes indicator is green.
 
-If the answer is:
-error: current-context is not set
-
-then no cluster is configured. kubectl get nodes will try http://localhost:8080 and the connection will be refused.
-
-Open Docker Desktop and wait until the engine is running.
-Go to Settings, then Kubernetes.
-Check Enable Kubernetes, and select Kubeadm.
-Click Apply & Restart (or Apply & Install).
-Wait until the Kubernetes indicator is green. The first start can take several minutes while it pulls cluster images.
-
-Then run:
 kubectl config current-context
 kubectl get nodes
 
-Expected:
-docker-desktop
-NAME             STATUS   ROLES           AGE     VERSION
-docker-desktop   Ready    control-plane   6m35s   v1.36.1
+Expected: context docker-desktop, node docker-desktop Ready, v1.36.1.
 
-If Enable Kubernetes never turns green, check WSL and update it, then restart Docker Desktop and try again:
-wsl -v
+If it never turns green:
 wsl --update
+Restart Docker Desktop and repeat this section.
 
 
 ---------- 2. Make kubectl v1.36.1 the one that runs ----------
 
-Docker Desktop installs a client that matches the cluster:
-C:\Program Files\Docker\Docker\resources\bin\kubectl.exe
-
-Check that file directly:
-& "C:\Program Files\Docker\Docker\resources\bin\kubectl.exe" version --client
-
-Expected: Client Version: v1.36.1
-
-where.exe kubectl can list more than one file. Windows searches the system Path before the user Path, and the first file wins. These three showed up on a machine that already had older installs:
-
-C:\ProgramData\chocolatey\bin\kubectl.exe
-    Chocolatey. On the system Path, so it wins over anything in the user Path. This copy was v1.27.3.
-
-C:\Users\<you>\AppData\Local\kubectl\kubectl.exe
-    An older manual copy on the user Path. This copy was v1.27.3.
-
-C:\Program Files\Docker\Docker\resources\bin\kubectl.exe
-    Docker Desktop. v1.36.1. Often second, so it never runs.
-
-This window only, until you close it:
-$env:Path = "C:\Program Files\Docker\Docker\resources\bin;" + $env:Path
+where.exe kubectl
 kubectl version --client
 
-Expected: Client Version: v1.36.1
-
-Permanent, when the first path is Chocolatey.
-A normal window cannot upgrade this package. Open PowerShell as Administrator
-(the prompt is PS C:\WINDOWS\system32>) and run:
+If the first path is C:\ProgramData\chocolatey\bin\kubectl.exe and the version is older, open PowerShell as Administrator:
 choco upgrade kubernetes-cli --version=1.36.1 -y
 
-If Chocolatey has no kubectl package yet, use install instead of upgrade:
+If Chocolatey has no kubernetes-cli package yet:
 choco install kubernetes-cli --version=1.36.1 -y
 
-Close that window. Open a normal PowerShell and run:
+Close that window. Open a normal PowerShell.
 where.exe kubectl
 kubectl version --client
 
-The first path can stay C:\ProgramData\chocolatey\bin\kubectl.exe.
-The version line must be: Client Version: v1.36.1
+Expected: Client Version: v1.36.1. The first path may still be the Chocolatey one.
 
-Permanent, when the first path is %LOCALAPPDATA%\kubectl and Chocolatey is not installed.
-In a normal PowerShell:
+If the first path is %LOCALAPPDATA%\kubectl and Chocolatey is not installed, run this in a normal PowerShell:
 $dockerBin = 'C:\Program Files\Docker\Docker\resources\bin'; $old = "$env:LOCALAPPDATA\kubectl"; $parts = @([Environment]::GetEnvironmentVariable('Path','User') -split ';' | Where-Object { $_.Trim() -and ($_.TrimEnd('\') -ine $old.TrimEnd('\')) -and ($_.TrimEnd('\') -ine $dockerBin.TrimEnd('\')) }); [Environment]::SetEnvironmentVariable('Path', ((@($dockerBin) + $parts) -join ';'), 'User')
 
-That puts Docker's bin first on the user Path and removes the AppData\Local\kubectl folder from the user Path. It does not delete the old kubectl.exe. It does not override Chocolatey, because the system Path is searched first. Open a new PowerShell and run where.exe kubectl again.
+Open a new PowerShell and run the two checks again.
+A Chocolatey install still wins over that user Path. Use the choco command above.
 
-Putting Docker's bin on the user Path is not enough when Chocolatey is installed. A new window still ran v1.27.3 from C:\ProgramData\chocolatey\bin\kubectl.exe until kubernetes-cli itself was upgraded.
 
-
----------- 3. check kubectl works ----------
-
-All of these are true:
+---------- 3. Check kubectl ----------
 
 where.exe kubectl
-    The first file is v1.36.1 (Chocolatey's or Docker Desktop's).
-
 kubectl version --client
-    Client Version: v1.36.1
-
 kubectl config current-context
-    docker-desktop
-
 kubectl get nodes
-    docker-desktop   Ready   control-plane   v1.36.1
 
-Verified on 2026-11-06 from an Administrator PowerShell after
-choco upgrade kubernetes-cli --version=1.36.1 -y:
-
-kubectl version --client
-Client Version: v1.36.1
-Kustomize Version: v5.8.1
-
-kubectl config current-context
-docker-desktop
-
-kubectl get nodes
-NAME             STATUS   ROLES           AGE   VERSION
-docker-desktop   Ready    control-plane   57m   v1.36.1
-
-Close the Administrator window after this. Later commands belong in a normal PowerShell.
-
------------------------------
-
----------- 4. install Lens ----------
+Expected: v1.36.1, context docker-desktop, node docker-desktop Ready.
+Later commands belong in a normal PowerShell.
 
 
-Lens is a desktop app that shows the same cluster kubectl talks to: nodes, pods,
-logs, and YAML. It is optional. The cluster already works without it. The guide
-asks for the free version: https://lenshq.io/
+---------- 4. Lens ----------
 
-Install it from that site (or the Lens installer it offers for Windows), sign in
-with the free account if it asks, then add the local cluster. Docker Desktop
-usually appears on its own as context docker-desktop, because Lens reads the
-same kubeconfig file kubectl uses (C:\Users\[USER]\.kube\config).
-
-Check: Lens shows the docker-desktop cluster, and the node docker-desktop is Ready.
-That is the same node `kubectl get nodes` already printed.
-
+Free app: https://lenshq.io/
+Install it. Sign in if it asks.
 
 After Lens is installed, you should set it up:
 in the first dialogue box,
@@ -173,4 +90,4 @@ Leave both toggle switches off and continue.
 "Step 5 Git ops"
 skip and continue
 
-
+The bottom bar should say docker-desktop (v1.36.1).

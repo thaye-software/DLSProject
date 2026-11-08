@@ -1,30 +1,24 @@
-
-
 ---------- Everyday setup start ----------
 
-The workloads below are already applied. After a shutdown, bring Docker back and check that they are running.
-Do this in a normal PowerShell, from the repo root. Software install is in softwareToInstall.txt.
+Normal PowerShell, from the repo root. Install steps are in softwareToInstall.txt.
 
-1. Open Docker Desktop and wait until the engine is running and the Kubernetes indicator is green.
+1. Open Docker Desktop. Wait until Kubernetes is green.
 
-2. Check the client, the context, and the node:
-
+2.
 kubectl version --client
 kubectl config current-context
 kubectl get nodes
 
-Expected: Client Version v1.36.1, context docker-desktop, node docker-desktop Ready and v1.36.1.
-If the client is older than v1.36.1, follow softwareToInstall.txt before continuing.
+Expected: v1.36.1, context docker-desktop, node docker-desktop Ready.
+If the client is older, follow softwareToInstall.txt.
 
-3. Check the pods:
-
+3.
 kubectl get pods
 
 Expected, each 1/1 Running: rabbitmq, catalog-db, catalog, orders-db, orders, payment, notif, search-db, search-cache, search.
-search-db can stay ContainerCreating for several minutes the first time mongo:7 is pulled. After that it should already be on disk.
+The first time, search-db can stay ContainerCreating while mongo:7 downloads.
 
-4. Check health:
-
+4.
 curl.exe http://localhost:30002/health
 curl.exe http://localhost:30000/health
 curl.exe http://localhost:30006/health
@@ -32,16 +26,14 @@ curl.exe http://localhost:30007/health
 curl.exe http://localhost:30003/health
 
 Each line should be {"status":"ok"}.
-RabbitMQ management UI: http://localhost:31672  guest / guest
+RabbitMQ UI: http://localhost:31672  guest / guest
 
-5. Open Lens on the docker-desktop cluster (bottom status bar: docker-desktop (v1.36.1)):
+5. Open Lens. Bottom bar: docker-desktop (v1.36.1).
+Namespace default. Workloads lists the same ten pods.
+An empty Overview metrics panel is normal.
+"Node docker-desktop has been rebooted" is from startup.
 
-In the default namespace, Workloads should list the same ten pods as step 3.
-Network shows the NodePorts from the service sections below. Storage shows catalog-db-data, orders-db-data, and search-db-data, each Bound.
-The Overview metrics panel stays empty until metrics-server is installed. The apps do not need it.
-The warning "Node docker-desktop has been rebooted" is from the morning start. It is not a failed app pod.
-
-6. If a pod is ErrImageNeverPull, that local image is missing. Rebuild only the one that failed, then delete its pod:
+6. If a pod is ErrImageNeverPull, rebuild that image, then delete its pod:
 
 docker build -t dls/catalog:local microservices/catalog
 docker build -t dls/orders:local microservices/orders
@@ -55,7 +47,9 @@ kubectl delete pod -l app=payment
 kubectl delete pod -l app=notif
 kubectl delete pod -l app=search
 
-7. If kubectl get pods lists nothing, the cluster was reset. Apply again in this order:
+If it stays ErrImageNeverPull: Docker Desktop, Settings, General, enable "Use containerd for pulling and storing images", Apply, then build and delete that pod again.
+
+7. If kubectl get pods lists nothing, apply again in this order:
 
 kubectl apply -f kubernetes/rabbitmq
 kubectl apply -f kubernetes/catalog
@@ -64,302 +58,82 @@ kubectl apply -f kubernetes/payment
 kubectl apply -f kubernetes/notif
 kubectl apply -f kubernetes/search
 
-Then repeat steps 3 and 4. Details for each service are in the sections below.
+Then repeat steps 3 and 4.
 
 
----------- RabbitMQ, first workload (2026-11-06) ----------
+---------- RabbitMQ ----------
 
-Software setup is in softwareToInstall.txt. This is the first thing that runs on the cluster.
-RabbitMQ is the broker in microservices/docker-compose.yml. Catalog, Orders, Search, Payment, and Notif
-connect with amqp://guest:guest@rabbitmq:5672. The image rabbitmq:4-management is public, so nothing is built or pushed.
-
-Files:
-kubernetes/rabbitmq/configmap.yaml
-kubernetes/rabbitmq/deployment.yaml
-kubernetes/rabbitmq/service.yaml
-
-configmap.yaml sets loopback_users.guest = false. Without that, guest is accepted only from inside
-the RabbitMQ container, and the other services cannot log in through the Service.
-
-The Service is a NodePort:
-AMQP from the laptop:        localhost:30672
-Management UI from the laptop: http://localhost:31672
-AMQP from another pod:       rabbitmq:5672
-Login: guest / guest
-
-From the repo root, in a normal PowerShell:
+First workload. Nothing to build.
 
 kubectl apply -f kubernetes/rabbitmq
 kubectl rollout status deployment/rabbitmq
 kubectl get pods -l app=rabbitmq
-kubectl get svc rabbitmq
 
-A ready pod and a Service with ports 30672 and 31672 means it is up.
 Open http://localhost:31672 and sign in as guest / guest.
 
 
----------- Catalog and its database (2026-11-06) ----------
+---------- Catalog ----------
 
-Do this after RabbitMQ is ready. Catalog keeps products, stock, and reservations in PostgreSQL.
-Other services call it over HTTP. It publishes catalog.events on RabbitMQ.
-
-From the repo root, build the image into Docker Desktop's local image store.
-The cluster uses that image. It is not pushed to a registry.
+After RabbitMQ is ready.
 
 docker build -t dls/catalog:local microservices/catalog
-
-Files:
-kubernetes/catalog/secret.yaml
-kubernetes/catalog/catalog-db-pvc.yaml
-kubernetes/catalog/catalog-db-deployment.yaml
-kubernetes/catalog/catalog-db-service.yaml
-kubernetes/catalog/deployment.yaml
-kubernetes/catalog/service.yaml
-
-secret.yaml holds the database password and INTERNAL_JWT_SECRET.
-The secret is the local placeholder from microservices/orders/.env.example:
-replace-with-at-least-32-random-characters
-Orders and Payment must use this same value when they are deployed.
-
-catalog-db-pvc.yaml asks for 1Gi. Docker Desktop's default storage class creates the volume.
-A separate PersistentVolume file is not required on this cluster.
-
-catalog-db-deployment.yaml runs postgres:17-alpine, the same image as microservices/catalog/docker-compose.yml.
-Database name, user, and password are catalog / catalog / catalog.
-
-Ports:
-Postgres from the laptop:  localhost:30434
-Postgres from Catalog:     catalog-db:5432
-Catalog health from the laptop: http://localhost:30002/health
-Catalog from another pod:  http://catalog:3002
-
-deployment.yaml waits until catalog-db:5432 and rabbitmq:5672 accept connections,
-then runs the image. The image applies Prisma migrations before it listens.
-imagePullPolicy is Never, so Kubernetes uses dls/catalog:local and does not try Docker Hub.
-
-From the repo root, in a normal PowerShell:
-
 kubectl apply -f kubernetes/catalog
 kubectl rollout status deployment/catalog-db
 kubectl rollout status deployment/catalog
-kubectl get pods -l 'app in (catalog,catalog-db)'
-kubectl get svc catalog catalog-db
-
-Catalog is up when its pod is 1/1 Running and this returns {"status":"ok"}:
-
 curl.exe http://localhost:30002/health
 
-If the Catalog pod stays at ErrImageNeverPull, the image was built in Docker but Kubernetes cannot see it.
-In Docker Desktop: Settings, General, enable "Use containerd for pulling and storing images",
-apply, then run the docker build command again and:
-
-kubectl delete pod -l app=catalog
+Expected: {"status":"ok"}
 
 
----------- Orders and its database (2026-11-06) ----------
+---------- Orders ----------
 
-Do this after RabbitMQ and Catalog are ready. Orders stores reserved orders in its own PostgreSQL database.
-It calls Catalog at http://catalog:3002 and uses the same INTERNAL_JWT_SECRET.
-
-From the repo root:
+After Catalog is ready.
 
 docker build -t dls/orders:local microservices/orders
-
-Files:
-kubernetes/orders/secret.yaml
-kubernetes/orders/orders-db-pvc.yaml
-kubernetes/orders/orders-db-deployment.yaml
-kubernetes/orders/orders-db-service.yaml
-kubernetes/orders/deployment.yaml
-kubernetes/orders/service.yaml
-
-secret.yaml uses database user, password, and database name orders / orders / orders.
-INTERNAL_JWT_SECRET is the same placeholder already stored in catalog-secret:
-replace-with-at-least-32-random-characters
-
-orders-db-pvc.yaml asks for 1Gi. Docker Desktop's default storage class creates the volume.
-
-The shipping price is 300 DKK (30000 in ore), from microservices/orders/.env.example.
-
-Ports:
-Postgres from the laptop: localhost:30433
-Postgres from Orders:    orders-db:5432
-Orders health from the laptop: http://localhost:30000/health
-Orders from another pod: http://orders:3000
-
-deployment.yaml waits until orders-db:5432, rabbitmq:5672, and catalog:3002 accept connections,
-then runs dls/orders:local. The image applies Prisma migrations before it listens.
-imagePullPolicy is Never.
-
-From the repo root, in a normal PowerShell:
-
 kubectl apply -f kubernetes/orders
 kubectl rollout status deployment/orders-db
 kubectl rollout status deployment/orders
-kubectl get pods -l "app in (orders,orders-db)"
-kubectl get svc orders orders-db
-
-Orders is up when its pod is 1/1 Running and this returns {"status":"ok"}:
-
 curl.exe http://localhost:30000/health
 
-If the Orders pod stays at ErrImageNeverPull, rebuild the image and delete the pod:
-
-docker build -t dls/orders:local microservices/orders
-kubectl delete pod -l app=orders
+Expected: {"status":"ok"}
 
 
----------- Payment (2026-11-06) ----------
+---------- Payment ----------
 
-Do this after RabbitMQ and Orders are ready. Payment has no database.
-It calls Orders at http://orders:3000 and publishes payment.events on RabbitMQ.
-The local cluster uses the fake provider, so no Stripe key is required.
-
-From the repo root. The source folder is microservices/payments:
+After Orders is ready. The provider stays fake.
 
 docker build -t dls/payment:local microservices/payments
-
-Files:
-kubernetes/payment/secret.yaml
-kubernetes/payment/deployment.yaml
-kubernetes/payment/service.yaml
-
-secret.yaml holds INTERNAL_JWT_SECRET, the same placeholder already used by Catalog and Orders:
-replace-with-at-least-32-random-characters
-
-PAYMENT_PROVIDER is fake. The example file microservices/payments/.env.example says stripe.
-That needs Stripe keys, which this local cluster does not use.
-
-Ports:
-Payment health from the laptop: http://localhost:30006/health
-Payment from another pod: http://payment:3006
-
-deployment.yaml waits until rabbitmq:5672 and orders:3000 accept connections,
-then runs dls/payment:local. imagePullPolicy is Never.
-
-From the repo root, in a normal PowerShell:
-
 kubectl apply -f kubernetes/payment
 kubectl rollout status deployment/payment
-kubectl get pods -l app=payment
-kubectl get svc payment
-
-Payment is up when its pod is 1/1 Running and this returns {"status":"ok"}:
-
 curl.exe http://localhost:30006/health
 
-The pod log should contain: payment listening on port 3006 (payment provider: fake)
-
-If the pod stays at ErrImageNeverPull, rebuild the image and delete the pod:
-
-docker build -t dls/payment:local microservices/payments
-kubectl delete pod -l app=payment
+Expected: {"status":"ok"}
 
 
----------- Notif (2026-11-06) ----------
+---------- Notif ----------
 
-Do this after RabbitMQ is ready. Notif sends the order confirmation and the contact message.
-It has no database. The local cluster uses the fake mailer, so no Resend key is required.
-
-From the repo root. The source folder is microservices/emails:
+After RabbitMQ is ready. The mailer stays fake. The source folder is microservices/emails.
 
 docker build -t dls/notif:local microservices/emails
-
-Files:
-kubernetes/notif/deployment.yaml
-kubernetes/notif/service.yaml
-
-MAILER is fake. The example file microservices/emails/.env.example says resend.
-That needs a Resend API key, which this local cluster does not use.
-
-Ports:
-Notif health from the laptop: http://localhost:30007/health
-Notif from another pod: http://notif:3007
-
-deployment.yaml waits until rabbitmq:5672 accepts connections, then runs dls/notif:local.
-imagePullPolicy is Never. It consumes order.events on the queue notif.order.events.
-
-From the repo root, in a normal PowerShell:
-
 kubectl apply -f kubernetes/notif
 kubectl rollout status deployment/notif
-kubectl get pods -l app=notif
-kubectl get svc notif
-
-Notif is up when its pod is 1/1 Running and this returns {"status":"ok"}:
-
 curl.exe http://localhost:30007/health
 
-The pod log should contain: notif listening on port 3007 (mailer: fake)
-
-If the pod stays at ErrImageNeverPull, rebuild the image and delete the pod:
-
-docker build -t dls/notif:local microservices/emails
-kubectl delete pod -l app=notif
+Expected: {"status":"ok"}
 
 
----------- Search, MongoDB, and Redis (2026-11-06) ----------
+---------- Search ----------
 
-Do this after RabbitMQ is ready. Search keeps a read model of products in MongoDB and a cache in Redis.
-It consumes catalog.events from RabbitMQ. It does not call Catalog over HTTP.
-
-From the repo root:
+After RabbitMQ is ready.
+The first mongo:7 download can take several minutes.
+An empty search result is expected.
 
 docker build -t dls/search:local microservices/search
-
-Files:
-kubernetes/search/search-db-pvc.yaml
-kubernetes/search/search-db-deployment.yaml
-kubernetes/search/search-db-service.yaml
-kubernetes/search/search-cache-deployment.yaml
-kubernetes/search/search-cache-service.yaml
-kubernetes/search/deployment.yaml
-kubernetes/search/service.yaml
-
-search-db-deployment.yaml runs mongo:7 with no username or password, matching microservices/search/docker-compose.yml.
-The first pull of mongo:7 can take several minutes. The pod stays ContainerCreating until that pull finishes.
-search-db-pvc.yaml asks for 1Gi. Docker Desktop's default storage class creates the volume.
-Redis is a cache only, so search-cache has no volume. A restart empties the cache. Searches still work.
-
-Ports:
-MongoDB from the laptop: localhost:30018
-MongoDB from Search:    search-db:27017
-Redis from the laptop:   localhost:30380
-Redis from Search:       search-cache:6379
-Search health from the laptop: http://localhost:30003/health
-Search from another pod: http://search:3003
-
-deployment.yaml waits until search-db:27017, search-cache:6379, and rabbitmq:5672 accept connections,
-then runs dls/search:local. imagePullPolicy is Never.
-It consumes catalog.events on the queue search.catalog.events.
-
-The index stays empty until Catalog publishes product_created. An empty search result is expected
-until that happens. See DECISIONS.md.
-
-From the repo root, in a normal PowerShell:
-
 kubectl apply -f kubernetes/search
 kubectl rollout status deployment/search-db
 kubectl rollout status deployment/search-cache
 kubectl rollout status deployment/search
-kubectl get pods -l "app in (search,search-db,search-cache)"
-kubectl get svc search search-db search-cache
-
-Search is up when its pod is 1/1 Running and this returns {"status":"ok"}:
-
 curl.exe http://localhost:30003/health
-
-A search with no products yet still answers. The items list is empty:
-
 curl.exe http://localhost:30003/search
 
-The pod log should contain: search listening on port 3003 (cache: redis)
-
-If the Search pod stays at ErrImageNeverPull, rebuild the image and delete the pod:
-
-docker build -t dls/search:local microservices/search
-kubectl delete pod -l app=search
-
-
-
-
+Health should be {"status":"ok"}.
