@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: search
+  labels:
+    app: search
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: search
+  template:
+    metadata:
+      labels:
+        app: search
+    spec:
+      initContainers:
+        - name: wait-for-dependencies
+          image: busybox:1.36
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - until nc -z search-db 27017 && nc -z search-cache 6379 && nc -z rabbitmq 5672; do sleep 2; done
+      containers:
+        - name: search
+          image: dls/search:local
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 3003
+          env:
+            - name: PORT
+              value: "3003"
+            - name: MONGODB_URL
+              value: mongodb://search-db:27017/search
+            - name: REDIS_URL
+              value: redis://search-cache:6379
+            - name: RABBITMQ_URL
+              value: amqp://guest:guest@rabbitmq:5672
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
