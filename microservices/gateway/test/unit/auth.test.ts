@@ -59,6 +59,17 @@ describe("createTokenVerifier", () => {
     await expect(verifier(SECRET)(await signHs256(SECRET, claims()))).resolves.toMatchObject({ userId: USER_ID });
   });
 
+  it("rejects an ES256 token signed with a different key", async () => {
+    const other = await createTestKeys();
+    await expect(verifier()(await other.sign(claims()))).rejects.toBeInstanceOf(InvalidTokenError);
+  });
+
+  it("rejects HS256 signed with a different secret than configured", async () => {
+    await expect(verifier(SECRET)(await signHs256("x".repeat(40), claims()))).rejects.toBeInstanceOf(
+      InvalidTokenError,
+    );
+  });
+
   it("rejects alg none", async () => {
     const token = `${b64url('{"alg":"none"}')}.${b64url(JSON.stringify(claims()))}.`;
     await expect(verifier()(token)).rejects.toBeInstanceOf(InvalidTokenError);

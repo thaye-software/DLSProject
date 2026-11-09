@@ -37,6 +37,17 @@ describe("loadConfig", () => {
     expect(() => loadConfig({ ...validEnv, SUPABASE_JWT_SECRET: "0123456789" })).toThrow(/Invalid environment/);
   });
 
+  it("treats an empty or blank SUPABASE_JWT_SECRET as absent", () => {
+    expect(loadConfig({ ...validEnv, SUPABASE_JWT_SECRET: "" }).supabaseJwtSecret).toBeNull();
+    expect(loadConfig({ ...validEnv, SUPABASE_JWT_SECRET: "  " }).supabaseJwtSecret).toBeNull();
+  });
+
+  it("rejects a placeholder SUPABASE_JWT_SECRET", () => {
+    expect(() => loadConfig({ ...validEnv, SUPABASE_JWT_SECRET: "replace-with-supabase-jwt-secret" })).toThrow(
+      /Invalid environment/,
+    );
+  });
+
   it("rejects a missing SUPABASE_URL", () => {
     expect(() => loadConfig({})).toThrow(/Invalid environment/);
   });

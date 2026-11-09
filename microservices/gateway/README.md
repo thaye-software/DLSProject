@@ -10,7 +10,7 @@ Design: `../../docs/superpowers/specs/2026-11-09-api-gateway-frontend-design.md`
 |---|---|---|
 | `PORT` | `8000` | Default 8000 |
 | `SUPABASE_URL` | `https://<project>.supabase.co` | Required; trailing slash is removed |
-| `SUPABASE_JWT_SECRET` | random 32+ characters | Optional; used to verify JWTs |
+| `SUPABASE_JWT_SECRET` | unset (default) | Optional, normally leave unset. Enables HS256 verification for a local Supabase on the legacy secret. Anyone who knows it can forge admin tokens, so never set it to a placeholder or a value that is in git |
 | `ORDERS_URL`, `PAYMENT_URL`, `CATALOG_URL`, `SEARCH_URL`, `MESSAGING_URL`, `NOTIF_URL`, `USERS_URL` | `http://orders:3000` | Upstream per service; unset means the service is not routed |
 | `CORS_ORIGINS` | `http://localhost:3100,https://limitedwatches.dk` | Comma-separated |
 | `UPSTREAM_TIMEOUT_MS` | `10000` | Default 10000 |

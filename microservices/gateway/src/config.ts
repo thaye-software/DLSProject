@@ -21,7 +21,15 @@ const httpUrl = z.url({ protocol: /^https?$/ });
 const schema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(DEFAULT_PORT),
   SUPABASE_URL: httpUrl.transform((url) => url.replace(/\/+$/, "")),
-  SUPABASE_JWT_SECRET: z.string().min(MIN_HS256_SECRET_LENGTH).optional(),
+  // Blank means absent. Placeholders are rejected: a published secret lets anyone mint admin tokens.
+  SUPABASE_JWT_SECRET: z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z
+      .string()
+      .min(MIN_HS256_SECRET_LENGTH)
+      .refine((v) => !v.startsWith("replace-with"), "must not be a placeholder")
+      .optional(),
+  ),
   ORDERS_URL: httpUrl.optional(),
   PAYMENT_URL: httpUrl.optional(),
   CATALOG_URL: httpUrl.optional(),
