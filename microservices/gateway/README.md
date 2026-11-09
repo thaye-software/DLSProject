@@ -17,6 +17,10 @@ Design: `../../docs/superpowers/specs/2026-11-09-api-gateway-frontend-design.md`
 
 Copy `.env.example` to `.env`; `.env` is gitignored.
 
+Before `docker compose up` (the gateway is in the default compose profile): `cp .env.example .env` and fill in `SUPABASE_URL`, otherwise the gateway container crash-loops. Use `START_GATEWAY=false` to leave it out.
+
+Dev-only risk: the other services still publish host ports in their compose files. Those ports bypass the gateway and trust forged `X-User-*` headers, so they are for local development only and must not be exposed.
+
 ## Running
 
 ```bash

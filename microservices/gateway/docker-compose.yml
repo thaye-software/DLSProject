@@ -2,6 +2,7 @@ services:
   gateway:
     profiles: ["${START_GATEWAY:-true}"]
     build: .
+    # Needs SUPABASE_URL: cp .env.example .env (see README.md)
     env_file:
       - path: ./.env
         required: false

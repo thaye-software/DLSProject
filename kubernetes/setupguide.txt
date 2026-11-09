@@ -22,15 +22,11 @@ Expected, each 1/1 Running: rabbitmq, catalog-db, catalog, orders-db, orders, pa
 The first time, search-db or messaging-db can stay ContainerCreating while mongo:7 downloads.
 
 4.
-curl.exe http://localhost:30002/health
-curl.exe http://localhost:30000/health
-curl.exe http://localhost:30006/health
-curl.exe http://localhost:30007/health
-curl.exe http://localhost:30003/health
-curl.exe http://localhost:30004/health
+curl.exe http://localhost:30080/health
+For each service, in a second terminal: kubectl port-forward svc/<name> <port>:<port>  (catalog 3002, orders 3000, payment 3006, notif 3007, search 3003, messaging 3004), then curl.exe http://localhost:<port>/health
 
 Each line should be {"status":"ok"}.
-RabbitMQ UI: http://localhost:31672  guest / guest
+RabbitMQ UI: run kubectl port-forward svc/rabbitmq 15672 in a second terminal, open http://localhost:15672  guest / guest
 
 5. Open Lens. Bottom bar: docker-desktop (v1.36.1).
 Namespace default. Workloads lists the same twelve pods.
@@ -127,8 +123,8 @@ kubectl rollout status deployment/rabbitmq
 kubectl get pods -l app=rabbitmq
 
 The pod should be 1/1 Running.
-Open http://localhost:31672 and sign in as guest / guest.
-From this PC, AMQP is localhost:30672. Other pods use the name rabbitmq.
+RabbitMQ UI: run kubectl port-forward svc/rabbitmq 15672 in a second terminal, open http://localhost:15672  guest / guest
+From this PC, use kubectl port-forward svc/rabbitmq 5672 (AMQP on localhost:5672). Other pods use the name rabbitmq.
 
 
 ---------- Catalog ----------
@@ -142,10 +138,11 @@ kubectl rollout status deployment/catalog-db
 kubectl rollout status deployment/catalog
 
 The Catalog image applies its database migrations, then listens. The first start can take a minute.
-curl.exe http://localhost:30002/health
+kubectl port-forward svc/catalog 3002:3002   (second terminal; stop it with Ctrl+C)
+curl.exe http://localhost:3002/health
 
 Expected: {"status":"ok"}
-Postgres from this PC is localhost:30434. Other pods call http://catalog:3002.
+Databases are not exposed to this PC; use kubectl port-forward svc/<name> <port> when you need one. Other pods call http://catalog:3002.
 
 
 ---------- Orders ----------
@@ -160,10 +157,11 @@ kubectl rollout status deployment/orders-db
 kubectl rollout status deployment/orders
 
 The Orders image applies its database migrations, then listens.
-curl.exe http://localhost:30000/health
+kubectl port-forward svc/orders 3000:3000   (second terminal; stop it with Ctrl+C)
+curl.exe http://localhost:3000/health
 
 Expected: {"status":"ok"}
-Postgres from this PC is localhost:30433. Other pods call http://orders:3000.
+Databases are not exposed to this PC; use kubectl port-forward svc/<name> <port> when you need one. Other pods call http://orders:3000.
 
 
 ---------- Payment ----------
@@ -175,7 +173,8 @@ The source folder is microservices/payments.
 docker build -t dls/payment:local microservices/payments
 kubectl apply -f kubernetes/payment
 kubectl rollout status deployment/payment
-curl.exe http://localhost:30006/health
+kubectl port-forward svc/payment 3006:3006   (second terminal; stop it with Ctrl+C)
+curl.exe http://localhost:3006/health
 
 Expected: {"status":"ok"}
 kubectl logs deployment/payment
@@ -192,7 +191,8 @@ The source folder is microservices/emails.
 docker build -t dls/notif:local microservices/emails
 kubectl apply -f kubernetes/notif
 kubectl rollout status deployment/notif
-curl.exe http://localhost:30007/health
+kubectl port-forward svc/notif 3007:3007   (second terminal; stop it with Ctrl+C)
+curl.exe http://localhost:3007/health
 
 Expected: {"status":"ok"}
 kubectl logs deployment/notif
@@ -217,13 +217,14 @@ kubectl get pods -l app=search-db
 When search-db is 1/1 Running:
 kubectl rollout status deployment/search-cache
 kubectl rollout status deployment/search
-curl.exe http://localhost:30003/health
-curl.exe "http://localhost:30003/search"
+kubectl port-forward svc/search 3003:3003   (second terminal; stop it with Ctrl+C)
+curl.exe http://localhost:3003/health
+curl.exe "http://localhost:3003/search"   (or through the gateway: curl.exe "http://localhost:30080/search")
 
 Health should be {"status":"ok"}.
 An empty list is expected. Catalog does not publish new products onto this queue yet. See DECISIONS.md.
 A typical body is {"items":[],"page":1,"page_size":20,"total":0}.
-Mongo from this PC is localhost:30018. Redis from this PC is localhost:30380. Other pods call http://search:3003.
+Databases are not exposed to this PC; use kubectl port-forward svc/<name> <port> when you need one. Other pods call http://search:3003.
 kubectl logs deployment/search
 The log should include: search listening on port 3003 (cache: redis)
 
@@ -244,10 +245,11 @@ kubectl get pods -l app=messaging-db
 
 When messaging-db is 1/1 Running:
 kubectl rollout status deployment/messaging
-curl.exe http://localhost:30004/health
+kubectl port-forward svc/messaging 3004:3004   (second terminal; stop it with Ctrl+C)
+curl.exe http://localhost:3004/health
 
 Expected: {"status":"ok"}
-Mongo from this PC is localhost:30019. Other pods call http://messaging:3004.
+Databases are not exposed to this PC; use kubectl port-forward svc/<name> <port> when you need one. Other pods call http://messaging:3004.
 kubectl logs deployment/messaging
 The log should include: messaging listening on port 3004 (realtime: off)
 
@@ -261,19 +263,15 @@ kubectl get pods
 
 Expected, each 1/1 Running: rabbitmq, catalog-db, catalog, orders-db, orders, payment, notif, search-db, search-cache, search, messaging-db, messaging.
 
-curl.exe http://localhost:30002/health
-curl.exe http://localhost:30000/health
-curl.exe http://localhost:30006/health
-curl.exe http://localhost:30007/health
-curl.exe http://localhost:30003/health
-curl.exe http://localhost:30004/health
+curl.exe http://localhost:30080/health
+For each service, in a second terminal: kubectl port-forward svc/<name> <port>:<port>  (catalog 3002, orders 3000, payment 3006, notif 3007, search 3003, messaging 3004), then curl.exe http://localhost:<port>/health
 
 Each line should be {"status":"ok"}.
-RabbitMQ UI: http://localhost:31672  guest / guest
+RabbitMQ UI: run kubectl port-forward svc/rabbitmq 15672 in a second terminal, open http://localhost:15672  guest / guest
 
 Open Lens. The bottom bar should say docker-desktop (v1.36.1).
 In the default namespace, Workloads shows those twelve pods.
-Network shows the NodePorts used above. Storage shows catalog-db-data, orders-db-data, search-db-data, and messaging-db-data, each Bound.
+Network shows the gateway NodePort 30080. Storage shows catalog-db-data, orders-db-data, search-db-data, and messaging-db-data, each Bound.
 An empty Overview metrics panel is normal. "Node docker-desktop has been rebooted" is from startup.
 
 The next morning, use Everyday setup start at the top of this file.

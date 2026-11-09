@@ -18,7 +18,7 @@ for databases:
 also
 PersistentVolume yaml
 
-For services that you need to access from the localhost, you need to use NodePort in the service yaml.
+For services that you need to access from the localhost, you need to use NodePort in the service yaml. Only the gateway (and later the frontend) is NodePort now; every other Service is ClusterIP, so reach it through the gateway or with kubectl port-forward.
 
 prompt example: "i have this docker compose, i need kubernetes manifests for local kubernetes deployment"
 
