@@ -1,12 +1,12 @@
 /** @jest-environment node */
 import { GatewayError, gatewayFetch } from "@/lib/gateway";
-import { filtersFromParams, toSearchQuery, watchHref } from "@/services/searchService";
+import { filtersFromParams, searchErrorMessage, toSearchQuery, watchHref } from "@/services/searchService";
 import { getProduct } from "@/services/productService";
 
 jest.mock("server-only", () => ({}));
 jest.mock("@/lib/gateway", () => {
   class GatewayError extends Error {
-    constructor(public status: number) {
+    constructor(public status: number, public problem: unknown = null) {
       super(`Gateway error ${status}`);
     }
   }
@@ -57,5 +57,19 @@ describe("getProduct", () => {
   it("rethrows 500", async () => {
     fetchMock.mockRejectedValue(new GatewayError(500, null));
     await expect(getProduct("p1")).rejects.toMatchObject({ status: 500 });
+  });
+});
+
+describe("searchErrorMessage", () => {
+  it("shows problem title and detail from a GatewayError", () => {
+    const e = new GatewayError(503, { type: "x", title: "Service unavailable", status: 503, detail: "search is down" });
+    expect(searchErrorMessage(e)).toBe("Service unavailable: search is down");
+  });
+  it("falls back to a generic message and logs other errors", () => {
+    const spy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const msg = searchErrorMessage(new GatewayError(502, null));
+    expect(msg).toMatch(/could not be loaded/);
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
   });
 });

@@ -1,14 +1,14 @@
 import { WatchesGrid } from "@/components/Watches/WatchesGrid";
-import { searchProducts, type SearchFilters } from "@/services/searchService";
+import { searchErrorMessage, searchProducts, type SearchFilters } from "@/services/searchService";
 
 export async function WatchesListing({ filters }: { filters: SearchFilters }) {
   let items;
   try {
     items = (await searchProducts({ pageSize: 24, ...filters })).items;
-  } catch {
+  } catch (e) {
     return (
       <div className="flex justify-center items-center py-20 text-destructive text-lg font-medium">
-        Watches could not be loaded right now. Please try again later.
+        {searchErrorMessage(e)}
       </div>
     );
   }
