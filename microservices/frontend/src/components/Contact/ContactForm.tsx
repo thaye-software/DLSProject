@@ -38,6 +38,7 @@ export default function ContactForm() {
   
   const [isSuccess, setIsSuccess] = useState<boolean | undefined>(undefined);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | undefined>(undefined);
 
   const form = useForm<z.infer<typeof contactFormSchema>>({
     resolver: zodResolver(contactFormSchema),
@@ -51,15 +52,17 @@ export default function ContactForm() {
 
   async function onSubmit(values: z.infer<typeof contactFormSchema>) {
     
-    const sentSuccessfully = await sendEmail(values);
-    if (!sentSuccessfully) {
+    setIsLoading(true);
+    const result = await sendEmail(values);
+    setIsLoading(false);
+    if (!result.ok) {
+      setError(result.error);
       setIsSuccess(false);
       return;
     }
 
     form.reset();
     setIsSuccess(true);
-    setIsLoading(false);
   }
 
   return (
@@ -69,7 +72,7 @@ export default function ContactForm() {
     ) : isSuccess ? (
       <h1 className="mb-12 text-green-600">Email sent successfully.</h1>
     ) : (
-      <h1 className="mb-12 text-red-600">Email was unfortunatly not sent successfully, please try again later.</h1>
+      <h1 className="mb-12 text-red-600">{error}</h1>
     )}
     
       <Form {...form}>

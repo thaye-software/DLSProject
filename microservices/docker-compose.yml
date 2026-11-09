@@ -1,5 +1,6 @@
 include:
   - gateway/docker-compose.yml
+  - frontend/docker-compose.yml
   - catalog/docker-compose.yml
   - orders/docker-compose.yml
   - payments/docker-compose.yml

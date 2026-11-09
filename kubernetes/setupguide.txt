@@ -108,6 +108,10 @@ curl.exe http://localhost:30080/health
 Expected: {"status":"ok"}
 Without a token, curl.exe -i http://localhost:30080/orders returns 401.
 
+The web frontend is the other NodePort, http://localhost:30100. Its public Supabase/Stripe/PostHog values are baked in at build time, so pass them as build args (see microservices/frontend/README.md):
+docker build -t dls/frontend:local --build-arg NEXT_PUBLIC_SUPABASE_URL=... microservices/frontend
+kubectl apply -f kubernetes/frontend
+
 Make a user admin: in the Supabase dashboard SQL editor run
 update auth.users set raw_app_meta_data = raw_app_meta_data || '{"role":"admin"}' where email = 'user@example.com';
 The user must log in again to get a token with app_metadata.role = "admin".
