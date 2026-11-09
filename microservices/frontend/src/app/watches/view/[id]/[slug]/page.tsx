@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 
+import BuyButton from "@/components/Watches/BuyButton";
 import { formatMoney } from "@/lib/money";
 import { getProduct } from "@/services/productService";
 import { watchHref } from "@/services/searchService";
@@ -35,6 +36,7 @@ export default async function WatchPage({ params }: { params: Promise<{ id: stri
         {product.model && <p className="text-muted-foreground">{product.model}</p>}
         <p className="text-3xl font-bold">{formatMoney(product.price)}</p>
         <p className="capitalize text-sm text-muted-foreground">{product.availability}</p>
+        <BuyButton productId={product.product_id} available={product.availability === "available"} />
       </div>
     </div>
   );

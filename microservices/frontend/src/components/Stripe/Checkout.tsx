@@ -38,7 +38,7 @@ function PaymentForm({ orderId }: { orderId: string }) {
     const { error } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: `${baseUrl}/orders/checkout/success?orderId=${orderId}`,
+        return_url: `${baseUrl}/orders/checkout/success?order=${orderId}`,
       },
     })
 

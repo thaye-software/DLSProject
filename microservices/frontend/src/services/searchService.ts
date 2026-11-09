@@ -1,5 +1,6 @@
 import "server-only";
-import { GatewayError, gatewayFetch } from "@/lib/gateway";
+import { gatewayFetch } from "@/lib/gateway";
+import { problemMessage } from "@/lib/problemMessage";
 import type { Money } from "@/lib/money";
 
 // Typed from docs/contracts/openapi.yaml (ProductListing, SearchResults)
@@ -76,11 +77,4 @@ export function watchHref(listing: Pick<ProductListing, "product_id" | "slug">):
 
 const GENERIC_ERROR = "Watches could not be loaded right now. Please try again later.";
 
-// Shows the service's problem+json title/detail when there is one; logs everything else.
-export function searchErrorMessage(e: unknown): string {
-  if (e instanceof GatewayError && e.problem) {
-    return [e.problem.title, e.problem.detail].filter(Boolean).join(": ");
-  }
-  console.error("Search failed", e);
-  return GENERIC_ERROR;
-}
+export const searchErrorMessage = (e: unknown) => problemMessage(e, GENERIC_ERROR, "Search failed");

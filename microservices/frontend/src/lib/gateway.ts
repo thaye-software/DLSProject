@@ -22,10 +22,11 @@ export async function gatewayFetch<T>(
     body?: unknown;
     query?: Record<string, string | number | undefined>;
     auth?: boolean;
+    headers?: Record<string, string>;
   } = {},
 ): Promise<T> {
   const { method = "GET", body, query, auth = true } = init;
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { ...init.headers };
 
   if (auth) {
     const supabase = await createClient();
