@@ -1,5 +1,4 @@
 import "server-only";
-import { randomUUID } from "node:crypto";
 import { gatewayFetch } from "@/lib/gateway";
 import type { Money } from "@/lib/money";
 
@@ -42,12 +41,12 @@ export type UpdateOrderStatusRequest = {
 };
 
 // Orders rejects any non-null offer_token (422), so it is always null here.
-// shortcut: a fresh Idempotency-Key per call, so a retried form submit may reserve twice (the reservation expires).
-export const createOrder = (request: Omit<CreateOrderRequest, "offer_token">) =>
+// The caller owns the Idempotency-Key (one per form), so Orders replays a retried submit instead of reserving twice.
+export const createOrder = (request: Omit<CreateOrderRequest, "offer_token">, idempotencyKey: string) =>
   gatewayFetch<Order>("/orders", {
     method: "POST",
     body: { ...request, offer_token: null },
-    headers: { "idempotency-key": randomUUID() },
+    headers: { "idempotency-key": idempotencyKey },
   });
 
 export const getOrder = (orderId: string) => gatewayFetch<Order>(`/orders/${encodeURIComponent(orderId)}`);

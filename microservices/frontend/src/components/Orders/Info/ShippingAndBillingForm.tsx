@@ -26,6 +26,9 @@ export type CheckoutProduct = {
 export default function ShippingAndBillingForm({ product }: { product: CheckoutProduct }) {
   const [state, formAction, pending] = useActionState<CheckoutState, FormData>(submitCheckout, {});
   const [sameAsBilling, setSameAsBilling] = useState(true);
+  // one key per form mount: a retried submit is replayed by Orders instead of reserving twice
+  const [formKey] = useState(() => crypto.randomUUID());
+  const values = state.values;
 
   return (
     <div>
@@ -40,10 +43,11 @@ export default function ShippingAndBillingForm({ product }: { product: CheckoutP
           <div className="grid lg:grid-cols-2 gap-8">
             <form action={formAction}>
               <input type="hidden" name="product_id" value={product.id} />
+              <input type="hidden" name="idempotency_key" value={state.idempotencyKey ?? formKey} />
               <div className="space-y-8">
                 <Card className="p-6">
                   <h2 className="text-xl font-semibold text-foreground mb-6">Billing Address</h2>
-                  <BillingForm prefix="billing" />
+                  <BillingForm prefix="billing" values={values} />
                 </Card>
 
                 <Card className="p-6">
@@ -59,7 +63,7 @@ export default function ShippingAndBillingForm({ product }: { product: CheckoutP
                   {!sameAsBilling && (
                     <>
                       <h2 className="text-xl font-semibold text-foreground mb-6">Shipping Address</h2>
-                      <BillingForm prefix="delivery" />
+                      <BillingForm prefix="delivery" values={values} />
                     </>
                   )}
                 </Card>

@@ -9,6 +9,7 @@ jest.mock("@/lib/gateway", () => ({ gatewayFetch: jest.fn().mockResolvedValue({}
 const fetchMock = gatewayFetch as jest.Mock;
 beforeEach(() => fetchMock.mockClear());
 
+const KEY = "7d1b2c3e-0000-4000-8000-000000000001";
 const address = {
   first_name: "A",
   middle_name: null,
@@ -21,17 +22,17 @@ const address = {
   country_code: "DK",
 };
 
-test("createOrder posts to /orders with offer_token null and an Idempotency-Key", async () => {
-  await createOrder({ items: [{ product_id: "p1", quantity: 1 }], billing_address: address, delivery_address: address });
+test("createOrder posts to /orders with offer_token null and the passed Idempotency-Key", async () => {
+  await createOrder({ items: [{ product_id: "p1", quantity: 1 }], billing_address: address, delivery_address: address }, KEY);
   const [path, init] = fetchMock.mock.calls[0];
   expect(path).toBe("/orders");
   expect(init.method).toBe("POST");
   expect(init.body).toMatchObject({ offer_token: null, items: [{ product_id: "p1", quantity: 1 }] });
-  expect(init.headers["idempotency-key"]).toMatch(/^[0-9a-f-]{36}$/);
+  expect(init.headers["idempotency-key"]).toBe(KEY);
 });
 
 test("createOrder forces offer_token null even if a caller smuggles one in", async () => {
-  await createOrder({ items: [], billing_address: address, delivery_address: address, offer_token: "x" } as never);
+  await createOrder({ items: [], billing_address: address, delivery_address: address, offer_token: "x" } as never, KEY);
   expect(fetchMock.mock.calls[0][1].body.offer_token).toBeNull();
 });
 
