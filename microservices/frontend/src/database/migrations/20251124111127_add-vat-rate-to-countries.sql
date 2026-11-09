@@ -1,0 +1,1 @@
+ALTER TABLE "countries" ADD COLUMN "vat_rate" integer DEFAULT 0 NOT NULL;
