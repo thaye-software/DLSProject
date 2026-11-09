@@ -3,11 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { useUnreadMessagesContext } from "@/context/UnreadMessagesContext";
 
 export default function ConversationsLinkContent() {
-  const { unreadCounts } = useUnreadMessagesContext();
-
-  const totalUnread = Object.values(unreadCounts).reduce((sum, count) => sum + count, 0);
-  //                         ^^since unreadCounts is a record we we can extract the values by call .values on Objects.
-
+  const { totalUnread } = useUnreadMessagesContext();
 
    return (
     <span className="flex items-center gap-2">

@@ -1,11 +1,11 @@
 "use client";
 
 import { cn } from "@/lib/tailwindUtils";
-import type { ChatMessage } from "@/hooks/useRealtimeChat";
 import { Button } from "@/components/ui/button";
 
+// Display shape: the chat maps contract messages (sender_user_id only) to a name.
 interface ChatMessageItemProps {
-  message: ChatMessage;
+  message: { username: string; content: string; createdAt: string };
   isOwnMessage: boolean;
   showHeader: boolean;
 }

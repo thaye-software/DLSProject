@@ -41,7 +41,7 @@ export default function ChatBox() {
               </Button>
             </div>
             <div className="font-bold justify-start">
-              <h1>{selectedConversation.product.name}</h1>
+              <h1>{selectedConversation.product_name}</h1>
             </div>
             <div>
               <Button

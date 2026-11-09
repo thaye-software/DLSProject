@@ -1,123 +1,80 @@
 "use client";
 
-import { useCallback, useEffect, useState, useRef, useMemo } from "react";
-
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { listMessages, markRead, sendMessage as sendMessageAction } from "@/app/chat/actions";
 import { createClient } from "@/lib/supabase/client";
+import type { ChatMessage, Conversation } from "@/services/conversationService";
+
+export type { ChatMessage };
 
 interface UseRealtimeChatProps {
-  conversation: any;
-  username: string;
-  // Callback to notify parent (Dashboard) to update sidebar
+  conversation: Conversation;
+  userId: string;
+  // Called after the conversation was marked read (parent refreshes its unread count)
+  onRead?: () => void;
+  // Called for every message added to this conversation, own or incoming
   onMessageReceived?: (message: ChatMessage) => void;
 }
 
-export interface ChatMessage {
-  id?: string;
-  conversationId?: string;
-  senderId?: string | null;
-  username: string;
-  senderType?: "customer" | "seller";
-  content: string;
-  isRead?: boolean;
-  createdAt: string;
-}
+// Appends a message unless one with the same id is already there (sender also gets its own broadcast).
+const addMessage = (list: ChatMessage[], m: ChatMessage) =>
+  list.some((x) => x.message_id === m.message_id) ? list : [...list, m];
 
-export function useRealtimeChat({
-  conversation,
-  onMessageReceived,
-}: UseRealtimeChatProps) {
+export function useRealtimeChat({ conversation, userId, onRead, onMessageReceived }: UseRealtimeChatProps) {
   const supabase = useMemo(() => createClient(), []);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
+  const id = conversation.conversation_id;
 
-  // Ref to track current channel to prevent race conditions in cleanup
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const markReadNow = useCallback(async () => {
+    if ((await markRead(id)).ok) onRead?.();
+  }, [id, onRead]);
 
   useEffect(() => {
-    if (!conversation?.id) {
-      return;
-    }
-
-    // Cleanup previous channel if exists (Safety for Bug 4)
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-    }
-
-    const channelName = `chat:${conversation.id}`;
-    const newChannel = supabase.channel(channelName);
-    channelRef.current = newChannel;
-
-    // Check if already joined (e.g. by Sidebar)
-    const isAlreadyJoined = newChannel.state === "joined";
-    if (isAlreadyJoined) {
-      setIsConnected(true);
-    }
-
-    newChannel
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `conversation_id=eq.${conversation.id}`,
-        },
-        async (payload: any) => {
-          const newRecord = payload.new;
-          // convert payload to ChatMessage
-          const incomingMessage: ChatMessage = {
-            id: newRecord.id,
-            conversationId: newRecord.conversation_id,
-            senderId: newRecord.sender_id,
-            username: newRecord.username,
-            senderType: newRecord.sender_type,
-            content: newRecord.content,
-            isRead: newRecord.is_read,
-            createdAt: newRecord.created_at.endsWith("Z")
-              ? newRecord.created_at
-              : `${newRecord.created_at}Z`,
-          };
-          
-          setMessages((current) => {
-            if (current.some((m) => m.id === incomingMessage.id)) {
-              return current;
-            }
-            return [...current, incomingMessage];
-          });
-
-          // Notify parent to update sidebar
-          if (onMessageReceived) {
-            onMessageReceived(incomingMessage);
-          }
-        }
-      )
+    let active = true;
+    const channel = supabase
+      .channel(`conversation:${id}`)
+      .on("broadcast", { event: "message_created" }, ({ payload }: { payload: unknown }) => {
+        const message = payload as ChatMessage;
+        setMessages((cur) => addMessage(cur, message));
+        onMessageReceived?.(message);
+        if (message.sender_user_id !== userId) void markReadNow();
+      })
       .subscribe((status: string) => {
+        if (!active) return;
+        setIsConnected(status === "SUBSCRIBED");
+        // Load history once subscribed so nothing sent in between is missed (merged by id).
         if (status === "SUBSCRIBED") {
-          setIsConnected(true);
-        } else {
-          setIsConnected(false);
+          void listMessages(id).then((r) => {
+            if (!active) return;
+            if (!r.ok) return void toast.error(r.error);
+            setMessages((cur) => r.data.items.reduce(addMessage, cur));
+            void markReadNow();
+          });
         }
       });
 
     return () => {
+      active = false;
+      void supabase.removeChannel(channel);
       setIsConnected(false);
-
-      // Only remove channel if it wasn't already joined when we got it
-      // This prevents killing the Sidebar's subscription
-      if (channelRef.current && !isAlreadyJoined) {
-        supabase.removeChannel(channelRef.current);
-      }
-      channelRef.current = null;
       setMessages([]);
     };
-  }, [conversation?.id, supabase, onMessageReceived]);
+    // onMessageReceived/markReadNow are intentionally read through the first render of this conversation
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, supabase, userId]);
 
-  // Persisting messages goes through the gateway in Task 8.
-  const sendMessage = useCallback(async (_content: string) => {
-    toast.error("Chat is not available yet.");
-  }, []);
+  const sendMessage = useCallback(
+    async (content: string) => {
+      const r = await sendMessageAction(id, content, crypto.randomUUID());
+      if (!r.ok) return void toast.error(r.error);
+      setMessages((cur) => addMessage(cur, r.data));
+      onMessageReceived?.(r.data);
+    },
+    [id, onMessageReceived],
+  );
 
   return { messages, sendMessage, isConnected };
 }

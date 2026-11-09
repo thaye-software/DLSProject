@@ -1,44 +1,47 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
-import { ChatMessage } from "@/hooks/useRealtimeChat";
+import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
 
-type UnreadMessagesContextType = {
-  unreadCounts: Record<string, number>;
-  setUnreadCounts: React.Dispatch<React.SetStateAction<Record<string, number>>>;
-  // New additions:
-  realtimeMessages: Record<string, ChatMessage[]>;
-  addRealtimeMessage: (conversationId: string, message: ChatMessage) => void;
+import { listConversations } from "@/app/chat/actions";
+import type { Conversation } from "@/services/conversationService";
+
+const POLL_MS = 10_000;
+
+type InboxContextType = {
+  conversations: Conversation[];
+  totalUnread: number;
+  refresh: () => Promise<void>;
 };
 
-const UnreadMessagesContext = createContext<UnreadMessagesContextType | undefined>(undefined);
+const UnreadMessagesContext = createContext<InboxContextType | undefined>(undefined);
 
+// Admin inbox: polls the conversation list (also feeds the sidebar badge on every admin page).
 export function UnreadMessagesProvider({ children }: { children: ReactNode }) {
-  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
-  const [realtimeMessages, setRealtimeMessages] = useState<Record<string, ChatMessage[]>>({});
+  const [conversations, setConversations] = useState<Conversation[]>([]);
 
-  const addRealtimeMessage = (conversationId: string, message: ChatMessage) => {
-    setRealtimeMessages((prev) => {
-      const currentList = prev[conversationId] || [];
-      // Deduplicate: Don't add if ID already exists
-      if (currentList.some((m) => m.id === message.id)) return prev;
-      
-      return {
-        ...prev,
-        [conversationId]: [...currentList, message],
-      };
-    });
-  };
+  const refresh = useCallback(async () => {
+    try {
+      const r = await listConversations();
+      if (r.ok) setConversations(r.data.items);
+      else console.error("Inbox refresh failed:", r.error);
+    } catch (e) {
+      console.error("Inbox refresh failed:", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    const first = setTimeout(() => void refresh(), 0);
+    const timer = setInterval(() => void refresh(), POLL_MS);
+    return () => {
+      clearTimeout(first);
+      clearInterval(timer);
+    };
+  }, [refresh]);
+
+  const totalUnread = conversations.reduce((sum, c) => sum + c.unread_count, 0);
 
   return (
-    <UnreadMessagesContext.Provider
-      value={{
-        unreadCounts,
-        setUnreadCounts,
-        realtimeMessages,
-        addRealtimeMessage,
-      }}
-    >
+    <UnreadMessagesContext.Provider value={{ conversations, totalUnread, refresh }}>
       {children}
     </UnreadMessagesContext.Provider>
   );

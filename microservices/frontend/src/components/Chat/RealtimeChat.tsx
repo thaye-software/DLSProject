@@ -4,6 +4,7 @@ import { cn } from "@/lib/tailwindUtils";
 import { ChatMessageItem } from "@/components/Chat/ChatMessage";
 import { useChatScroll } from "@/hooks/useChatScroll";
 import { type ChatMessage, useRealtimeChat } from "@/hooks/useRealtimeChat";
+import type { Conversation } from "@/services/conversationService";
 import { Button } from "@/components/ui/button";
 import { ArrowDown, Send } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -11,22 +12,13 @@ import { toast } from "sonner";
 import { Badge } from "../ui/badge";
 
 interface RealtimeChatProps {
-  conversation: any;
+  conversation: Conversation;
   userId: string;
-  username: string;
-  onMessage?: (messages: ChatMessage[]) => void;
   onMessageReceived?: (message: ChatMessage) => void;
-  messages?: ChatMessage[];
+  onRead?: () => void;
 }
 
-export const RealtimeChat = ({
-  conversation,
-  userId,
-  username,
-  onMessage,
-  onMessageReceived,
-  messages: initialMessages = [],
-}: RealtimeChatProps) => {
+export const RealtimeChat = ({ conversation, userId, onMessageReceived, onRead }: RealtimeChatProps) => {
   const {
     containerRef,
     scrollToBottom,
@@ -34,53 +26,21 @@ export const RealtimeChat = ({
     setAutoScrollEnabled,
   } = useChatScroll();
 
-  const {
-    messages: realtimeMessages,
-    sendMessage,
-    isConnected,
-  } = useRealtimeChat({
+  const { messages: realtimeMessages, sendMessage, isConnected } = useRealtimeChat({
     conversation,
-    username,
+    userId,
     onMessageReceived,
+    onRead,
   });
+
+  // The history page and live messages arrive separately: show them oldest first.
+  const allMessages = useMemo(
+    () => [...realtimeMessages].sort((a, b) => a.created_at.localeCompare(b.created_at)),
+    [realtimeMessages],
+  );
 
   const [newMessage, setNewMessage] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Merge messages
-  const allMessages = useMemo(() => {
-    const mergedMessages = [...initialMessages, ...realtimeMessages];
-    const seen = new Set<string>();
-    const uniqueMessages = [] as typeof mergedMessages;
-
-    for (const orig of mergedMessages) {
-      const createdAtStr =
-        typeof orig.createdAt === "string"
-          ? orig.createdAt
-          : orig.createdAt
-          ? new Date(orig.createdAt).toISOString()
-          : new Date().toISOString();
-
-      const key = orig.id ?? `${createdAtStr}:${orig.content}`;
-      if (!seen.has(String(key))) {
-        seen.add(String(key));
-        uniqueMessages.push({ ...orig, createdAt: createdAtStr } as any);
-      }
-    }
-
-    uniqueMessages.sort(
-      (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-    );
-
-    return uniqueMessages;
-  }, [initialMessages, realtimeMessages]);
-
-  useEffect(() => {
-    if (onMessage) {
-      onMessage(allMessages);
-    }
-  }, [allMessages, onMessage]);
 
   useEffect(() => {
     if (autoScrollEnabled) {
@@ -153,17 +113,23 @@ export const RealtimeChat = ({
             {allMessages.map((message, index) => {
               const prevMessage = index > 0 ? allMessages[index - 1] : null;
               const showHeader =
-                !prevMessage || prevMessage.username !== message.username;
-              console.log("all messages:", allMessages);
-              
+                !prevMessage || prevMessage.sender_user_id !== message.sender_user_id;
+
               return (
                 <div
-                  key={message.id || index}
+                  key={message.message_id}
                   className="animate-in fade-in slide-in-from-bottom-2 duration-300"
                 >
                   <ChatMessageItem
-                    message={message}
-                    isOwnMessage={String(message.senderId) === String(userId)}
+                    message={{
+                      username:
+                        message.sender_user_id === conversation.customer_user_id
+                          ? conversation.customer_display_name
+                          : "Seller",
+                      content: message.content,
+                      createdAt: message.created_at,
+                    }}
+                    isOwnMessage={message.sender_user_id === userId}
                     showHeader={showHeader}
                   />
                 </div>
