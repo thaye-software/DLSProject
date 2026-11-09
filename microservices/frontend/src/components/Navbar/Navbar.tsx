@@ -15,6 +15,7 @@ import { Button } from "../ui/button";
 import { Spinner } from "../ui/spinner";
 
 import { UserNavbarDropdown } from "./UserNavbarDropdown";
+import SearchBar from "./SearchBar";
 
 import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 
@@ -68,6 +69,9 @@ export function Navbar() {
 
       {/* Right side login */}
       <div className="ml-auto flex items-center gap-2">
+        <div className="w-60 mr-10">
+          <SearchBar />
+        </div>
         {loading ? (
           <div>
           <Spinner />
