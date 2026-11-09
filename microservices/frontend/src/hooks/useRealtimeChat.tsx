@@ -4,12 +4,7 @@ import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 
 import { toast } from "sonner";
 
-import { persistMessage, PersistableMessage } from "@/services/messageService";
-
-import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
-
 import { createClient } from "@/lib/supabase/client";
-import { getUserById } from "@/services/userService";
 
 interface UseRealtimeChatProps {
   conversation: any;
@@ -31,10 +26,8 @@ export interface ChatMessage {
 
 export function useRealtimeChat({
   conversation,
-  username,
   onMessageReceived,
 }: UseRealtimeChatProps) {
-  const { user } = useSupabaseAuthContext();
   const supabase = useMemo(() => createClient(), []);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
@@ -121,60 +114,10 @@ export function useRealtimeChat({
     };
   }, [conversation?.id, supabase, onMessageReceived]);
 
-  const sendMessage = useCallback(
-    async (content: string) => {
-      // Allow sending if we have a user, even if socket momentarily disconnected (optimistic),
-      // though usually we want to wait for connection.
-      if (!conversation?.id || !user?.id) {
-        return;
-      }
-
-      try {
-        const foundUser = await getUserById(user.id);
-        if (!foundUser) {
-          console.error("User not found in DB:", user.id);
-          toast.error("User not found");
-          return;
-        }
-
-        const userRole = foundUser.role;
-        const messageId = crypto.randomUUID();
-
-        const message: ChatMessage = {
-          id: messageId,
-          conversationId: conversation.id,
-          senderId: user.id,
-          username: username,
-          senderType: userRole === "admin" ? "seller" : "customer",
-          content,
-          createdAt: new Date().toISOString(),
-        };
-
-        // Notify Parent (Dashboard) immediately for own message too
-        if (onMessageReceived) {
-          onMessageReceived(message);
-        }
-
-        // Persist
-        const messageToPersist: PersistableMessage = {
-          id: messageId,
-          conversationId: conversation.id,
-          senderId: user.id,
-          username: username,
-          senderType: userRole === "admin" ? "seller" : "customer",
-          content,
-          isRead: false,
-          createdAt: new Date().toISOString(),
-        };
-
-        await persistMessage(messageToPersist);
-      } catch (error) {
-        console.error("Failed to send message", error);
-        toast.error("Failed to send message");
-      }
-    },
-    [isConnected, conversation?.id, username, user?.id, onMessageReceived]
-  );
+  // Persisting messages goes through the gateway in Task 8.
+  const sendMessage = useCallback(async (_content: string) => {
+    toast.error("Chat is not available yet.");
+  }, []);
 
   return { messages, sendMessage, isConnected };
 }

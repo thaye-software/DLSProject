@@ -3,13 +3,11 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
-import { getUserById } from "@/services/userService";
 
 interface AuthContextType {
   user: User | null;
   username: string | null;
   role: string | null;
-  avatarUrl: string | null;
   loading: boolean;
   isLoggedIn: boolean;
   signOut: () => Promise<void>;
@@ -24,10 +22,6 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
   const [username, setUsername] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("avatarUrl");
-  });
 
   
 //---------- helper funciton -------------
@@ -37,7 +31,6 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
         setUsername(null);
         setRole(null);
-        setAvatarUrl(null);
         return;
       }
 
@@ -45,18 +38,7 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       setUsername(currentUser.user_metadata?.display_name ?? null);
 
 
-      const dbUser = await getUserById(currentUser.id);
-
-      // fetch role and avatar from server (secure lookup in our users table)
-      if (dbUser && !('error' in dbUser)) {
-        setRole(dbUser.role);
-        setAvatarUrl(dbUser.avatarUrl || null);
-
-        if (dbUser.avatarUrl) {
-          localStorage.setItem("avatarUrl", dbUser.avatarUrl);
-        } 
-        
-      }
+      setRole(currentUser.app_metadata?.role === "admin" ? "admin" : "customer");
     } catch (error) {
       console.error("Error fetching user data:", error);
     }
@@ -106,10 +88,8 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
-    setAvatarUrl(null);
     setRole(null);
     setUsername(null);
-    localStorage.removeItem("avatarUrl");
   }, []);
 
 
@@ -118,7 +98,6 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     user,
     username,
     role,
-    avatarUrl,
     loading,
     isLoggedIn: !!user,
     signOut,

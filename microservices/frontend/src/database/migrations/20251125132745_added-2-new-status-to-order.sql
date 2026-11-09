@@ -1,2 +1,0 @@
-ALTER TABLE "orders" DROP CONSTRAINT "orders_status_check";--> statement-breakpoint
-ALTER TABLE "orders" ADD CONSTRAINT "orders_status_check" CHECK ("orders"."status" IN ('RESERVED', 'EXPIRED', 'PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'));

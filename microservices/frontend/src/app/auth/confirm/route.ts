@@ -3,9 +3,6 @@ import { type NextRequest } from 'next/server'
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { eq } from 'drizzle-orm'
-import { users } from '@/database/schema'
-import { db } from '@/database/drizzle'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -23,23 +20,6 @@ export async function GET(request: NextRequest) {
     })
     
     if (!error) {
-      if (type === 'email_change') {
-        const { data: { user } } = await supabase.auth.getUser()
-        
-        if (user && user.email) {
-          try {
-            await db
-              .update(users)
-              .set({ email: user.email })
-              .where(eq(users.id, user.id))
-            
-            console.log(`Successfully synced email for user ${user.id} to ${user.email}`)
-          } catch (dbError) {
-            console.error('Failed to sync email to public.users:', dbError)
-          }
-        }
-      }
-      
       redirect(next)
     }
   }

@@ -1,2 +1,0 @@
-ALTER TABLE "orders" ADD COLUMN "shipping_price_dkk" numeric(12, 2) DEFAULT '0' NOT NULL;--> statement-breakpoint
-ALTER TABLE "orders" ADD COLUMN "shipping_price_currency" numeric(12, 2) DEFAULT '0' NOT NULL;

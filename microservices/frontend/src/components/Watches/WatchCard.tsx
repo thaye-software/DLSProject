@@ -7,8 +7,6 @@ import { motion } from "framer-motion";
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-import FavoriteButton from "./FavoriteButton";
-
 import { Product } from "@/app/watches/type";
 
 
@@ -17,12 +15,10 @@ export function WatchCard({
   product,
   formattedPrice,
   index,
-  onFavoriteClick,
 }: {
   product: Product;
   formattedPrice: string;
   index?: number;
-  onFavoriteClick?: () => void;
   }) {
 
 
@@ -47,12 +43,6 @@ export function WatchCard({
                 unoptimized // REMOVE THIS IN PRODUCTION
               />
 
-              <div className="absolute top-4 right-4 flex gap-2 group">
-                <FavoriteButton
-                  productId={product.id}
-                  onFavoriteClick={onFavoriteClick}
-                />
-              </div>
             </div>
           </CardHeader>
         </Link>

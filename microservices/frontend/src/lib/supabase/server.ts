@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 
 export async function createClient() {
   const cookieStore = await cookies()
-  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const supabaseServiceRoleKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     supabaseServiceRoleKey,

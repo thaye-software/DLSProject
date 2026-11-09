@@ -17,7 +17,6 @@ import { AnimatePresence } from "framer-motion";
 import ChatBox from "@/components/Chat/ChatBox";
 import { Toaster } from "sonner";
 import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
-import { getUserById } from "@/services/userService";
 import { SupabaseAuthProvider } from "@/context/SupabaseAuthContext";
 
 const theSeasons = theSeasonsFont({

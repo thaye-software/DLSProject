@@ -1,22 +1,6 @@
-import { BrandTable } from "@/components/Admin/Brands/BrandTable";
-import { getAllBrands } from "@/services/brandService";
-import { getAllProducts } from "@/services/productService";
+import { NotAvailable } from "@/components/NotAvailable";
 
-export default async function BrandsPage() {
-  const initialBrands = await getAllBrands() || [];
-  const initialProducts = await getAllProducts() || [];
-
-  return (
-    <div>
-      <div className="mb-10 flex gap-4">
-        <h1 className="font-bold text-3xl">Brands Page</h1>
-      </div>
-      <div className="mt-10">
-        <BrandTable
-          initialBrands={initialBrands}
-          initialProducts={initialProducts}
-        />
-      </div>
-    </div>
-  );
+// Deferred, not in the microservice scope
+export default function Page() {
+  return <NotAvailable feature="Brand administration" />;
 }

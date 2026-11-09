@@ -2,10 +2,8 @@
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { useEffect, useState } from "react";
 import { LogOut, Scroll, Settings, User } from "lucide-react";
 
-import { AvatarImage } from "@radix-ui/react-avatar";
 
 import {
   DropdownMenu,
@@ -16,19 +14,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Avatar } from "@/components/ui/avatar";
 
 import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 
 
 
 export function UserNavbarDropdown() {
-  const { user, signOut, avatarUrl, role } = useSupabaseAuthContext();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const { user, signOut, role } = useSupabaseAuthContext();
 
   function handleSignOut() {
     signOut();
@@ -36,13 +28,7 @@ export function UserNavbarDropdown() {
   }
 
   // Always render User icon during SSR
-  const avatarContent = mounted && avatarUrl ? (
-    <Avatar>
-      <AvatarImage src={avatarUrl} alt="User Avatar" />
-    </Avatar>
-  ) : (
-    <User />
-  );
+  const avatarContent = <User />;
 
 
   return (

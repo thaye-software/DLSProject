@@ -1,17 +1,7 @@
 import { MetadataRoute } from "next";
 import { baseUrl } from "@/lib/utils/client/utils";
-import { getAllProducts } from "@/services/productService";
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const products = await getAllProducts();
-
-  const productUrls: MetadataRoute.Sitemap = products.map((product) => ({
-    url: `${baseUrl}/watches/view/${product.watch.slug}`,
-    lastModified: product.createdAt.toISOString(),
-    changeFrequency: "yearly",
-    priority: 0.8,
-  }));
-
+export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
       url: `${baseUrl}`,
@@ -31,6 +21,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.7,
     },
-    ...productUrls,
   ];
 }

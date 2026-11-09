@@ -1,1 +1,0 @@
-ALTER TABLE "messages" ADD COLUMN "username" text DEFAULT 'unknown' NOT NULL;

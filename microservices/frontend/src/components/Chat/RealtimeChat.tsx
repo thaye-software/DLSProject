@@ -7,9 +7,6 @@ import { type ChatMessage, useRealtimeChat } from "@/hooks/useRealtimeChat";
 import { Button } from "@/components/ui/button";
 import { ArrowDown, Send } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { markAsRead } from "@/services/messageService";
-import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
-import { OfferPricePopover } from "./OfferPricePopover";
 import { toast } from "sonner";
 import { Badge } from "../ui/badge";
 
@@ -48,7 +45,6 @@ export const RealtimeChat = ({
   });
 
   const [newMessage, setNewMessage] = useState("");
-  const { role } = useSupabaseAuthContext();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Merge messages
@@ -91,28 +87,6 @@ export const RealtimeChat = ({
       scrollToBottom();
     }
   }, [allMessages, autoScrollEnabled, scrollToBottom]);
-
-  // Mark as read logic
-  useEffect(() => {
-    const handleReadStatus = async () => {
-      if (!conversation?.id || !userId) return;
-
-      const lastMsg =
-        realtimeMessages.length > 0
-          ? realtimeMessages[realtimeMessages.length - 1]
-          : initialMessages[initialMessages.length - 1];
-
-      if (lastMsg && String(lastMsg.senderId) !== String(userId)) {
-        try {
-          await markAsRead(conversation.id, userId);
-        } catch (err) {
-          console.error("Failed to mark as read", err);
-        }
-      }
-    };
-
-    handleReadStatus();
-  }, [realtimeMessages, conversation?.id, userId, initialMessages]);
 
   // preselect the textare/input when chat/conversations has been selected
   useEffect(() => {
@@ -238,14 +212,6 @@ export const RealtimeChat = ({
               maxLength={-1} // no max length
             />
           </div>
-
-          {/* Action buttons (aligned to the bottom by the parent div) */}
-          {role === "admin" && (
-            <OfferPricePopover
-              product={conversation?.product}
-              sendMessage={sendMessage}
-            />
-          )}
 
           <Button
             className="aspect-square rounded-full shrink-0"

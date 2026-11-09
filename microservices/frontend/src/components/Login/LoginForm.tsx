@@ -3,10 +3,8 @@ import { cn } from "@/lib/tailwindUtils";
 import { Button } from "@/components/ui/button";
 import {
   Field,
-  FieldDescription,
   FieldGroup,
   FieldLabel,
-  FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "../ui/spinner";
@@ -15,22 +13,11 @@ import { login, type LoginFormState } from "@/app/login/actions";
 import { useActionState } from "react";
 import { useSupabaseAuthContext } from "@/context/SupabaseAuthContext";
 
-function toggleLoginState(
-  isLogin: boolean,
-  setIsLogin: (isLogin: boolean) => void
-) {
-  setIsLogin(!isLogin);
-}
-
 export function LoginForm({
-  isLogin,
-  setIsLogin,
   redirectUrl,
   className,
   ...props
 }: React.ComponentProps<"form"> & {
-  isLogin: boolean;
-  setIsLogin: (isLogin: boolean) => void;
   redirectUrl?: string;
 }) {
   const initialState: LoginFormState = {};
@@ -126,19 +113,6 @@ export function LoginForm({
           <Button type="submit" disabled={loading} aria-busy={loading}>
             {loading ? <>Loading... <Spinner /></> : "Login"}
           </Button>
-        </Field>
-        <FieldSeparator />
-        <Field>
-          <FieldDescription className="text-center">
-            <span>Don't have an account? </span>
-            <Button
-              type="button"
-              variant="link"
-              onClick={() => toggleLoginState(isLogin, setIsLogin)}
-            >
-              Sign up
-            </Button>
-          </FieldDescription>
         </Field>
       </FieldGroup>
     </form>

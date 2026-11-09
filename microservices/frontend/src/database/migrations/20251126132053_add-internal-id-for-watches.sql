@@ -1,1 +1,0 @@
-ALTER TABLE "watches" ADD COLUMN "internal_id" text DEFAULT '' NOT NULL;
