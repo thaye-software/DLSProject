@@ -96,6 +96,27 @@ Use the matching app name: catalog, orders, payment, notif, search, or messaging
 Wait until the health check in that section prints {"status":"ok"} before you start the next section.
 
 
+---------- Gateway (entry point) ----------
+
+Only the gateway has a NodePort now. Every other Service is ClusterIP, so localhost:30000 and the other old ports no longer answer.
+Browsers and curl go through the gateway on http://localhost:30080. To reach one service directly, use:
+kubectl port-forward svc/orders 3000:3000
+
+Put your Supabase project URL and JWT secret in kubernetes/gateway/secret.yaml first (they are placeholders in git; do not commit real values).
+
+docker build -t dls/gateway:local microservices/gateway
+kubectl apply -f kubernetes/gateway
+kubectl rollout status deployment/gateway
+curl.exe http://localhost:30080/health
+
+Expected: {"status":"ok"}
+Without a token, curl.exe -i http://localhost:30080/orders returns 401.
+
+Make a user admin: in the Supabase dashboard SQL editor run
+update auth.users set raw_app_meta_data = raw_app_meta_data || '{"role":"admin"}' where email = 'user@example.com';
+The user must log in again to get a token with app_metadata.role = "admin".
+
+
 ---------- RabbitMQ ----------
 
 Start here. There is no image to build. The public image is rabbitmq:4-management.

@@ -5,11 +5,10 @@ metadata:
   labels:
     app: payment
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: payment
   ports:
     - name: http
       port: 3006
       targetPort: http
-      nodePort: 30006
