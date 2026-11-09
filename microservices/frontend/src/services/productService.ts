@@ -19,7 +19,7 @@ export async function getProduct(id: string): Promise<ProductSummary | null> {
   try {
     return await gatewayFetch<ProductSummary>(`/products/${encodeURIComponent(id)}`, { auth: false });
   } catch (e) {
-    if (e instanceof GatewayError && e.status === 404) return null;
+    if (e instanceof GatewayError && (e.status === 404 || e.status === 400)) return null;
     throw e;
   }
 }

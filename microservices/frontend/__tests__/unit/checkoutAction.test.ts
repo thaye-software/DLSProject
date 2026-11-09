@@ -8,6 +8,9 @@ jest.mock("next/navigation", () => ({
   redirect: jest.fn(() => {
     throw new Error("NEXT_REDIRECT");
   }),
+  unstable_rethrow: (e: unknown) => {
+    if (e instanceof Error && e.message === "NEXT_REDIRECT") throw e;
+  },
 }));
 jest.mock("@/lib/gateway", () => {
   class GatewayError extends Error {

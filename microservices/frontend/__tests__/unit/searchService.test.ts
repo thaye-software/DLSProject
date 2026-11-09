@@ -54,6 +54,10 @@ describe("getProduct", () => {
     await expect(getProduct("p1")).resolves.toBeNull();
     expect(fetchMock).toHaveBeenCalledWith("/products/p1", { auth: false });
   });
+  it("returns null on 400 (malformed id)", async () => {
+    fetchMock.mockRejectedValue(new GatewayError(400, null));
+    await expect(getProduct("bad")).resolves.toBeNull();
+  });
   it("rethrows 500", async () => {
     fetchMock.mockRejectedValue(new GatewayError(500, null));
     await expect(getProduct("p1")).rejects.toMatchObject({ status: 500 });

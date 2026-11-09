@@ -5,14 +5,13 @@ import { problemMessage } from "@/lib/problemMessage";
 import * as svc from "@/services/conversationService";
 
 // Server action errors are masked in production, so failures come back as data.
-// redirect("/login") from withLoginRedirect is not caught here: it must propagate.
+// redirect("/login") from withLoginRedirect propagates because problemMessage rethrows it.
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 
 async function run<T>(label: string, call: () => Promise<T>): Promise<Result<T>> {
   try {
     return { ok: true, data: await withLoginRedirect(call) };
   } catch (e) {
-    if (e instanceof Error && (e as { digest?: string }).digest?.startsWith("NEXT_REDIRECT")) throw e;
     return { ok: false, error: problemMessage(e, "Chat is unavailable right now. Please try again.", label) };
   }
 }

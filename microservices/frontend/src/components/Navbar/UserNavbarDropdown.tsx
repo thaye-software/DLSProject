@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LogOut, Scroll, Settings, User } from "lucide-react";
+import { LogOut, Package, Scroll, Settings, User } from "lucide-react";
 
 
 import {
@@ -50,6 +50,13 @@ export function UserNavbarDropdown() {
               Admin Panel
             </Link>
           ) : null}
+          <Link
+            href="/orders"
+            className="cursor-pointer hover:bg-accent relative flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+          >
+            <Package className="opacity-60" />
+            My orders
+          </Link>
           <Link
             href="/watchlist"
             className="cursor-pointer hover:bg-accent relative flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
