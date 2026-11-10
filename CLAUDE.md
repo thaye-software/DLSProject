@@ -4,11 +4,12 @@
 
 ## Architecture v3 (target)
 
-**Edge:** User/Admin Frontend --HTTP--> API Gateway (verifies JWT, routes). There is no Authorization service: login goes straight to Supabase Auth, and the gateway verifies JWTs using its signing keys. The frontend also talks to Supabase Realtime (WebSocket, chat), Stripe (Stripe.js payment confirm) and PostHog (analytics).
+**Edge:** User/Admin Frontend --HTTP--> API Gateway (routes). Login, signup and token refresh go straight to Supabase Auth, which issues the user JWTs. For every protected route the gateway asks the Auth service (`GET /verify`, forward-auth), which checks the JWT against Supabase's signing keys and answers `X-User-Id` / `X-User-Email` / `X-User-Role`. The role comes from Users. The frontend also talks to Supabase Realtime (WebSocket, chat), Stripe (Stripe.js payment confirm) and PostHog (analytics).
 
 **API Gateway (HTTP/REST) routes to:** Search, Users, Editorial, Messaging, Catalog, Auctions, Orders, Payment, Notif/Email.
 
 **Services, stores and external SaaS**
+- Auth: stateless, no DB. Forward-auth for the gateway. Verifies Supabase JWTs (JWKS) and gets the role from Users over HTTP (cached 30 s). Issues no tokens.
 - Search: MongoDB read model + Redis cache.
 - Users: PostgreSQL. Supabase DB webhook (email-confirmed) in, Supabase Storage (avatars).
 - Editorial: MongoDB. Supabase Storage (blog media). Calls Catalog over HTTP.

@@ -1,0 +1,22 @@
+services:
+  auth:
+    profiles: ["${START_AUTH:-true}"]
+    build: .
+    env_file:
+      - path: ./.env
+        required: false
+    environment:
+      USERS_URL: http://users:3005
+    ports:
+      - "3001:3001"
+    depends_on:
+      users:
+        condition: service_healthy
+        # Users can be switched off with START_USERS=false (or run elsewhere); /verify then answers 503.
+        required: false
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3

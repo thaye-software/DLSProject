@@ -5,6 +5,8 @@ include:
   - emails/docker-compose.yml
   - search/docker-compose.yml
   - messaging/docker-compose.yml
+  - users/docker-compose.yml
+  - auth/docker-compose.yml
 
 services:
   rabbitmq:

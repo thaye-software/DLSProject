@@ -15,7 +15,7 @@ on:
   workflow_call:
     inputs:
       service:
-        description: Folder under microservices/ (catalog, orders, search, emails or payments)
+        description: Folder under microservices/ (catalog, orders, search, emails, payments, users or auth)
         required: true
         type: string
   workflow_dispatch:
@@ -24,7 +24,7 @@ on:
         description: Service to scan
         required: true
         type: choice
-        options: [catalog, orders, search, emails, payments]
+        options: [catalog, orders, search, emails, payments, users, auth]
 
 permissions:
   contents: read
@@ -44,7 +44,7 @@ jobs:
       # Every service in the compose files sits behind profiles: ["${START_X:-true}"].
       # Locally microservices/.env (from .env.example) sets this; without it only rabbitmq starts.
       COMPOSE_PROFILES: "true"
-      # Catalog, Orders and Payment sign and verify service JWTs with this shared secret.
+      # Catalog, Orders, Payment, Users and Auth sign and verify service JWTs with this shared secret.
       INTERNAL_JWT_SECRET: ci-only-secret-0123456789abcdef0123456789
       # The user the API scan acts as (the gateway's X-User-Id / X-User-Email).
       ZAP_USER_ID: 0b3c5a1e-7f2d-4c9a-8e61-2d4f7a9b1c03
@@ -61,6 +61,8 @@ jobs:
             orders)   port=3000 tag=Orders  jwt="payment orders" ;;  # GET /internal/orders/{id}/payment-details
             catalog)  port=3002 tag=Catalog jwt="orders catalog" ;;  # /internal/reservations
             search)   port=3003 tag=Search  jwt="" ;;
+            users)    port=3005 tag=Users   jwt="auth users" ;;     # GET /internal/users/{id}
+            auth)     port=3001 tag=Auth    jwt="" ;;               # GET /verify takes a user token, not a service JWT
             payments) port=3006 tag=Payment jwt="" ;;
             emails)   port=3007 tag=Notif   jwt="" ;;
             *) echo "::error::No ZAP settings for service '$SERVICE'"; exit 1 ;;
@@ -90,16 +92,39 @@ jobs:
           cat > emails/.env <<'EOF'
           MAILER=fake
           EOF
+          cat > users/.env <<EOF
+          IDENTITY_PROVIDER=fake
+          INTERNAL_JWT_SECRET=$INTERNAL_JWT_SECRET
+          SUPABASE_WEBHOOK_SECRET=ci-only-webhook-secret-0123456789abcdef
+          EOF
+          # No Supabase in CI: the JWKS URL is unreachable and tokens are checked with a legacy HS256 secret.
+          cat > auth/.env <<EOF
+          SUPABASE_URL=http://localhost:9
+          SUPABASE_JWT_SECRET=ci-only-supabase-jwt-secret-0123456789abcdef
+          INTERNAL_JWT_SECRET=$INTERNAL_JWT_SECRET
+          EOF
+
+      # Every image builds in parallel (two npm ci each), so one dropped registry connection
+      # (npm ECONNRESET) cancels the whole build. Finished layers stay cached, so a retry only
+      # redoes what failed.
+      - name: Build images
+        run: |
+          for attempt in 1 2 3; do
+            docker compose build && exit 0
+            echo "::warning::docker compose build failed (attempt $attempt of 3)"
+            sleep 15
+          done
+          exit 1
 
       - name: Start stack
-        run: docker compose up --build --detach --wait --wait-timeout 300
+        run: docker compose up --detach --wait --wait-timeout 300
 
       # --wait only covers the containers that were created, so check every service answers.
       - name: Check services are up
         id: up
         run: |
           docker compose ps
-          for port in 3000 3002 3003 3006 3007; do
+          for port in 3000 3001 3002 3003 3005 3006 3007; do
             curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 3 \
               "http://localhost:$port/health" > /dev/null
             echo "port $port healthy"
@@ -149,11 +174,18 @@ jobs:
           echo "ORDER_ID=$(jq -er .order_id "$RUNNER_TEMP/order.json")" >> "$GITHUB_ENV"
           echo "PRODUCT_ID=$(jq -er '.items[0].product_id' "$RUNNER_TEMP/order.json")" >> "$GITHUB_ENV"
 
+      # The scan user's profile, so the /users/me routes reach their handlers instead of only their 404s.
+      - name: Create scan user
+        id: user
+        if: ${{ !cancelled() && steps.up.outcome == 'success' && inputs.service == 'users' }}
+        run: |
+          curl --fail-with-body --silent --show-error -X POST http://localhost:3005/users             -H "content-type: application/json"             -H "x-user-id: $ZAP_USER_ID" -H "x-user-email: $ZAP_USER_EMAIL"             --data '{"username":"zap_scan"}'
+
       # The service's operations from the contract, pointed at its auth proxy, with order_id/product_id
       # set to the records above. ZAP runs in Docker with the workspace mounted at /zap/wrk.
       - name: Build API spec
         id: spec
-        if: ${{ !cancelled() && steps.up.outcome == 'success' && steps.data.outcome != 'failure' }}
+        if: ${{ !cancelled() && steps.up.outcome == 'success' && steps.data.outcome != 'failure' && steps.user.outcome != 'failure' }}
         run: |
           mkdir -p "$GITHUB_WORKSPACE/.zap"
           yq -o=json docs/contracts/openapi.yaml > "$GITHUB_WORKSPACE/.zap/openapi.json"
@@ -189,7 +221,7 @@ jobs:
 
       # Only when the stack or the scan setup broke; a failed gate already says why above.
       - name: Service logs
-        if: ${{ failure() && (steps.up.outcome == 'failure' || steps.data.outcome == 'failure' || steps.spec.outcome == 'failure' || steps.proxy.outcome == 'failure' || steps.baseline.outcome == 'failure' || steps.api.outcome == 'failure') }}
+        if: ${{ failure() && (steps.up.outcome == 'failure' || steps.data.outcome == 'failure' || steps.user.outcome == 'failure' || steps.spec.outcome == 'failure' || steps.proxy.outcome == 'failure' || steps.baseline.outcome == 'failure' || steps.api.outcome == 'failure') }}
         run: |
           docker compose logs
           [ -f "$RUNNER_TEMP/proxy.log" ] && { echo "--- auth proxy"; cat "$RUNNER_TEMP/proxy.log"; } || true

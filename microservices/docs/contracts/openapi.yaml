@@ -13,6 +13,7 @@ tags:
   - name: Payment
   - name: Catalog
   - name: Users
+  - name: Auth
   - name: Notif
   - name: Search
   - name: Messaging
@@ -747,7 +748,7 @@ paths:
                 title: Invalid webhook secret
                 status: 401
                 detail: Invalid webhook secret.
-                instance: /orders
+                instance: /webhooks/supabase/email-confirmed
         "404":
           description: User not found
           content:
@@ -759,7 +760,494 @@ paths:
                 title: User not found
                 status: 404
                 detail: User not found.
+                instance: /webhooks/supabase/email-confirmed
+        "409":
+          description: Another user already has the confirmed email (email_taken); nothing changed
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "422":
+          description: "Body is not a Supabase UPDATE webhook on auth.users"
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+  /users:
+    servers:
+      - url: "https://api.limitedwatches.dk"
+        description: "Public, via API Gateway → users"
+    post:
+      tags:
+        - Users
+      operationId: createUser
+      summary: Create the user's profile after Supabase signUp
+      description: "Called by the frontend right after supabase.auth.signUp, with the new session's JWT. The id and email come from the gateway headers (X-User-Id, X-User-Email), never the body; the role is always customer. Replaces the monolith's createUser in register(). Idempotent per user: repeating it for a user that already exists returns that user (200)."
+      security:
+        - userJwt: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateUserRequest"
+            example:
+              username: mette_j
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/User"
+              example:
+                user_id: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+                username: mette_j
+                email: "mette@example.com"
+                first_name: null
+                middle_name: null
+                last_name: null
+                phone: null
+                country_code: null
+                avatar_url: null
+                role: customer
+                address: null
+                version: 1
+        "200":
+          description: The user already existed (repeated call); its current profile
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/User"
+        "401":
+          description: Missing or invalid X-User-Id / X-User-Email from the gateway
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "409":
+          description: "Username or email already belongs to another user (username_taken, email_taken), or this account was deleted (account_deleted)"
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+              example:
+                type: "https://limitedwatches.dk/problems/username_taken"
+                title: Username taken
+                status: 409
+                detail: User with the same username already exists.
+                instance: /users
+        "422":
+          description: Invalid request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+  /users/username-available:
+    servers:
+      - url: "https://api.limitedwatches.dk"
+        description: "Public, via API Gateway → users"
+    get:
+      tags:
+        - Users
+      operationId: checkUsernameAvailable
+      summary: Is a username free?
+      description: "Public, no login: the signup form checks this before calling supabase.auth.signUp, so a taken username does not leave an orphaned Supabase account."
+      security:
+        - {}
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema:
+            "$ref": "#/components/schemas/Username"
+      responses:
+        "200":
+          description: Availability
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/UsernameAvailability"
+              example:
+                username: mette_j
+                available: true
+        "422":
+          description: Invalid username
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+  /users/me:
+    servers:
+      - url: "https://api.limitedwatches.dk"
+        description: "Public, via API Gateway → users"
+    get:
+      tags:
+        - Users
+      operationId: getMyProfile
+      summary: The signed-in user's profile and billing address
+      security:
+        - userJwt: []
+      responses:
+        "200":
+          description: Profile
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/User"
+              example:
+                user_id: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+                username: mette_j
+                email: "mette@example.com"
+                first_name: Mette
+                middle_name: null
+                last_name: Jensen
+                phone: "+45 26 46 95 96"
+                country_code: DK
+                avatar_url: "https://xyz.supabase.co/storage/v1/object/public/avatars/2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11.png?v=4"
+                role: customer
+                address:
+                  address_line_1: Nørregade 12
+                  address_line_2: null
+                  city: København K
+                  zip_code: "1165"
+                  state_province: null
+                version: 4
+        "401":
+          description: Missing or invalid X-User-Id from the gateway
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "404":
+          description: "No profile (POST /users not called yet) or the account was deleted"
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+    patch:
+      tags:
+        - Users
+      operationId: updateMyProfile
+      summary: Change username, names, phone or country
+      description: "Only the fields sent change; null clears an optional field. Email and password are changed through Supabase Auth directly (the email is synced back by POST /webhooks/supabase/email-confirmed). A new username is also copied to the Supabase user's display_name, best effort."
+      security:
+        - userJwt: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UserProfileUpdate"
+            example:
+              first_name: Mette
+              last_name: Jensen
+              phone: "+45 26 46 95 96"
+              country_code: DK
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/User"
+        "401":
+          description: Missing or invalid X-User-Id from the gateway
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "404":
+          description: No profile, or the account was deleted
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "409":
+          description: Username already belongs to another user (username_taken)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "422":
+          description: Invalid request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+    delete:
+      tags:
+        - Users
+      operationId: deleteMyAccount
+      summary: Delete the account (soft delete)
+      description: "In one transaction: anonymises the profile (the id stays), deletes the billing address and writes user_deleted to the outbox, so every service anonymises its copy. Afterwards, and retried until it succeeds, Users deletes the Supabase Auth user and the avatar file. Repeating it is a no-op (204)."
+      security:
+        - userJwt: []
+      responses:
+        "204":
+          description: Deleted (or was already deleted)
+        "401":
+          description: Missing or invalid X-User-Id from the gateway
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "404":
+          description: No profile for this user
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+  /users/me/address:
+    servers:
+      - url: "https://api.limitedwatches.dk"
+        description: "Public, via API Gateway → users"
+    put:
+      tags:
+        - Users
+      operationId: setMyAddress
+      summary: Save the billing address
+      description: "Creates or replaces the user's single saved billing address (the monolith's saveBillingAddress / updateBillingInfo). Names, phone and country are profile fields (PATCH /users/me)."
+      security:
+        - userJwt: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UserAddressInput"
+            example:
+              address_line_1: Nørregade 12
+              city: København K
+              zip_code: "1165"
+      responses:
+        "200":
+          description: Profile with the saved address
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/User"
+        "401":
+          description: Missing or invalid X-User-Id from the gateway
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "404":
+          description: No profile, or the account was deleted
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "422":
+          description: Invalid request
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+    delete:
+      tags:
+        - Users
+      operationId: deleteMyAddress
+      summary: Forget the billing address
+      description: "The monolith's deleteBillingAddress (checkout with 'save billing info' unticked). Idempotent."
+      security:
+        - userJwt: []
+      responses:
+        "204":
+          description: Removed (or there was none)
+        "401":
+          description: Missing or invalid X-User-Id from the gateway
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "404":
+          description: No profile, or the account was deleted
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+  /users/me/avatar:
+    servers:
+      - url: "https://api.limitedwatches.dk"
+        description: "Public, via API Gateway → users"
+    put:
+      tags:
+        - Users
+      operationId: uploadMyAvatar
+      summary: Upload a new avatar
+      description: "The raw JPEG or PNG file is the body (at most 5 MB; the file's own bytes must match the content type). Users stores it in the Supabase Storage bucket avatars as {user_id}.jpg or {user_id}.png and saves its public URL, so a client can never point avatar_url at another address."
+      security:
+        - userJwt: []
+      requestBody:
+        required: true
+        content:
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
+          image/png:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "200":
+          description: Profile with the new avatar_url
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/User"
+        "401":
+          description: Missing or invalid X-User-Id from the gateway
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "404":
+          description: No profile, or the account was deleted
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "413":
+          description: Larger than 5 MB
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "415":
+          description: "Not a JPEG or PNG (by content type or by the file's bytes)"
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+              example:
+                type: "https://limitedwatches.dk/problems/unsupported_media_type"
+                title: Unsupported image type
+                status: 415
+                detail: Only JPEG and PNG avatars are supported.
+                instance: /users/me/avatar
+  "/internal/users/{user_id}":
+    servers:
+      - url: "http://users:8080"
+        description: "Internal network only (users); not routed by the gateway"
+    get:
+      tags:
+        - Users
+      operationId: getInternalUser
+      summary: "Role and deleted state of a user (Auth → Users)"
+      description: "Auth calls this from GET /verify after checking a Supabase JWT and caches the answer for a short time. The gateway then gets role as X-User-Role, and a deleted user is rejected (their JWT stays valid until it expires)."
+      security:
+        - serviceJwt: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: The user
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/InternalUser"
+              example:
+                user_id: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+                role: customer
+                deleted: false
+        "401":
+          description: "Missing or invalid service JWT (signature, aud users, iss auth, at most 60 s lifetime)"
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+        "404":
+          description: "No such user (signed up with Supabase but POST /users not called yet)"
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+  /verify:
+    servers:
+      - url: "http://auth:8080"
+        description: "Internal network only (auth); called by the API Gateway, never routed to"
+    get:
+      tags:
+        - Auth
+      operationId: verifyRequest
+      summary: "Forward-auth check of a user request (Gateway → Auth)"
+      description: "The gateway calls this for every request to a protected route (nginx auth_request / Traefik ForwardAuth), with the client's Authorization header and the original method and URI. Auth verifies the Supabase access token (Supabase's signing keys from its JWKS, or the legacy HS256 secret), checks iss, aud authenticated, exp and role authenticated, then looks up the user's role in Users (GET /internal/users/{user_id}, cached briefly). On 200 the gateway copies X-User-Id, X-User-Email and X-User-Role onto the upstream request, after removing any the client sent; on any other status it returns that response to the client. A user who signed up with Supabase but has no Users profile yet may only call POST /users. Public routes (e.g. GET /search, POST /contact, webhooks) are not sent here."
+      security:
+        - userJwt: []
+      parameters:
+        - name: X-Forwarded-Method
+          in: header
+          required: false
+          description: The original request's method (sent by Traefik; set by the nginx config)
+          schema:
+            type: string
+          example: GET
+        - name: X-Forwarded-Uri
+          in: header
+          required: false
+          description: "The original request's path and query, e.g. /users/me"
+          schema:
+            type: string
+          example: /orders?page=1
+      responses:
+        "200":
+          description: "Authenticated; empty body. The headers are what the gateway forwards to the services."
+          headers:
+            X-User-Id:
+              description: "The Supabase user id (JWT sub)"
+              schema:
+                type: string
+                format: uuid
+              example: "2b6f0c1e-4d53-4a8e-9a39-1f0f6b3c7a11"
+            X-User-Email:
+              description: "The email in the token, i.e. the user's current Supabase email"
+              schema:
+                type: string
+                format: email
+              example: "mette@example.com"
+            X-User-Role:
+              description: "users.role from Users (customer for a user who is creating their profile)"
+              schema:
+                "$ref": "#/components/schemas/UserRole"
+              example: customer
+        "401":
+          description: "No bearer token, or it is invalid, expired, not issued by this Supabase project or not a signed-in user's token (unauthorized); or the account was deleted (account_deleted)"
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+              example:
+                type: "https://limitedwatches.dk/problems/unauthorized"
+                title: Missing or invalid JWT
+                status: 401
+                detail: "A valid Supabase access token is required: token expired."
                 instance: /orders
+        "403":
+          description: "Signed up with Supabase but has no Users profile yet, and the request is not POST /users (profile_required)"
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
+              example:
+                type: "https://limitedwatches.dk/problems/profile_required"
+                title: Profile required
+                status: 403
+                detail: Create the profile with POST /users first.
+                instance: /orders
+        "503":
+          description: "Supabase's signing keys could not be fetched (signing_keys_unavailable), or Users did not answer and nothing is cached (users_unavailable)"
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/Problem"
   /contact:
     servers:
       - url: "https://api.limitedwatches.dk"
@@ -2114,6 +2602,208 @@ components:
         - email
         - message
       description: "The monolith's contact form (app/contact/actions.ts)."
+    Username:
+      type: string
+      minLength: 3
+      maxLength: 32
+      pattern: "^[a-zA-Z0-9_.-]+$"
+      description: "Letters, numbers, underscores, dashes and dots (the monolith's RegisterSchema)"
+    CreateUserRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        username:
+          "$ref": "#/components/schemas/Username"
+      required:
+        - username
+    UsernameAvailability:
+      type: object
+      additionalProperties: false
+      properties:
+        username:
+          type: string
+        available:
+          type: boolean
+      required:
+        - username
+        - available
+    UserProfileUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        username:
+          "$ref": "#/components/schemas/Username"
+        first_name:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 255
+        middle_name:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 255
+        last_name:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 255
+        phone:
+          type:
+            - string
+            - "null"
+          minLength: 1
+          maxLength: 20
+          description: "Free text, as in the monolith, e.g. +45 26 46 95 96"
+        country_code:
+          type:
+            - string
+            - "null"
+          pattern: "^[A-Z]{2}$"
+          description: ISO 3166-1 alpha-2
+    UserAddressInput:
+      type: object
+      additionalProperties: false
+      properties:
+        address_line_1:
+          type: string
+          minLength: 1
+          maxLength: 255
+        address_line_2:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+        city:
+          type: string
+          minLength: 1
+          maxLength: 255
+        zip_code:
+          type: string
+          minLength: 1
+          maxLength: 50
+        state_province:
+          type:
+            - string
+            - "null"
+          maxLength: 255
+      required:
+        - address_line_1
+        - city
+        - zip_code
+    UserAddress:
+      type: object
+      additionalProperties: false
+      description: "The user's saved billing address. The country is the profile's country_code."
+      properties:
+        address_line_1:
+          type: string
+        address_line_2:
+          type:
+            - string
+            - "null"
+        city:
+          type: string
+        zip_code:
+          type: string
+        state_province:
+          type:
+            - string
+            - "null"
+      required:
+        - address_line_1
+        - address_line_2
+        - city
+        - zip_code
+        - state_province
+    UserRole:
+      type: string
+      enum:
+        - customer
+        - admin
+      description: "users.role, as in the monolith. Admins are set directly in the database."
+    User:
+      type: object
+      additionalProperties: false
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: Same id as the Supabase Auth user
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+          description: "Copied from Supabase Auth (X-User-Email at creation, then the email-confirmed webhook)"
+        first_name:
+          type:
+            - string
+            - "null"
+        middle_name:
+          type:
+            - string
+            - "null"
+        last_name:
+          type:
+            - string
+            - "null"
+        phone:
+          type:
+            - string
+            - "null"
+        country_code:
+          type:
+            - string
+            - "null"
+          pattern: "^[A-Z]{2}$"
+        avatar_url:
+          type:
+            - string
+            - "null"
+          format: uri
+        role:
+          "$ref": "#/components/schemas/UserRole"
+        address:
+          oneOf:
+            - "$ref": "#/components/schemas/UserAddress"
+            - type: "null"
+        version:
+          type: integer
+          minimum: 1
+          description: "Aggregate version, +1 on every change (the version in user_deleted)"
+      required:
+        - user_id
+        - username
+        - email
+        - first_name
+        - middle_name
+        - last_name
+        - phone
+        - country_code
+        - avatar_url
+        - role
+        - address
+        - version
+    InternalUser:
+      type: object
+      additionalProperties: false
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        role:
+          "$ref": "#/components/schemas/UserRole"
+        deleted:
+          type: boolean
+      required:
+        - user_id
+        - role
+        - deleted
     SupabaseUpdateWebhook:
       type: object
       description: Supabase database webhook (UPDATE on auth.users)
