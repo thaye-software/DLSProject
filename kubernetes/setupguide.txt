@@ -18,7 +18,7 @@ If the client is older, follow softwareToInstall.txt.
 3.
 kubectl get pods
 
-Expected, each 1/1 Running: rabbitmq, catalog-db, catalog, orders-db, orders, payment, notif, search-db, search-cache, search, messaging-db, messaging.
+Expected, each 1/1 Running: rabbitmq, catalog-db, catalog, orders-db, orders, payment, notif, search-db, search-cache, search, messaging-db, messaging, users-db, users, auth.
 The first time, search-db or messaging-db can stay ContainerCreating while mongo:7 downloads.
 
 4.
@@ -28,12 +28,14 @@ curl.exe http://localhost:30006/health
 curl.exe http://localhost:30007/health
 curl.exe http://localhost:30003/health
 curl.exe http://localhost:30004/health
+curl.exe http://localhost:30005/health
+curl.exe http://localhost:30001/health
 
 Each line should be {"status":"ok"}.
 RabbitMQ UI: http://localhost:31672  guest / guest
 
 5. Open Lens. Bottom bar: docker-desktop (v1.36.1).
-Namespace default. Workloads lists the same twelve pods.
+Namespace default. Workloads lists the same fifteen pods.
 An empty Overview metrics panel is normal.
 "Node docker-desktop has been rebooted" is from startup.
 
@@ -45,6 +47,8 @@ docker build -t dls/payment:local microservices/payments
 docker build -t dls/notif:local microservices/emails
 docker build -t dls/search:local microservices/search
 docker build -t dls/messaging:local microservices/messaging
+docker build -t dls/users:local microservices/users
+docker build -t dls/auth:local microservices/auth
 
 kubectl delete pod -l app=catalog
 kubectl delete pod -l app=orders
@@ -52,6 +56,8 @@ kubectl delete pod -l app=payment
 kubectl delete pod -l app=notif
 kubectl delete pod -l app=search
 kubectl delete pod -l app=messaging
+kubectl delete pod -l app=users
+kubectl delete pod -l app=auth
 
 If it stays ErrImageNeverPull: Docker Desktop, Settings, General, enable "Use containerd for pulling and storing images", Apply, then build and delete that pod again.
 
@@ -64,6 +70,8 @@ kubectl apply -f kubernetes/payment
 kubectl apply -f kubernetes/notif
 kubectl apply -f kubernetes/search
 kubectl apply -f kubernetes/messaging
+kubectl apply -f kubernetes/users
+kubectl apply -f kubernetes/auth
 
 Then repeat steps 3 and 4.
 
@@ -81,25 +89,25 @@ kubectl get nodes
 
 Expected: v1.36.1, context docker-desktop, node docker-desktop Ready.
 
-This starts twelve workloads, in this order:
-RabbitMQ, Catalog and its Postgres, Orders and its Postgres, Payment, Notif, Search with MongoDB and Redis, then Messaging and its MongoDB.
+This starts fifteen workloads, in this order:
+RabbitMQ, Catalog and its Postgres, Orders and its Postgres, Payment, Notif, Search with MongoDB and Redis, Messaging and its MongoDB, Users and its Postgres, then Auth.
 
 Build each app image on this PC. Kubernetes uses the image you just built.
 Apply one folder at a time. The kubernetes folder also contains these text guides, so leave the folder itself out of kubectl apply.
-Usernames, passwords, the fake payment provider, and the fake mailer are already in the yaml files.
+Usernames, passwords, the fake payment provider, the fake mailer, and the fake Supabase stand-ins for Users and Auth are already in the yaml files.
 
 If an app pod stays ErrImageNeverPull, Docker Desktop is not sharing its images with Kubernetes.
 Settings, General, enable "Use containerd for pulling and storing images", Apply, run that service's docker build again, then delete the pod:
 kubectl delete pod -l app=catalog
 
-Use the matching app name: catalog, orders, payment, notif, search, or messaging.
+Use the matching app name: catalog, orders, payment, notif, search, messaging, users, or auth.
 Wait until the health check in that section prints {"status":"ok"} before you start the next section.
 
 
 ---------- RabbitMQ ----------
 
 Start here. There is no image to build. The public image is rabbitmq:4-management.
-Catalog, Orders, Payment, Notif, Search, and Messaging connect to rabbitmq:5672 with guest / guest.
+Catalog, Orders, Payment, Notif, Search, Messaging, and Users connect to rabbitmq:5672 with guest / guest.
 
 kubectl apply -f kubernetes/rabbitmq
 kubectl rollout status deployment/rabbitmq
@@ -231,14 +239,61 @@ kubectl logs deployment/messaging
 The log should include: messaging listening on port 3004 (realtime: off)
 
 
+---------- Users ----------
+
+Start after RabbitMQ is Running.
+Users keeps profiles, roles, and the saved address in its own Postgres, and publishes user_deleted on RabbitMQ (Orders, Catalog, and Messaging read it).
+IDENTITY_PROVIDER is fake, so this cluster needs no Supabase project. Supabase accounts and avatar files are never touched, and avatars get a made-up URL.
+
+docker build -t dls/users:local microservices/users
+kubectl apply -f kubernetes/users
+kubectl rollout status deployment/users-db
+kubectl rollout status deployment/users
+
+The Users image applies its database migrations, then listens.
+curl.exe http://localhost:30005/health
+
+Expected: {"status":"ok"}
+Postgres from this PC is localhost:30435. Other pods call http://users:3005.
+kubectl logs deployment/users
+The log should include: users listening on port 3005
+
+
+---------- Auth ----------
+
+Start after Users returns {"status":"ok"}.
+Auth has no database. The gateway will ask it at /verify whether a caller is signed in. It looks up the role at http://users:3005.
+TOKEN_VERIFIER is fake, so this cluster needs no Supabase project: the bearer token fake:<user id> signs in as that user, unchecked. Only use it in this local cluster.
+
+docker build -t dls/auth:local microservices/auth
+kubectl apply -f kubernetes/auth
+kubectl rollout status deployment/auth
+curl.exe http://localhost:30001/health
+
+Expected: {"status":"ok"}
+kubectl logs deployment/auth
+The log should include: auth listening on port 3001 (token verifier: fake)
+Other pods call http://auth:3001.
+
+Try a sign-in. There is no gateway yet, so call Auth and Users directly. A user with no profile is stopped:
+curl.exe -i -H "Authorization: Bearer fake:11111111-1111-4111-8111-111111111111" -H "X-Forwarded-Method: GET" -H "X-Forwarded-Uri: /users/me" http://localhost:30001/verify
+
+Expected: HTTP/1.1 403 and "code":"profile_required" (the first time only; after the next step it is 200).
+Create the profile, as the gateway would after /verify:
+Invoke-RestMethod -Method Post http://localhost:30005/users -ContentType application/json -Headers @{ 'X-User-Id' = '11111111-1111-4111-8111-111111111111'; 'X-User-Email' = '11111111-1111-4111-8111-111111111111@fake.invalid' } -Body '{"username":"k8s_check"}'
+
+Expected: the new profile, with role customer.
+Run the first curl.exe again. Expected: HTTP/1.1 200 with X-User-Role: customer.
+
+
 ---------- Check the whole stack ----------
 
-Run this after Messaging is up.
+Run this after Auth is up.
 Or paste kubernetes/verifykubernetes.txt into PowerShell. The last line says ALL OK when the yaml workloads are running.
 
 kubectl get pods
 
-Expected, each 1/1 Running: rabbitmq, catalog-db, catalog, orders-db, orders, payment, notif, search-db, search-cache, search, messaging-db, messaging.
+Expected, each 1/1 Running: rabbitmq, catalog-db, catalog, orders-db, orders, payment, notif, search-db, search-cache, search, messaging-db, messaging, users-db, users, auth.
 
 curl.exe http://localhost:30002/health
 curl.exe http://localhost:30000/health
@@ -246,13 +301,15 @@ curl.exe http://localhost:30006/health
 curl.exe http://localhost:30007/health
 curl.exe http://localhost:30003/health
 curl.exe http://localhost:30004/health
+curl.exe http://localhost:30005/health
+curl.exe http://localhost:30001/health
 
 Each line should be {"status":"ok"}.
 RabbitMQ UI: http://localhost:31672  guest / guest
 
 Open Lens. The bottom bar should say docker-desktop (v1.36.1).
-In the default namespace, Workloads shows those twelve pods.
-Network shows the NodePorts used above. Storage shows catalog-db-data, orders-db-data, search-db-data, and messaging-db-data, each Bound.
+In the default namespace, Workloads shows those fifteen pods.
+Network shows the NodePorts used above. Storage shows catalog-db-data, orders-db-data, search-db-data, messaging-db-data, and users-db-data, each Bound.
 An empty Overview metrics panel is normal. "Node docker-desktop has been rebooted" is from startup.
 
 The next morning, use Everyday setup start at the top of this file.

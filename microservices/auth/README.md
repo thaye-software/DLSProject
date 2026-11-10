@@ -44,7 +44,8 @@ Contracts: `contract.md` (summary) and `../docs/contracts/openapi.yaml` (tag `Au
 | Variable | Example | |
 |---|---|---|
 | `PORT` | `3001` | |
-| `SUPABASE_URL` | `https://xyz.supabase.co` | The project the tokens come from |
+| `TOKEN_VERIFIER` | `supabase` | `fake` runs without a Supabase project (the local Kubernetes cluster): `Bearer fake:<user id>` or `fake:<user id>:<email>` signs in as that user without any check, and the email defaults to `<user id>@fake.invalid`. Never expose it to real clients |
+| `SUPABASE_URL` | `https://xyz.supabase.co` | The project the tokens come from; required with `supabase` |
 | `SUPABASE_JWT_SECRET` | | Legacy HS256 projects only; empty for asymmetric signing keys |
 | `USERS_URL` | `http://users:3005` | Set by compose |
 | `INTERNAL_JWT_SECRET` | random 32+ characters | The same as in `users/.env` |
