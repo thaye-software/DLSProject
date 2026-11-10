@@ -104,8 +104,20 @@ jobs:
           INTERNAL_JWT_SECRET=$INTERNAL_JWT_SECRET
           EOF
 
+      # Every image builds in parallel (two npm ci each), so one dropped registry connection
+      # (npm ECONNRESET) cancels the whole build. Finished layers stay cached, so a retry only
+      # redoes what failed.
+      - name: Build images
+        run: |
+          for attempt in 1 2 3; do
+            docker compose build && exit 0
+            echo "::warning::docker compose build failed (attempt $attempt of 3)"
+            sleep 15
+          done
+          exit 1
+
       - name: Start stack
-        run: docker compose up --build --detach --wait --wait-timeout 300
+        run: docker compose up --detach --wait --wait-timeout 300
 
       # --wait only covers the containers that were created, so check every service answers.
       - name: Check services are up
