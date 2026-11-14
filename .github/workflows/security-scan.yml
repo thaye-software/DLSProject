@@ -15,7 +15,7 @@ on:
   workflow_call:
     inputs:
       service:
-        description: Folder under microservices/ (catalog, orders, search, emails, payments, users or auth)
+        description: Folder under microservices/ (catalog, orders, search, messaging, emails, payments, users or auth)
         required: true
         type: string
   workflow_dispatch:
@@ -24,7 +24,7 @@ on:
         description: Service to scan
         required: true
         type: choice
-        options: [catalog, orders, search, emails, payments, users, auth]
+        options: [catalog, orders, search, messaging, emails, payments, users, auth]
 
 permissions:
   contents: read
@@ -61,6 +61,7 @@ jobs:
             orders)   port=3000 tag=Orders  jwt="payment orders" ;;  # GET /internal/orders/{id}/payment-details
             catalog)  port=3002 tag=Catalog jwt="orders catalog" ;;  # /internal/reservations
             search)   port=3003 tag=Search  jwt="" ;;
+            messaging) port=3004 tag=Messaging jwt="" ;;
             users)    port=3005 tag=Users   jwt="auth users" ;;     # GET /internal/users/{id}
             auth)     port=3001 tag=Auth    jwt="" ;;               # GET /verify takes a user token, not a service JWT
             payments) port=3006 tag=Payment jwt="" ;;
@@ -124,7 +125,7 @@ jobs:
         id: up
         run: |
           docker compose ps
-          for port in 3000 3001 3002 3003 3005 3006 3007; do
+          for port in 3000 3001 3002 3003 3004 3005 3006 3007; do
             curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 3 \
               "http://localhost:$port/health" > /dev/null
             echo "port $port healthy"
@@ -149,10 +150,10 @@ jobs:
       # ---------------------------------------------------------------------------------------------
       # 2. API scan (runs even when the baseline gate failed, so both reports are always there)
       # ---------------------------------------------------------------------------------------------
-      # Catalog, Orders and Payment have routes keyed by product and order, so they get real records.
+      # Catalog, Orders, Payment and Messaging have routes keyed by product and order, so they get real records.
       - name: Seed test data
         id: data
-        if: ${{ !cancelled() && steps.up.outcome == 'success' && contains(fromJSON('["catalog", "orders", "payments"]'), inputs.service) }}
+        if: ${{ !cancelled() && steps.up.outcome == 'success' && contains(fromJSON('["catalog", "orders", "payments", "messaging"]'), inputs.service) }}
         run: |
           # The runtime image has no tsx for `npm run db:seed`, so call the compiled seed directly.
           docker compose exec -T catalog node --input-type=module -e '
