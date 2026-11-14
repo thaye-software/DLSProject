@@ -1,0 +1,116 @@
+---------- Monitoring: logs in Grafana ----------
+
+Start after the services in setupguide.txt are running.
+Normal PowerShell, from the repo root.
+
+Promtail runs on the node and reads every pod's stdout and stderr (the same lines kubectl logs shows).
+It sends them to Loki, which stores them for 7 days. Grafana shows them.
+Everything runs in its own namespace, monitoring. The services in default are not changed.
+
+  pods (stdout) --> Promtail --> Loki --> Grafana  (http://localhost:30300)
+
+The images are public on Docker Hub: grafana/loki, grafana/promtail and grafana/grafana.
+
+kubernetes/monitoring has the namespace and one folder per tool:
+  namespace.yaml   the monitoring namespace, apply it first
+  loki/            configmap (Loki's settings), pvc (stored logs), deployment, service
+  promtail/        serviceaccount, clusterrole and clusterrolebinding (lets Promtail list the pods),
+                   configmap (what to read and how to label it), daemonset (one Promtail per node)
+  grafana/         secret (admin login), datasources-configmap (Loki), dashboard-providers-configmap
+                   and dashboards-configmap (the Service logs dashboard), pvc, deployment, service
+
+Apply them in this order. Loki first, so Promtail has somewhere to send to.
+
+kubectl apply -f kubernetes/monitoring/namespace.yaml
+kubectl apply -f kubernetes/monitoring/loki
+kubectl -n monitoring rollout status deployment/loki
+kubectl apply -f kubernetes/monitoring/promtail
+kubectl -n monitoring rollout status daemonset/promtail
+kubectl apply -f kubernetes/monitoring/grafana
+kubectl -n monitoring rollout status deployment/grafana
+kubectl -n monitoring get pods
+
+Expected, each 1/1 Running: loki, promtail, grafana.
+
+Loki answers ready once it has started, which can take up to a minute after the pod is Running:
+kubectl get --raw /api/v1/namespaces/monitoring/services/loki:3100/proxy/ready
+
+Expected: ready
+
+Promtail has found the log files when this lists the apps:
+kubectl get --raw "/api/v1/namespaces/monitoring/services/loki:3100/proxy/loki/api/v1/label/app/values"
+
+Expected: a list with names such as catalog, notif, payment, rabbitmq.
+An empty list right after the start is normal. Try again after half a minute.
+
+
+---------- Look at the logs ----------
+
+Open http://localhost:30300 and sign in as admin / admin (kubernetes/monitoring/grafana/secret.yaml). Skip the request to change the password.
+
+Dashboards, DLS, Service logs.
+At the top, choose the namespace (default), one or more apps, the levels, and text the lines must contain.
+The upper panel counts lines per level. The lower panel shows the lines; click one to see all its fields.
+
+Only the Node services log JSON with a level. Databases and RabbitMQ have no level, so pick Level All to see them.
+
+Or use Explore, data source Loki, with a query like:
+
+{app="payment"}
+{app="notif", level="error"}
+{namespace="default"} | json | orderId="<an order id>"
+{app=~"payment|notif"} | json | eventId="<an event id>"
+
+| json turns each field of the line (orderId, eventId, requestId, err_message, ...) into something you can filter on.
+
+
+---------- Make a log line to look for ----------
+
+curl.exe -s -o NUL -w "%{http_code}" -X POST http://localhost:30006/payments -H "Content-Type: application/json" -d "{}"
+
+Expected: 401, because there is no X-User-Id.
+In Service logs, app payment, the request shows up within a few seconds: info "Request received", then warn "Request completed" with statusCode 401.
+
+To see the debug lines (full inputs and durations) of one service, turn its level up and restart it:
+kubectl set env deployment/payment LOG_LEVEL=debug
+Turn it back with:
+kubectl set env deployment/payment LOG_LEVEL-
+
+
+---------- Labels ----------
+
+Each line has these labels: namespace, pod, container, app (the pod's app label), node, stream (stdout or stderr), and level (only JSON lines with a level field).
+Fields such as orderId, eventId and requestId stay in the line, not in labels. Labels must have few values, or Loki gets slow.
+
+
+---------- If something is wrong ----------
+
+No apps in Grafana, or "No data":
+kubectl -n monitoring logs daemonset/promtail
+kubectl -n monitoring logs deployment/loki
+
+A Promtail line with "error sending batch" means Loki is not ready yet. It retries by itself.
+If Promtail runs but sends nothing, check that the node has the files it reads:
+kubectl -n monitoring exec daemonset/promtail -- ls /var/log/pods
+
+Loki stays 0/1 with "permission denied" in its log: its volume belongs to another user. Start it on a fresh volume:
+kubectl -n monitoring delete deployment loki
+kubectl -n monitoring delete pvc loki-data
+kubectl apply -f kubernetes/monitoring/loki
+
+Grafana keeps its own settings and users on the grafana-data volume. The Loki data source and the Service logs dashboard come from the configmaps in kubernetes/monitoring/grafana and are loaded again on every start.
+The admin login in secret.yaml is only used the first time Grafana starts on an empty volume. Changing it later changes nothing until the grafana-data PVC is deleted.
+After you change a file in kubernetes/monitoring/grafana, apply the folder and restart Grafana:
+kubectl apply -f kubernetes/monitoring/grafana
+kubectl -n monitoring rollout restart deployment/grafana
+
+The same goes for a change in the Loki or Promtail configmap:
+kubectl apply -f kubernetes/monitoring/loki
+kubectl -n monitoring rollout restart deployment/loki
+kubectl apply -f kubernetes/monitoring/promtail
+kubectl -n monitoring rollout restart daemonset/promtail
+
+To remove the monitoring and its stored logs:
+kubectl delete namespace monitoring
+kubectl delete clusterrole promtail
+kubectl delete clusterrolebinding promtail

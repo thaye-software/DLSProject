@@ -1,0 +1,100 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: monitoring
+  labels:
+    app: grafana
+data:
+  service-logs.json: |
+    {
+      "uid": "dls-service-logs",
+      "title": "Service logs",
+      "tags": ["logs"],
+      "timezone": "browser",
+      "refresh": "10s",
+      "time": { "from": "now-1h", "to": "now" },
+      "schemaVersion": 39,
+      "templating": {
+        "list": [
+          {
+            "name": "namespace",
+            "label": "Namespace",
+            "type": "query",
+            "datasource": { "type": "loki", "uid": "loki" },
+            "query": { "type": 1, "label": "namespace", "stream": "", "refId": "namespace" },
+            "refresh": 2,
+            "current": { "text": "default", "value": "default" }
+          },
+          {
+            "name": "app",
+            "label": "App",
+            "type": "query",
+            "datasource": { "type": "loki", "uid": "loki" },
+            "query": { "type": 1, "label": "app", "stream": "{namespace=\"$namespace\"}", "refId": "app" },
+            "refresh": 2,
+            "includeAll": true,
+            "multi": true,
+            "allValue": ".+",
+            "current": { "text": "All", "value": "$__all" }
+          },
+          {
+            "name": "level",
+            "label": "Level",
+            "type": "custom",
+            "query": "trace,debug,info,warn,error,fatal",
+            "includeAll": true,
+            "multi": true,
+            "allValue": ".*",
+            "current": { "text": "All", "value": "$__all" }
+          },
+          {
+            "name": "search",
+            "label": "Contains",
+            "type": "textbox",
+            "query": "",
+            "current": { "text": "", "value": "" }
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Log lines per level",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 0, "w": 24, "h": 7 },
+          "datasource": { "type": "loki", "uid": "loki" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (level) (count_over_time({namespace=\"$namespace\", app=~\"$app\", level=~\"$level\"} |= \"$search\" [$__auto]))",
+              "legendFormat": "{{level}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": { "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal" } } },
+            "overrides": [
+              { "matcher": { "id": "byName", "options": "error" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] },
+              { "matcher": { "id": "byName", "options": "fatal" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "dark-red" } }] },
+              { "matcher": { "id": "byName", "options": "warn" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
+              { "matcher": { "id": "byName", "options": "info" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+              { "matcher": { "id": "byName", "options": "debug" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "blue" } }] }
+            ]
+          }
+        },
+        {
+          "id": 2,
+          "title": "Logs",
+          "type": "logs",
+          "gridPos": { "x": 0, "y": 7, "w": 24, "h": 20 },
+          "datasource": { "type": "loki", "uid": "loki" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "{namespace=\"$namespace\", app=~\"$app\", level=~\"$level\"} |= \"$search\""
+            }
+          ],
+          "options": { "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true }
+        }
+      ]
+    }
