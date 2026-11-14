@@ -1,6 +1,8 @@
 services:
   search-db:
     profiles: ["${START_SEARCH:-true}"]
+    networks:
+      - search-data
     image: mongo:7
     ports:
       - "27018:27017"
@@ -14,6 +16,8 @@ services:
 
   search-cache:
     profiles: ["${START_SEARCH:-true}"]
+    networks:
+      - search-data
     image: redis:7-alpine
     ports:
       - "6380:6379"
@@ -25,6 +29,9 @@ services:
 
   search:
     profiles: ["${START_SEARCH:-true}"]
+    networks:
+      - default
+      - search-data
     build: .
     env_file:
       - path: ./.env
@@ -50,6 +57,11 @@ services:
       interval: 10s
       timeout: 3s
       retries: 3
+
+networks:
+  # Only search joins this network with search-db and search-cache, so no other container can reach them.
+  # RabbitMQ and the other services' HTTP APIs stay on the shared default network.
+  search-data:
 
 volumes:
   search-db-data:

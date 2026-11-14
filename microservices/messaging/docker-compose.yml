@@ -1,6 +1,8 @@
 services:
   messaging-db:
     profiles: ["${START_MESSAGING:-true}"]
+    networks:
+      - messaging-data
     image: mongo:7
     ports:
       - "27019:27017"
@@ -14,6 +16,9 @@ services:
 
   messaging:
     profiles: ["${START_MESSAGING:-true}"]
+    networks:
+      - default
+      - messaging-data
     build: .
     env_file:
       - path: ./.env
@@ -37,6 +42,11 @@ services:
       interval: 10s
       timeout: 3s
       retries: 3
+
+networks:
+  # Only messaging joins this network with messaging-db, so no other container can reach it.
+  # RabbitMQ and the other services' HTTP APIs stay on the shared default network.
+  messaging-data:
 
 volumes:
   messaging-db-data:

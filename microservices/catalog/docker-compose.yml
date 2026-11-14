@@ -1,6 +1,8 @@
 services:
   catalog-db:
     profiles: ["${START_CATALOG:-true}"]
+    networks:
+      - catalog-data
     image: postgres:17-alpine
     environment:
       POSTGRES_USER: catalog
@@ -18,6 +20,9 @@ services:
 
   catalog:
     profiles: ["${START_CATALOG:-true}"]
+    networks:
+      - default
+      - catalog-data
     build: .
     env_file:
       - path: ./.env
@@ -40,6 +45,11 @@ services:
       interval: 10s
       timeout: 3s
       retries: 3
+
+networks:
+  # Only catalog joins this network with catalog-db, so no other container can reach it.
+  # RabbitMQ and the other services' HTTP APIs stay on the shared default network.
+  catalog-data:
 
 volumes:
   catalog-db-data:

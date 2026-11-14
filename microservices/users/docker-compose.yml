@@ -1,6 +1,8 @@
 services:
   users-db:
     profiles: ["${START_USERS:-true}"]
+    networks:
+      - users-data
     image: postgres:17-alpine
     environment:
       POSTGRES_USER: users
@@ -18,6 +20,9 @@ services:
 
   users:
     profiles: ["${START_USERS:-true}"]
+    networks:
+      - default
+      - users-data
     build: .
     env_file:
       - path: ./.env
@@ -40,6 +45,11 @@ services:
       interval: 10s
       timeout: 3s
       retries: 3
+
+networks:
+  # Only users joins this network with users-db, so no other container can reach it.
+  # RabbitMQ and the other services' HTTP APIs stay on the shared default network.
+  users-data:
 
 volumes:
   users-db-data:
