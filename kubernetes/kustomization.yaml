@@ -1,0 +1,76 @@
+# The whole cluster, monitoring included, in one command from the repo root:
+#   kubectl apply -k kubernetes
+# kubectl applies the Namespace first. The rest can start in any order: each app pod waits for its own
+# database and RabbitMQ, and Kubernetes restarts a pod until the services it calls answer.
+# A new manifest file must be added here too.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  # rabbitmq
+  - rabbitmq/configmap.yaml
+  - rabbitmq/deployment.yaml
+  - rabbitmq/service.yaml
+  # catalog
+  - catalog/catalog-db-deployment.yaml
+  - catalog/catalog-db-pvc.yaml
+  - catalog/catalog-db-service.yaml
+  - catalog/deployment.yaml
+  - catalog/secret.yaml
+  - catalog/service.yaml
+  # orders
+  - orders/deployment.yaml
+  - orders/orders-db-deployment.yaml
+  - orders/orders-db-pvc.yaml
+  - orders/orders-db-service.yaml
+  - orders/secret.yaml
+  - orders/service.yaml
+  # payment
+  - payment/deployment.yaml
+  - payment/secret.yaml
+  - payment/service.yaml
+  # notif
+  - notif/deployment.yaml
+  - notif/service.yaml
+  # search
+  - search/deployment.yaml
+  - search/search-cache-deployment.yaml
+  - search/search-cache-service.yaml
+  - search/search-db-deployment.yaml
+  - search/search-db-pvc.yaml
+  - search/search-db-service.yaml
+  - search/service.yaml
+  # messaging
+  - messaging/deployment.yaml
+  - messaging/messaging-db-deployment.yaml
+  - messaging/messaging-db-pvc.yaml
+  - messaging/messaging-db-service.yaml
+  - messaging/service.yaml
+  # users
+  - users/deployment.yaml
+  - users/secret.yaml
+  - users/service.yaml
+  - users/users-db-deployment.yaml
+  - users/users-db-pvc.yaml
+  - users/users-db-service.yaml
+  # auth
+  - auth/deployment.yaml
+  - auth/secret.yaml
+  - auth/service.yaml
+  # monitoring
+  - monitoring/grafana/dashboard-providers-configmap.yaml
+  - monitoring/grafana/dashboards-configmap.yaml
+  - monitoring/grafana/datasources-configmap.yaml
+  - monitoring/grafana/deployment.yaml
+  - monitoring/grafana/pvc.yaml
+  - monitoring/grafana/secret.yaml
+  - monitoring/grafana/service.yaml
+  - monitoring/loki/configmap.yaml
+  - monitoring/loki/deployment.yaml
+  - monitoring/loki/pvc.yaml
+  - monitoring/loki/service.yaml
+  - monitoring/namespace.yaml
+  - monitoring/promtail/clusterrole.yaml
+  - monitoring/promtail/clusterrolebinding.yaml
+  - monitoring/promtail/configmap.yaml
+  - monitoring/promtail/daemonset.yaml
+  - monitoring/promtail/serviceaccount.yaml

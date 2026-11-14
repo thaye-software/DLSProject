@@ -19,7 +19,8 @@ kubernetes/monitoring has the namespace and one folder per tool:
   grafana/         secret (admin login), datasources-configmap (Loki), dashboard-providers-configmap
                    and dashboards-configmap (the Service logs dashboard), pvc, deployment, service
 
-Apply them in this order. Loki first, so Promtail has somewhere to send to.
+kubectl apply -k kubernetes (see kubernetes/kustomization.yaml) applies all of this together with the services.
+To apply only the monitoring, in this order (Loki first, so Promtail has somewhere to send to):
 
 kubectl apply -f kubernetes/monitoring/namespace.yaml
 kubectl apply -f kubernetes/monitoring/loki

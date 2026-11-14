@@ -53,7 +53,11 @@ Use the matching app name: catalog, orders, payment, notif, search, messaging, u
 To run the newest image CI published, restart the deployment. It pulls :latest again:
 kubectl rollout restart deployment/catalog
 
-7. If kubectl get pods lists nothing, apply again in this order:
+7. If kubectl get pods lists nothing, apply everything again, monitoring included, with one command:
+
+kubectl apply -k kubernetes
+
+Or one folder at a time, in this order:
 
 kubectl apply -f kubernetes/rabbitmq
 kubectl apply -f kubernetes/catalog
