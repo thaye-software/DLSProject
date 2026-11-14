@@ -14,18 +14,10 @@ spec:
       labels:
         app: auth
     spec:
-      initContainers:
-        - name: wait-for-users
-          image: busybox:1.36
-          imagePullPolicy: IfNotPresent
-          command:
-            - sh
-            - -c
-            - until nc -z users 3005; do sleep 2; done
       containers:
         - name: auth
-          image: dls/auth:local
-          imagePullPolicy: Never
+          image: ghcr.io/thaye-software/dlsproject-auth:latest
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 3001

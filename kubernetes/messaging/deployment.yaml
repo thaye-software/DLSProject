@@ -21,11 +21,11 @@ spec:
           command:
             - sh
             - -c
-            - until nc -z messaging-db 27017 && nc -z rabbitmq 5672 && nc -z catalog 3002; do sleep 2; done
+            - until nc -z messaging-db 27017 && nc -z rabbitmq 5672; do sleep 2; done
       containers:
         - name: messaging
-          image: dls/messaging:local
-          imagePullPolicy: Never
+          image: ghcr.io/thaye-software/dlsproject-messaging:latest
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 3004

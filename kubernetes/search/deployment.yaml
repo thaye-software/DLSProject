@@ -21,11 +21,11 @@ spec:
           command:
             - sh
             - -c
-            - until nc -z search-db 27017 && nc -z search-cache 6379 && nc -z rabbitmq 5672; do sleep 2; done
+            - until nc -z search-db 27017 && nc -z rabbitmq 5672; do sleep 2; done
       containers:
         - name: search
-          image: dls/search:local
-          imagePullPolicy: Never
+          image: ghcr.io/thaye-software/dlsproject-search:latest
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 3003

@@ -24,8 +24,8 @@ spec:
             - until nc -z catalog-db 5432 && nc -z rabbitmq 5672; do sleep 2; done
       containers:
         - name: catalog
-          image: dls/catalog:local
-          imagePullPolicy: Never
+          image: ghcr.io/thaye-software/dlsproject-catalog:latest
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 3002

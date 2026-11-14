@@ -39,27 +39,19 @@ Namespace default. Workloads lists the same fifteen pods.
 An empty Overview metrics panel is normal.
 "Node docker-desktop has been rebooted" is from startup.
 
-6. If a pod is ErrImageNeverPull, rebuild that image, then delete its pod:
+6. If an app pod is ErrImagePull or ImagePullBackOff, see why:
 
-docker build -t dls/catalog:local microservices/catalog
-docker build -t dls/orders:local microservices/orders
-docker build -t dls/payment:local microservices/payments
-docker build -t dls/notif:local microservices/emails
-docker build -t dls/search:local microservices/search
-docker build -t dls/messaging:local microservices/messaging
-docker build -t dls/users:local microservices/users
-docker build -t dls/auth:local microservices/auth
+kubectl describe pod -l app=catalog
 
+"unauthorized" or "denied": that image is still private on GHCR. Make it public, see First-time setup, then delete the pod:
 kubectl delete pod -l app=catalog
-kubectl delete pod -l app=orders
-kubectl delete pod -l app=payment
-kubectl delete pod -l app=notif
-kubectl delete pod -l app=search
-kubectl delete pod -l app=messaging
-kubectl delete pod -l app=users
-kubectl delete pod -l app=auth
 
-If it stays ErrImageNeverPull: Docker Desktop, Settings, General, enable "Use containerd for pulling and storing images", Apply, then build and delete that pod again.
+"not found" or "manifest unknown": that service has no published image yet. CI publishes one on every push to dev or main that changes the service.
+
+Use the matching app name: catalog, orders, payment, notif, search, messaging, users, or auth.
+
+To run the newest image CI published, restart the deployment. It pulls :latest again:
+kubectl rollout restart deployment/catalog
 
 7. If kubectl get pods lists nothing, apply again in this order:
 
@@ -92,21 +84,23 @@ Expected: v1.36.1, context docker-desktop, node docker-desktop Ready.
 This starts fifteen workloads, in this order:
 RabbitMQ, Catalog and its Postgres, Orders and its Postgres, Payment, Notif, Search with MongoDB and Redis, Messaging and its MongoDB, Users and its Postgres, then Auth.
 
-Build each app image on this PC. Kubernetes uses the image you just built.
+Kubernetes pulls each app image from GitHub Container Registry: ghcr.io/thaye-software/dlsproject-<service folder>:latest.
+CI pushes these images on every push to dev or main, after the tests and the security scan pass. Nothing is built on this PC.
 Apply one folder at a time. The kubernetes folder also contains these text guides, so leave the folder itself out of kubectl apply.
 Usernames, passwords, the fake payment provider, the fake mailer, and the fake Supabase stand-ins for Users and Auth are already in the yaml files.
 
-If an app pod stays ErrImageNeverPull, Docker Desktop is not sharing its images with Kubernetes.
-Settings, General, enable "Use containerd for pulling and storing images", Apply, run that service's docker build again, then delete the pod:
-kubectl delete pod -l app=catalog
+The images are public, so Kubernetes pulls them without a login.
+A service's first image on GHCR starts out private. An owner of the thaye-software organization makes it public once:
+GitHub, thaye-software, Packages, the dlsproject-<service> package, Package settings, Change visibility, Public.
 
+If an app pod stays ErrImagePull or ImagePullBackOff, run kubectl describe pod -l app=catalog and see step 6 of Everyday setup start.
 Use the matching app name: catalog, orders, payment, notif, search, messaging, users, or auth.
 Wait until the health check in that section prints {"status":"ok"} before you start the next section.
 
 
 ---------- RabbitMQ ----------
 
-Start here. There is no image to build. The public image is rabbitmq:4-management.
+Start here. The public image is rabbitmq:4-management.
 Catalog, Orders, Payment, Notif, Search, Messaging, and Users connect to rabbitmq:5672 with guest / guest.
 
 kubectl apply -f kubernetes/rabbitmq
@@ -123,7 +117,6 @@ From this PC, AMQP is localhost:30672. Other pods use the name rabbitmq.
 Start after RabbitMQ is Running.
 Catalog keeps products, stock, and reservations in its own Postgres. Other services call it over HTTP.
 
-docker build -t dls/catalog:local microservices/catalog
 kubectl apply -f kubernetes/catalog
 kubectl rollout status deployment/catalog-db
 kubectl rollout status deployment/catalog
@@ -141,7 +134,6 @@ Start after Catalog returns {"status":"ok"}.
 Orders keeps reserved orders in its own Postgres and calls Catalog at http://catalog:3002.
 The shipping price is 300 DKK.
 
-docker build -t dls/orders:local microservices/orders
 kubectl apply -f kubernetes/orders
 kubectl rollout status deployment/orders-db
 kubectl rollout status deployment/orders
@@ -157,9 +149,8 @@ Postgres from this PC is localhost:30433. Other pods call http://orders:3000.
 
 Start after Orders returns {"status":"ok"}.
 Payment has no database. It calls Orders at http://orders:3000 and uses the fake provider, so this cluster needs no Stripe key.
-The source folder is microservices/payments.
+The image is ghcr.io/thaye-software/dlsproject-payments:latest, built from microservices/payments.
 
-docker build -t dls/payment:local microservices/payments
 kubectl apply -f kubernetes/payment
 kubectl rollout status deployment/payment
 curl.exe http://localhost:30006/health
@@ -174,9 +165,8 @@ Other pods call http://payment:3006.
 
 Start after Payment is up. Notif itself only waits for RabbitMQ.
 Notif has no database. It reads order events from RabbitMQ and uses the fake mailer, so this cluster needs no Resend key.
-The source folder is microservices/emails.
+The image is ghcr.io/thaye-software/dlsproject-emails:latest, built from microservices/emails.
 
-docker build -t dls/notif:local microservices/emails
 kubectl apply -f kubernetes/notif
 kubectl rollout status deployment/notif
 curl.exe http://localhost:30007/health
@@ -190,10 +180,9 @@ Other pods call http://notif:3007.
 ---------- Search ----------
 
 Start after RabbitMQ is Running.
-Search fills its product read model from catalog events on RabbitMQ, and stores that model in MongoDB with a cache in Redis. The image is dls/search:local.
+Search fills its product read model from catalog events on RabbitMQ, and stores that model in MongoDB with a cache in Redis. The image is ghcr.io/thaye-software/dlsproject-search:latest.
 Redis has no disk. A restart clears the cache, and searches still run.
 
-docker build -t dls/search:local microservices/search
 kubectl apply -f kubernetes/search
 kubectl rollout status deployment/search-db
 
@@ -221,7 +210,6 @@ Start after Catalog returns {"status":"ok"}. RabbitMQ must already be Running.
 Messaging stores chat in its own MongoDB and calls Catalog at http://catalog:3002. It reads user_deleted from RabbitMQ.
 Supabase Realtime is left unset, so live broadcast is off and chat history still works over HTTP.
 
-docker build -t dls/messaging:local microservices/messaging
 kubectl apply -f kubernetes/messaging
 kubectl rollout status deployment/messaging-db
 
@@ -245,7 +233,6 @@ Start after RabbitMQ is Running.
 Users keeps profiles, roles, and the saved address in its own Postgres, and publishes user_deleted on RabbitMQ (Orders, Catalog, and Messaging read it).
 IDENTITY_PROVIDER is fake, so this cluster needs no Supabase project. Supabase accounts and avatar files are never touched, and avatars get a made-up URL.
 
-docker build -t dls/users:local microservices/users
 kubectl apply -f kubernetes/users
 kubectl rollout status deployment/users-db
 kubectl rollout status deployment/users
@@ -265,7 +252,6 @@ Start after Users returns {"status":"ok"}.
 Auth has no database. The gateway will ask it at /verify whether a caller is signed in. It looks up the role at http://users:3005.
 TOKEN_VERIFIER is fake, so this cluster needs no Supabase project: the bearer token fake:<user id> signs in as that user, unchecked. Only use it in this local cluster.
 
-docker build -t dls/auth:local microservices/auth
 kubectl apply -f kubernetes/auth
 kubectl rollout status deployment/auth
 curl.exe http://localhost:30001/health

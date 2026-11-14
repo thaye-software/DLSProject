@@ -21,11 +21,11 @@ spec:
           command:
             - sh
             - -c
-            - until nc -z orders-db 5432 && nc -z rabbitmq 5672 && nc -z catalog 3002; do sleep 2; done
+            - until nc -z orders-db 5432 && nc -z rabbitmq 5672; do sleep 2; done
       containers:
         - name: orders
-          image: dls/orders:local
-          imagePullPolicy: Never
+          image: ghcr.io/thaye-software/dlsproject-orders:latest
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 3000
