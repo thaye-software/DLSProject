@@ -32,7 +32,9 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    restart: unless-stopped
+    # Restarted after a crash (non-zero exit), but not when Docker Desktop starts: on shutdown the service
+    # gets SIGTERM and exits 0, so Docker has nothing to restart. Start the stack with docker compose up.
+    restart: on-failure
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3005/health"]
       interval: 10s
