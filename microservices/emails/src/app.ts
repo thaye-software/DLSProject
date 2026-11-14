@@ -2,6 +2,7 @@ import express, { type ErrorRequestHandler, type Express } from "express";
 import { contactController } from "./contact/contact-controller.js";
 import type { ContactMessage } from "./contact/contact-types.js";
 import { notFoundHandler, securityHeaders } from "./shared/http-security.js";
+import { requestLogger } from "./shared/logger.js";
 import { sendProblem, sendValidationProblem } from "./shared/problem.js";
 
 export type AppDependencies = {
@@ -12,6 +13,7 @@ export type AppDependencies = {
 export function createApp({ isBrokerConnected, sendContactMessage }: AppDependencies): Express {
   const app = express();
   app.disable("x-powered-by");
+  app.use(requestLogger);
   app.use(securityHeaders);
 
   app.get("/health", (request, response) => {

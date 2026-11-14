@@ -13,6 +13,7 @@ import { startConsumer } from "./rabbitmq/consumer.js";
 import { createEventPublisher } from "./rabbitmq/publisher.js";
 import { assertConsumerTopology } from "./rabbitmq/topology.js";
 import { refundPaymentListener } from "./refund-payment/refund-payment-listener.js";
+import { logger } from "./shared/logger.js";
 
 const ORDER_EVENTS_EXCHANGE = "order.events";
 const ORDER_EVENTS_QUEUE = "payment.order.events";
@@ -22,9 +23,7 @@ const broker = await connectToBroker(config.rabbitmqUrl);
 
 // Reconnecting is left to the container runtime: compose restarts the service when it exits.
 broker.onUnexpectedClose((error) => {
-  console.error(
-    error ? `RabbitMQ connection lost, exiting: ${error.message}` : "RabbitMQ closed the connection, exiting",
-  );
+  logger.fatal({ err: error }, "RabbitMQ connection lost, exiting");
   process.exit(1);
 });
 
@@ -62,7 +61,7 @@ const app = createApp({
       : undefined,
 });
 const server = app.listen(config.port, () => {
-  console.log(`payment listening on port ${config.port} (payment provider: ${config.paymentProvider.kind})`);
+  logger.info({ port: config.port, paymentProvider: config.paymentProvider.kind }, "Service listening");
 });
 
 async function shutdown(): Promise<void> {

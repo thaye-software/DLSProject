@@ -1,5 +1,6 @@
 import express, { type Router } from "express";
 import { z } from "zod";
+import { logger } from "../shared/logger.js";
 import { sendProblem, sendValidationProblem } from "../shared/problem.js";
 import type { CreatePaymentSessionResult } from "./payment-session-types.js";
 
@@ -39,7 +40,7 @@ export function paymentSessionController(
     try {
       result = await createPaymentSession({ orderId: body.data.order_id, userId: userId.data });
     } catch (error) {
-      console.error(`Failed to start payment for order ${body.data.order_id}`, error);
+      logger.error({ err: error, orderId: body.data.order_id }, "Failed to start payment");
       sendProblem(response, {
         code: "upstream_unavailable",
         title: "Payment could not be started",
@@ -52,6 +53,7 @@ export function paymentSessionController(
 
     switch (result.outcome) {
       case "created":
+        logger.info({ orderId: body.data.order_id }, "Payment session created");
         response.status(201).json(result.session);
         return;
       case "not_found":
