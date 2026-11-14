@@ -15,7 +15,9 @@ services:
       - "5672:5672"
       - "15672:15672"
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      # A plain TCP check. rabbitmq-diagnostics runs as root and, if it runs before the broker has started,
+      # creates a root-owned .erlang.cookie that the broker (user rabbitmq) cannot read, so it crashes.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/5672"]
       interval: 5s
       timeout: 5s
       retries: 12

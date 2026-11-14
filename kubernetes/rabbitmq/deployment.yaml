@@ -27,17 +27,19 @@ spec:
             - name: config
               mountPath: /etc/rabbitmq/rabbitmq.conf
               subPath: rabbitmq.conf
+          # TCP probes on the AMQP port. rabbitmq-diagnostics runs as root and, if it runs before the broker has
+          # started, creates a root-owned .erlang.cookie that the broker (user rabbitmq) cannot read, so it crashes.
           startupProbe:
-            exec:
-              command: ["rabbitmq-diagnostics", "-q", "ping"]
+            tcpSocket:
+              port: 5672
             periodSeconds: 5
-            timeoutSeconds: 10
+            timeoutSeconds: 3
             failureThreshold: 20
           readinessProbe:
-            exec:
-              command: ["rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+            tcpSocket:
+              port: 5672
             periodSeconds: 10
-            timeoutSeconds: 10
+            timeoutSeconds: 3
             failureThreshold: 3
       volumes:
         - name: config
