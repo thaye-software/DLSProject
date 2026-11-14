@@ -24,8 +24,8 @@ spec:
             - until nc -z rabbitmq 5672; do sleep 2; done
       containers:
         - name: notif
-          image: dls/notif:local
-          imagePullPolicy: Never
+          image: ghcr.io/thaye-software/dlsproject-emails:latest
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 3007

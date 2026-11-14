@@ -15,17 +15,17 @@ spec:
         app: payment
     spec:
       initContainers:
-        - name: wait-for-dependencies
+        - name: wait-for-rabbitmq
           image: busybox:1.36
           imagePullPolicy: IfNotPresent
           command:
             - sh
             - -c
-            - until nc -z rabbitmq 5672 && nc -z orders 3000; do sleep 2; done
+            - until nc -z rabbitmq 5672; do sleep 2; done
       containers:
         - name: payment
-          image: dls/payment:local
-          imagePullPolicy: Never
+          image: ghcr.io/thaye-software/dlsproject-payments:latest
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 3006

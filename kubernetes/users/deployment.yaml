@@ -24,8 +24,8 @@ spec:
             - until nc -z users-db 5432 && nc -z rabbitmq 5672; do sleep 2; done
       containers:
         - name: users
-          image: dls/users:local
-          imagePullPolicy: Never
+          image: ghcr.io/thaye-software/dlsproject-users:latest
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 3005
