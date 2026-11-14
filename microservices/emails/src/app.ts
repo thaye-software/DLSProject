@@ -2,6 +2,7 @@ import express, { type ErrorRequestHandler, type Express } from "express";
 import { contactController } from "./contact/contact-controller.js";
 import type { ContactMessage } from "./contact/contact-types.js";
 import { notFoundHandler, securityHeaders } from "./shared/http-security.js";
+import { logger, requestLogger } from "./shared/logger.js";
 import { sendProblem, sendValidationProblem } from "./shared/problem.js";
 
 export type AppDependencies = {
@@ -12,6 +13,7 @@ export type AppDependencies = {
 export function createApp({ isBrokerConnected, sendContactMessage }: AppDependencies): Express {
   const app = express();
   app.disable("x-powered-by");
+  app.use(requestLogger);
   app.use(securityHeaders);
 
   app.get("/health", (request, response) => {
@@ -38,6 +40,7 @@ export function createApp({ isBrokerConnected, sendContactMessage }: AppDependen
 
 const invalidJsonHandler: ErrorRequestHandler = (error, request, response, next) => {
   if (error?.type !== "entity.parse.failed") {
+    logger.error({ err: error }, "Unhandled request error");
     next(error);
     return;
   }

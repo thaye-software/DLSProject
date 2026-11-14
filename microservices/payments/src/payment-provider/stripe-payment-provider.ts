@@ -10,6 +10,7 @@ import type {
   PaymentProvider,
   RefundedPayment,
 } from "./payment-provider.js";
+import { callDependency } from "../shared/logger.js";
 import { orderOwnerFrom, toOrderMetadata } from "./order-metadata.js";
 
 const refundRequestIdSchema = z.uuid();
@@ -23,14 +24,16 @@ export class StripePaymentProvider implements PaymentProvider {
   }
 
   async createIntent({ orderId, userId, amount }: NewPaymentIntent): Promise<CreatedPaymentIntent> {
-    const intent = await this.stripe.paymentIntents.create(
-      {
-        amount: amount.amount_minor,
-        currency: amount.currency.toLowerCase(),
-        automatic_payment_methods: { enabled: true },
-        metadata: toOrderMetadata({ orderId, userId }),
-      },
-      { idempotencyKey: orderId },
+    const intent = await callDependency("Stripe create PaymentIntent", { orderId, amount }, () =>
+      this.stripe.paymentIntents.create(
+        {
+          amount: amount.amount_minor,
+          currency: amount.currency.toLowerCase(),
+          automatic_payment_methods: { enabled: true },
+          metadata: toOrderMetadata({ orderId, userId }),
+        },
+        { idempotencyKey: orderId },
+      ),
     );
     if (!intent.client_secret) throw new Error(`Stripe returned PaymentIntent ${intent.id} without a client secret`);
 
@@ -44,16 +47,21 @@ export class StripePaymentProvider implements PaymentProvider {
   async findIntentByOrderId(orderId: string): Promise<FoundPaymentIntent | null> {
     const {
       data: [intent],
-    } = await this.stripe.paymentIntents.search({ query: `metadata['order_id']:'${orderIdSchema.parse(orderId)}'`, limit: 1 });
+    } = await callDependency("Stripe search PaymentIntent", { orderId }, () =>
+      this.stripe.paymentIntents.search({ query: `metadata['order_id']:'${orderIdSchema.parse(orderId)}'`, limit: 1 }),
+    );
     return intent ? { id: intent.id, status: intent.status } : null;
   }
 
   async cancelIntent(paymentIntentId: string): Promise<CancelIntentResult> {
     try {
-      await this.stripe.paymentIntents.cancel(paymentIntentId);
+      await callDependency("Stripe cancel PaymentIntent", { paymentIntentId }, () =>
+        this.stripe.paymentIntents.cancel(paymentIntentId),
+      );
       return "cancelled";
     } catch (error) {
-      if (error instanceof Stripe.errors.StripeInvalidRequestError && error.code === "payment_intent_unexpected_state") {
+      const cause = error instanceof Error ? error.cause : undefined;
+      if (cause instanceof Stripe.errors.StripeInvalidRequestError && cause.code === "payment_intent_unexpected_state") {
         return "not_cancellable";
       }
       throw error;
@@ -61,13 +69,15 @@ export class StripePaymentProvider implements PaymentProvider {
   }
 
   async refund({ paymentIntentId, amount, refundRequestId }: NewRefund): Promise<CreatedRefund> {
-    const refund = await this.stripe.refunds.create(
-      {
-        payment_intent: paymentIntentId,
-        amount: amount.amount_minor,
-        metadata: { refund_request_id: refundRequestId },
-      },
-      { idempotencyKey: refundRequestId },
+    const refund = await callDependency("Stripe create refund", { paymentIntentId, refundRequestId, amount }, () =>
+      this.stripe.refunds.create(
+        {
+          payment_intent: paymentIntentId,
+          amount: amount.amount_minor,
+          metadata: { refund_request_id: refundRequestId },
+        },
+        { idempotencyKey: refundRequestId },
+      ),
     );
     return { refundId: refund.id };
   }
@@ -75,7 +85,9 @@ export class StripePaymentProvider implements PaymentProvider {
   async latestRefund(chargeId: string): Promise<RefundedPayment | null> {
     const {
       data: [refund],
-    } = await this.stripe.refunds.list({ charge: chargeId, limit: 1, expand: ["data.payment_intent"] });
+    } = await callDependency("Stripe list refunds", { chargeId }, () =>
+      this.stripe.refunds.list({ charge: chargeId, limit: 1, expand: ["data.payment_intent"] }),
+    );
     if (!refund) throw new Error(`Stripe has no refund for charge ${chargeId}`);
 
     const intent = refund.payment_intent;

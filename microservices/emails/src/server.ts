@@ -8,18 +8,23 @@ import { orderConfirmationListener } from "./order-confirmation/order-confirmati
 import { connectToBroker } from "./rabbitmq/connection.js";
 import { startConsumer } from "./rabbitmq/consumer.js";
 import { assertConsumerTopology } from "./rabbitmq/topology.js";
+import { logger } from "./shared/logger.js";
 
 const ORDER_EVENTS_EXCHANGE = "order.events";
 const ORDER_EVENTS_QUEUE = "notif.order.events";
+
+// Startup failures (bad config, broker unreachable) and anything else uncaught end up here.
+process.on("uncaughtException", (error) => {
+  logger.fatal({ err: error }, "Uncaught exception, exiting");
+  process.exit(1);
+});
 
 const config = loadConfig(process.env);
 const broker = await connectToBroker(config.rabbitmqUrl);
 
 // Reconnecting is left to the container runtime: compose restarts the service when it exits.
 broker.onUnexpectedClose((error) => {
-  console.error(
-    error ? `RabbitMQ connection lost, exiting: ${error.message}` : "RabbitMQ closed the connection, exiting",
-  );
+  logger.fatal({ err: error }, "RabbitMQ connection lost, exiting");
   process.exit(1);
 });
 
@@ -42,7 +47,7 @@ const app = createApp({
   sendContactMessage: (contactMessage) => sendContactMessage(contactMessage, mailer),
 });
 const server = app.listen(config.port, () => {
-  console.log(`notif listening on port ${config.port} (mailer: ${config.mailer.kind})`);
+  logger.info({ port: config.port, mailer: config.mailer.kind }, "Service listening");
 });
 
 async function shutdown(): Promise<void> {

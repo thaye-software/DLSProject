@@ -1,3 +1,5 @@
+import { logger } from "../shared/logger.js";
+
 export const RETRY_DELAYS_MS = [1000, 2000, 4000, 8000, 16000];
 
 export type Sleep = (milliseconds: number) => Promise<void>;
@@ -12,7 +14,8 @@ export async function withRetries<T>(
   for (const delayMs of delaysMs) {
     try {
       return await operation();
-    } catch {
+    } catch (error) {
+      logger.warn({ err: error, retryInMs: delayMs }, "Attempt failed, retrying");
       await sleep(delayMs);
     }
   }
