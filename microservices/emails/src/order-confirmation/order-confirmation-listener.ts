@@ -9,7 +9,7 @@ export function orderConfirmationListener(mailer: Mailer): Record<string, EventH
   return {
     order_confirmed: handleEvent(orderConfirmedDataSchema, async (order, event) => {
       await sendOrderConfirmation(order, event.id, mailer);
-      logger.info({ eventId: event.id, eventType: event.type, orderId: order.order_id }, "Order confirmation email sent");
+      logger.info({ orderId: order.order_id }, "Order confirmation email sent");
     }),
   };
 }

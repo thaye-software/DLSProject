@@ -2,7 +2,7 @@ import express, { type ErrorRequestHandler, type Express, type Router } from "ex
 import { paymentSessionController } from "./payment-session/payment-session-controller.js";
 import type { CreatePaymentSessionResult } from "./payment-session/payment-session-types.js";
 import { notFoundHandler, securityHeaders } from "./shared/http-security.js";
-import { requestLogger } from "./shared/logger.js";
+import { logger, requestLogger } from "./shared/logger.js";
 import { sendProblem, sendValidationProblem } from "./shared/problem.js";
 
 export type AppDependencies = {
@@ -43,6 +43,7 @@ export function createApp({ isBrokerConnected, createPaymentSession, stripeWebho
 
 const invalidJsonHandler: ErrorRequestHandler = (error, request, response, next) => {
   if (error?.type !== "entity.parse.failed") {
+    logger.error({ err: error }, "Unhandled request error");
     next(error);
     return;
   }

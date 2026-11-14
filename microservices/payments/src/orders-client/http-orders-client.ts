@@ -1,5 +1,6 @@
 import { SignJWT } from "jose";
 import { z } from "zod";
+import { callDependency } from "../shared/logger.js";
 import type { OrdersClient, PaymentDetailsLookup } from "./orders-client.js";
 
 export type HttpOrdersClientOptions = {
@@ -32,7 +33,11 @@ export class HttpOrdersClient implements OrdersClient {
     this.jwtKey = new TextEncoder().encode(jwtSecret);
   }
 
-  async getPaymentDetails(orderId: string): Promise<PaymentDetailsLookup> {
+  getPaymentDetails(orderId: string): Promise<PaymentDetailsLookup> {
+    return callDependency("Orders get payment details", { orderId }, () => this.fetchPaymentDetails(orderId));
+  }
+
+  private async fetchPaymentDetails(orderId: string): Promise<PaymentDetailsLookup> {
     const url = new URL(`internal/orders/${encodeURIComponent(orderId)}/payment-details`, this.baseUrl);
     const response = await fetch(url, {
       headers: { authorization: `Bearer ${await this.serviceJwt()}`, accept: "application/json" },

@@ -14,6 +14,7 @@ export function contactController(sendContactMessage: (contactMessage: ContactMe
   const router = express.Router();
 
   router.post("/contact", express.json(), async (request, response) => {
+    logger.debug({ input: request.body }, "Request input");
     const contactMessage = contactMessageSchema.safeParse(request.body);
     if (!contactMessage.success) {
       const detail = contactMessage.error.issues

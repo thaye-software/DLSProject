@@ -18,6 +18,12 @@ import { logger } from "./shared/logger.js";
 const ORDER_EVENTS_EXCHANGE = "order.events";
 const ORDER_EVENTS_QUEUE = "payment.order.events";
 
+// Startup failures (bad config, broker unreachable) and anything else uncaught end up here.
+process.on("uncaughtException", (error) => {
+  logger.fatal({ err: error }, "Uncaught exception, exiting");
+  process.exit(1);
+});
+
 const config = loadConfig(process.env);
 const broker = await connectToBroker(config.rabbitmqUrl);
 

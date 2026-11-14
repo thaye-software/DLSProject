@@ -14,6 +14,7 @@ export function paymentSessionController(
 
   router.post("/payments", express.json(), async (request, response) => {
     const instance = request.path;
+    logger.debug({ input: request.body }, "Request input");
 
     const userId = userIdSchema.safeParse(request.get("x-user-id"));
     if (!userId.success) {

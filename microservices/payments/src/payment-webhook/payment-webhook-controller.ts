@@ -39,6 +39,8 @@ export function paymentWebhookController({
       return;
     }
 
+    logger.debug({ input: event }, "Stripe event input");
+
     try {
       const webhook = await toPaymentWebhook(event, payments);
       if (webhook) {
@@ -131,12 +133,12 @@ async function toPaymentWebhook(
       };
     }
     default:
-      return null;
+      return ignore(event, "event type is not handled");
   }
 }
 
 function ignore(event: Stripe.Event, reason: string): null {
-  logger.warn({ stripeEventId: event.id, stripeEventType: event.type, reason }, "Ignoring Stripe event");
+  logger.info({ stripeEventId: event.id, stripeEventType: event.type, reason }, "Ignoring Stripe event");
   return null;
 }
 

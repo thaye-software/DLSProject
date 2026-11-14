@@ -7,12 +7,12 @@ import { refundPayment } from "./refund-payment-service.js";
 // Handlers for order.events, keyed by CloudEvent type (= routing key).
 export function refundPaymentListener({ payments }: { payments: PaymentProvider }): Record<string, EventHandler> {
   return {
-    refund_requested: handleEvent(refundRequestedDataSchema, async (request, event) => {
+    refund_requested: handleEvent(refundRequestedDataSchema, async (request) => {
       const { refundId } = await refundPayment(
         { refundRequestId: request.refund_request_id, orderId: request.order_id, amount: request.amount },
         { payments },
       );
-      logger.info({ eventId: event.id, eventType: event.type, orderId: request.order_id, refundId }, "Order refunded");
+      logger.info({ orderId: request.order_id, refundId }, "Order refunded");
     }),
   };
 }
