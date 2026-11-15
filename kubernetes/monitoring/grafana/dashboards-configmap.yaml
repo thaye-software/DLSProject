@@ -98,3 +98,322 @@ data:
         }
       ]
     }
+  k6-load-test.json: |
+    {
+      "uid": "dls-k6-load-test",
+      "title": "k6 load test",
+      "tags": ["k6", "load test"],
+      "timezone": "browser",
+      "refresh": "5s",
+      "time": { "from": "now-15m", "to": "now" },
+      "schemaVersion": 39,
+      "templating": {
+        "list": [
+          {
+            "name": "testid",
+            "label": "Test run (start time, UTC)",
+            "type": "query",
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "query": { "qryType": 1, "query": "label_values(k6_http_reqs_total, testid)", "refId": "testid" },
+            "refresh": 2,
+            "sort": 2
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Response p95",
+          "description": "95% of all requests in the selected time range were answered within this time. The test passes below 500 ms.",
+          "type": "stat",
+          "gridPos": { "x": 0, "y": 0, "w": 5, "h": 4 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "histogram_quantile(0.95, sum(increase(k6_http_req_duration_seconds{testid=~\"$testid\"}[$__range])))",
+              "instant": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 0.5 }] }
+            },
+            "overrides": []
+          },
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" }
+        },
+        {
+          "id": 2,
+          "title": "Response p99",
+          "description": "99% of all requests in the selected time range were answered within this time. The test passes below 1 s.",
+          "type": "stat",
+          "gridPos": { "x": 5, "y": 0, "w": 5, "h": 4 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "histogram_quantile(0.99, sum(increase(k6_http_req_duration_seconds{testid=~\"$testid\"}[$__range])))",
+              "instant": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] }
+            },
+            "overrides": []
+          },
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" }
+        },
+        {
+          "id": 3,
+          "title": "Errors",
+          "description": "Share of requests with an answer the test did not expect, such as a 500 or a timeout. A 409 for a watch that is already reserved is expected and not an error. The test passes below 1%.",
+          "type": "stat",
+          "gridPos": { "x": 10, "y": 0, "w": 5, "h": 4 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "(sum(increase(k6_http_reqs_total{testid=~\"$testid\", expected_response=\"false\"}[$__range])) or vector(0)) / sum(increase(k6_http_reqs_total{testid=~\"$testid\"}[$__range]))",
+              "instant": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "decimals": 2,
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 0.01 }] }
+            },
+            "overrides": []
+          },
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" }
+        },
+        {
+          "id": 4,
+          "title": "Requests",
+          "description": "Requests sent in the selected time range.",
+          "type": "stat",
+          "gridPos": { "x": 15, "y": 0, "w": 5, "h": 4 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "round(sum(increase(k6_http_reqs_total{testid=~\"$testid\"}[$__range])))",
+              "instant": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [{ "color": "text", "value": null }] } },
+            "overrides": []
+          },
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "none" }
+        },
+        {
+          "id": 5,
+          "title": "Peak users",
+          "description": "The highest number of customers and admins on the site at the same time.",
+          "type": "stat",
+          "gridPos": { "x": 20, "y": 0, "w": 4, "h": 4 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "max(max_over_time(k6_vus{testid=~\"$testid\"}[$__range]))",
+              "instant": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [{ "color": "text", "value": null }] } },
+            "overrides": []
+          },
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "none" }
+        },
+        {
+          "id": 6,
+          "title": "Virtual users",
+          "description": "Customers and admins on the site at the same time.",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "refId": "A", "expr": "k6_vus{testid=~\"$testid\"}", "legendFormat": "virtual users" }],
+          "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 15, "lineInterpolation": "stepAfter" } }, "overrides": [] }
+        },
+        {
+          "id": 7,
+          "title": "Requests per second, by service",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (service) (rate(k6_http_reqs_total{testid=~\"$testid\"}[30s]))",
+              "legendFormat": "{{service}}"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "reqps", "min": 0, "custom": { "fillOpacity": 30, "stacking": { "mode": "normal" } } }, "overrides": [] }
+        },
+        {
+          "id": 8,
+          "title": "Response time, all requests",
+          "description": "The dashed lines are the limits of the test: 500 ms for p95 and 1 s for p99.",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "histogram_quantile(0.50, sum(rate(k6_http_req_duration_seconds{testid=~\"$testid\"}[30s])))",
+              "legendFormat": "p50"
+            },
+            {
+              "refId": "B",
+              "expr": "histogram_quantile(0.95, sum(rate(k6_http_req_duration_seconds{testid=~\"$testid\"}[30s])))",
+              "legendFormat": "p95"
+            },
+            {
+              "refId": "C",
+              "expr": "histogram_quantile(0.99, sum(rate(k6_http_req_duration_seconds{testid=~\"$testid\"}[30s])))",
+              "legendFormat": "p99"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "min": 0,
+              "custom": { "thresholdsStyle": { "mode": "dashed" } },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [{ "color": "transparent", "value": null }, { "color": "orange", "value": 0.5 }, { "color": "red", "value": 1 }]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 9,
+          "title": "p95 response time, by service",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "histogram_quantile(0.95, sum by (service) (rate(k6_http_req_duration_seconds{testid=~\"$testid\"}[30s])))",
+              "legendFormat": "{{service}}"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "s", "min": 0 }, "overrides": [] }
+        },
+        {
+          "id": 10,
+          "title": "Requests per second, by user type",
+          "description": "Requests of the customers and of the admins. The checks before the test starts are not included.",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 20, "w": 12, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (scenario) (rate(k6_http_reqs_total{testid=~\"$testid\", scenario!=\"\"}[30s]))",
+              "legendFormat": "{{scenario}}"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "reqps", "min": 0, "custom": { "fillOpacity": 30, "stacking": { "mode": "normal" } } }, "overrides": [] }
+        },
+        {
+          "id": 11,
+          "title": "Failed requests per second",
+          "description": "Requests with an answer the test did not expect, by service and HTTP status. Status 0 means no answer at all, such as a timeout. Empty when nothing failed.",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 20, "w": 12, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (service, status) (rate(k6_http_reqs_total{testid=~\"$testid\", expected_response=\"false\"}[30s]))",
+              "legendFormat": "{{service}} {{status}}"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "reqps", "min": 0, "custom": { "drawStyle": "bars", "fillOpacity": 80 } }, "overrides": [] }
+        },
+        {
+          "id": 12,
+          "title": "Endpoints",
+          "description": "Every endpoint the test called in the selected time range. Click a column title to sort.",
+          "type": "table",
+          "gridPos": { "x": 0, "y": 28, "w": 24, "h": 12 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "round(sum by (service, name) (increase(k6_http_reqs_total{testid=~\"$testid\"}[$__range])))",
+              "format": "table",
+              "instant": true
+            },
+            {
+              "refId": "B",
+              "expr": "histogram_quantile(0.95, sum by (service, name) (increase(k6_http_req_duration_seconds{testid=~\"$testid\"}[$__range])))",
+              "format": "table",
+              "instant": true
+            },
+            {
+              "refId": "C",
+              "expr": "histogram_quantile(0.99, sum by (service, name) (increase(k6_http_req_duration_seconds{testid=~\"$testid\"}[$__range])))",
+              "format": "table",
+              "instant": true
+            },
+            {
+              "refId": "D",
+              "expr": "round(sum by (service, name) (increase(k6_http_reqs_total{testid=~\"$testid\", expected_response=\"false\"}[$__range])) or sum by (service, name) (increase(k6_http_reqs_total{testid=~\"$testid\"}[$__range])) * 0)",
+              "format": "table",
+              "instant": true
+            }
+          ],
+          "transformations": [
+            { "id": "merge", "options": {} },
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": { "Time": true },
+                "indexByName": { "service": 0, "name": 1, "Value #A": 2, "Value #B": 3, "Value #C": 4, "Value #D": 5 },
+                "renameByName": {
+                  "service": "Service",
+                  "name": "Endpoint",
+                  "Value #A": "Requests",
+                  "Value #B": "p95",
+                  "Value #C": "p99",
+                  "Value #D": "Failed"
+                }
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": [
+              { "matcher": { "id": "byName", "options": "p95" }, "properties": [{ "id": "unit", "value": "s" }] },
+              { "matcher": { "id": "byName", "options": "p99" }, "properties": [{ "id": "unit", "value": "s" }] }
+            ]
+          },
+          "options": { "sortBy": [{ "displayName": "Service", "desc": false }] }
+        },
+        {
+          "id": 13,
+          "title": "Warnings and errors the services logged",
+          "description": "From Loki: log lines with level warn, error or fatal, and everything written to stderr. The services that do not log JSON yet only show up through stderr.",
+          "type": "logs",
+          "gridPos": { "x": 0, "y": 40, "w": 24, "h": 12 },
+          "datasource": { "type": "loki", "uid": "loki" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "{namespace=\"default\", app!=\"k6\"} | level=~\"warn|error|fatal\" or stream=\"stderr\""
+            }
+          ],
+          "options": { "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true }
+        }
+      ]
+    }
