@@ -3,6 +3,7 @@
 # kubectl applies the Namespace first. The rest can start in any order: each app pod waits for its own
 # database and RabbitMQ, and Kubernetes restarts a pod until the services it calls answer.
 # A new manifest file must be added here too.
+# The k6 load test is not part of this: it is a Job you start yourself, see kubernetes/loadtest.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
@@ -75,6 +76,10 @@ resources:
   - monitoring/loki/pvc.yaml
   - monitoring/loki/service.yaml
   - monitoring/namespace.yaml
+  - monitoring/prometheus/configmap.yaml
+  - monitoring/prometheus/deployment.yaml
+  - monitoring/prometheus/pvc.yaml
+  - monitoring/prometheus/service.yaml
   - monitoring/promtail/clusterrole.yaml
   - monitoring/promtail/clusterrolebinding.yaml
   - monitoring/promtail/configmap.yaml
