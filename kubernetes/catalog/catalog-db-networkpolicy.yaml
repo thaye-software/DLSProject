@@ -1,0 +1,23 @@
+# Only Catalog's pods may connect to its Postgres; every other pod is refused.
+# Same rule as the catalog-data network in microservices/catalog/docker-compose.yml.
+# Enforced only when the cluster's network plugin supports NetworkPolicy (see setupguide.txt).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: catalog-db
+  labels:
+    app: catalog-db
+spec:
+  podSelector:
+    matchLabels:
+      app: catalog-db
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: catalog
+      ports:
+        - protocol: TCP
+          port: 5432

@@ -93,6 +93,15 @@ CI pushes these images on every push to dev or main, after the tests and the sec
 Apply one folder at a time. The kubernetes folder also contains these text guides, so leave the folder itself out of kubectl apply.
 Usernames, passwords, the fake payment provider, the fake mailer, and the fake Supabase stand-ins for Users and Auth are already in the yaml files.
 
+Each database and the Search cache has a NetworkPolicy (the *-networkpolicy.yaml files): only its own service's pods may connect to it.
+A NetworkPolicy only works when the cluster's network plugin enforces it, and Docker Desktop's kubeadm cluster may not. To check, after the stack is up:
+
+kubectl run netcheck --rm -it --restart=Never --image=busybox:1.36 -- nc -z -w 3 catalog-db 5432
+
+"pod deleted" with no error before it: nothing blocked the connection, so the policies are not enforced here.
+An error or a wait of 3 seconds: they are enforced. The database NodePorts from this PC may then be refused as well. Use a port-forward instead, for example:
+kubectl port-forward deployment/catalog-db 5434:5432
+
 The images are public, so Kubernetes pulls them without a login.
 A service's first image on GHCR starts out private. An owner of the thaye-software organization makes it public once:
 GitHub, thaye-software, Packages, the dlsproject-<service> package, Package settings, Change visibility, Public.

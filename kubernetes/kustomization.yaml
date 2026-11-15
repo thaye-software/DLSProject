@@ -12,6 +12,7 @@ resources:
   - rabbitmq/service.yaml
   # catalog
   - catalog/catalog-db-deployment.yaml
+  - catalog/catalog-db-networkpolicy.yaml
   - catalog/catalog-db-pvc.yaml
   - catalog/catalog-db-service.yaml
   - catalog/deployment.yaml
@@ -20,6 +21,7 @@ resources:
   # orders
   - orders/deployment.yaml
   - orders/orders-db-deployment.yaml
+  - orders/orders-db-networkpolicy.yaml
   - orders/orders-db-pvc.yaml
   - orders/orders-db-service.yaml
   - orders/secret.yaml
@@ -34,14 +36,17 @@ resources:
   # search
   - search/deployment.yaml
   - search/search-cache-deployment.yaml
+  - search/search-cache-networkpolicy.yaml
   - search/search-cache-service.yaml
   - search/search-db-deployment.yaml
+  - search/search-db-networkpolicy.yaml
   - search/search-db-pvc.yaml
   - search/search-db-service.yaml
   - search/service.yaml
   # messaging
   - messaging/deployment.yaml
   - messaging/messaging-db-deployment.yaml
+  - messaging/messaging-db-networkpolicy.yaml
   - messaging/messaging-db-pvc.yaml
   - messaging/messaging-db-service.yaml
   - messaging/service.yaml
@@ -50,6 +55,7 @@ resources:
   - users/secret.yaml
   - users/service.yaml
   - users/users-db-deployment.yaml
+  - users/users-db-networkpolicy.yaml
   - users/users-db-pvc.yaml
   - users/users-db-service.yaml
   # auth

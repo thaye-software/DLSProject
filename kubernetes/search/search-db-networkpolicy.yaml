@@ -1,0 +1,23 @@
+# Only Search's pods may connect to its MongoDB; every other pod is refused.
+# Same rule as the search-data network in microservices/search/docker-compose.yml.
+# Enforced only when the cluster's network plugin supports NetworkPolicy (see setupguide.txt).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: search-db
+  labels:
+    app: search-db
+spec:
+  podSelector:
+    matchLabels:
+      app: search-db
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: search
+      ports:
+        - protocol: TCP
+          port: 27017
