@@ -1,0 +1,192 @@
+---------- Load test with k6 ----------
+
+Start after the services in setupguide.txt and the monitoring in monitoringguide.txt are running.
+PowerShell on Windows, Terminal on macOS. The commands are the same. Run them from the repo root.
+
+k6 runs as a Job in the cluster. Its virtual users call the services the way customers and admins use the site,
+with pauses to read and type between their actions. Every 5 seconds k6 pushes its results to Prometheus. Grafana shows them.
+
+  k6 (Job) --> the services
+  k6 (Job) --> Prometheus --> Grafana  (http://localhost:30300, dashboard DLS, k6 load test)
+
+kubernetes/loadtest has:
+  settings.env        how many customers and admins, and for how long
+  job.yaml            the k6 Job
+  kustomization.yaml  builds the Job, its settings and its script
+  script/             the test itself
+                        main.js      the stages, the pass limits and the checks before the test starts
+                        customer.js  what a customer does      admin.js    what an admin does
+                        api.js       one function per endpoint gateway.js  how a request reaches a service
+                        config.js    the settings              data.js     what the users type
+                        random.js    pauses and random picks
+
+Prometheus is part of kubectl apply -k kubernetes (kubernetes/monitoring/prometheus). Check that it runs:
+kubectl -n monitoring rollout status deployment/prometheus
+
+The load test only runs against services in fake mode, which is how the cluster runs them.
+Do not point it at a stack with real Supabase, Stripe and Resend accounts: it signs up users and sends contact mails.
+The test stops before it starts when Auth does not accept a fake token.
+
+
+---------- Settings ----------
+
+kubernetes/loadtest/settings.env:
+
+CUSTOMER_VUS=20       customers on the site at the same time
+ADMIN_VUS=2           admins on the site at the same time. 0 runs the test without admins
+RAMP_UP=1m            time to reach those numbers
+DURATION=3m           time at full load
+RAMP_DOWN=30s         time to wind down
+THINK_TIME_SCALE=1    every pause is multiplied by this. 1 is a realistic user, 0.2 makes the pauses five times shorter
+
+With these values the test takes about 5 minutes and sends 2 to 3 requests per second, about 750 in total.
+More load: raise CUSTOMER_VUS. A user who pauses less (THINK_TIME_SCALE below 1) also sends more requests.
+
+Keep the machine quiet while a test runs. Everything shares one laptop, so other heavy work (a build, docker commands,
+many browser tabs) shows up as slow requests, first of all in p99.
+
+
+---------- Run ----------
+
+kubectl delete -k kubernetes/loadtest --ignore-not-found
+kubectl apply -k kubernetes/loadtest
+kubectl logs -f job/k6-loadtest
+
+The first command removes the previous run. A Job cannot be started twice, so it is needed before every run but the first.
+The second starts the test with the current settings.env and script.
+The third follows it. If it says the container is still being created, wait a few seconds and run it again.
+
+k6 warns that experimental-prometheus-rw is deprecated. That is the output to Prometheus. It works in k6 v2 and is planned for removal in v3.
+
+Stop a running test:
+kubectl delete -k kubernetes/loadtest
+
+
+---------- Pass or fail ----------
+
+The test passes when all three hold over the whole run (script/main.js, thresholds):
+
+  p95 < 500 ms    95% of the requests are answered within 500 ms
+  p99 < 1 s       99% of the requests are answered within 1 second
+  errors < 1%     fewer than 1 in 100 requests fail
+
+A request fails when the answer is not one the test expects: a 5xx, a timeout (15 seconds), a 401.
+An answer that is part of normal use is not a failure. Example: 409 from POST /orders, because another customer reserved the watch first.
+
+The log ends with the result:
+
+  THRESHOLDS
+    http_req_duration
+    'p(95)<500' p(95)=...
+    'p(99)<1000' p(99)=...
+    http_req_failed
+    'rate<0.01' rate=...
+
+Each line starts with a check mark when it passed and a cross when it failed. Below it are the checks per endpoint and the totals.
+
+kubectl get job k6-loadtest
+
+Expected status: Complete when every limit held, Failed when one did not (k6 exits with code 99).
+
+
+---------- Grafana ----------
+
+Open http://localhost:30300, Dashboards, DLS, k6 load test. It updates every 5 seconds while a test runs.
+
+Test run, at the top, picks a run by its start time (UTC). The newest run is selected when the page opens.
+Set the time range (top right) so that it covers the run. The figures are worked out over that range.
+
+  p95, p99, Errors              the three limits, green when they hold and red when they do not
+  Requests, Peak users          totals of the run
+  Virtual users                 the ramp up, the time at full load and the wind down
+  Requests per second           by service, and by user type (customers, admins)
+  Response time                 p50, p95 and p99 of all requests, with the two limits as dashed lines
+  p95 by service                which service is slow
+  Failed requests per second    by service and HTTP status. Empty when nothing failed
+  Endpoints                     requests, p95, p99 and failures per endpoint. Click a column title to sort
+  Warnings and errors           what the services logged during the test, from Loki
+
+The figures in Grafana come from histograms and can differ from the k6 log by a few percent. The k6 log is exact.
+
+Prometheus' own page is http://localhost:30090. All k6 metrics start with k6_, for example k6_http_reqs_total.
+
+
+---------- What the users do ----------
+
+Every request that needs a login first asks Auth (GET /verify), as the API gateway will. Then it goes to the service with the X-User-* headers.
+
+A customer signs up once (GET /users/username-available, POST /users). Each visit is 1 to 3 of these, then 10 to 30 seconds away:
+
+  40%  browse and search      GET /search with words, brand and price filters, GET /products/{id}
+  15%  ask about a watch      POST /conversations, send messages, read the thread, mark it read
+  12%  check out              POST /orders, POST /payments, GET /orders/{id}, POST /orders/{id}/cancel
+  10%  read the inbox         GET /conversations, read a thread, mark it read, sometimes answer
+  10%  edit the profile       GET and PATCH /users/me, PUT and DELETE /users/me/address, PUT /users/me/avatar
+   8%  look at own orders     GET /orders, GET /orders/{id}
+   3%  contact form           POST /contact
+   2%  sign up and leave      a new account that is deleted again with DELETE /users/me
+
+An admin does 1 to 3 of these per round, then 15 to 40 seconds of something else:
+
+  45%  answer customers       GET /conversations (all customers), read the unread threads, answer, mark them read
+  35%  handle orders          GET /orders (all customers), GET /orders/{id}, PATCH /orders/{id}/status
+  20%  check the listings     GET /search with reserved and sold watches included, GET /products/{id}
+
+Pauses are 3 to 8 seconds to look at a page, 8 to 25 seconds to type a message and 20 to 45 seconds to fill in an address.
+The shares are the JOURNEYS list in customer.js and the TASKS list in admin.js.
+
+Not in the test, because the services have no endpoint for it yet:
+  - favorites / watchlist
+  - creating, editing, hiding and deleting products and brands (Catalog only has GET /products/{id})
+  - the blog (Editorial) and auctions
+
+Three things work differently in the cluster than on the real site:
+  - Nobody can pay. Payment runs with a fake provider and has no Stripe webhook. A customer therefore starts the payment
+    and then cancels the order, which frees the watch again. No order is ever paid, so an admin finds no order to move
+    forward and PATCH /orders/{id}/status is not called.
+  - Search has no listings, because nothing creates products. Searches run but return empty lists.
+    The users then look at the one watch Catalog seeds itself with. Add PRODUCT_IDS=<id>,<id> to settings.env to give them more.
+  - That watch has a stock of 1, so only one customer at a time can reserve it. The others get 409, which is expected.
+
+
+---------- What the test leaves behind ----------
+
+The users are loadtest_customer_<n> and loadtest_admin_<n>. A second run uses the same users.
+Their conversations, messages and cancelled orders stay in the databases, and every run adds more.
+To start clean, remove the cluster with its data and deploy it again:
+kubectl delete -k kubernetes
+kubectl apply -k kubernetes
+
+
+---------- Try the script without the cluster Job ----------
+
+With k6 installed (Windows: winget install k6 --source winget, macOS: brew install k6) the script also runs from your own machine.
+It then calls the services on their NodePorts and prints the result in the terminal. Nothing goes to Grafana.
+
+k6 run -e CUSTOMER_VUS=2 -e ADMIN_VUS=1 -e RAMP_UP=5s -e DURATION=30s -e RAMP_DOWN=5s -e THINK_TIME_SCALE=0.2 kubernetes/loadtest/script/main.js
+
+
+---------- If something is wrong ----------
+
+The log stops right away with "<service> is not healthy":
+that service is not ready. Check kubectl get pods and start the test again when every pod is 1/1 Running.
+
+"Auth refused a fake token":
+Auth does not run with TOKEN_VERIFIER=fake. See the warning at the top.
+
+The log repeats an error about sending time series:
+Prometheus is not reachable. The test itself still runs and prints its result.
+kubectl -n monitoring get pods
+kubectl -n monitoring logs deployment/prometheus
+
+"No data" in Grafana:
+Check the time range covers the run and that Test run shows a start time. Without a start time Prometheus has received nothing.
+
+kubectl apply says the Job is immutable ("field is immutable"):
+the previous run is still there. Run the delete command first.
+
+Many 409 on POST /orders:
+expected, see above. They do not count as errors.
+
+Errors from one service only:
+look at the panel Warnings and errors, or at the Service logs dashboard for that service (monitoringguide.txt).

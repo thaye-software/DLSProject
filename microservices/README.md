@@ -76,9 +76,30 @@ Remove everything, including the stored data: `kubectl delete -k kubernetes`.
 
 Check the stack: on Windows paste [`kubernetes/verifykubernetes.txt`](../kubernetes/verifykubernetes.txt) into PowerShell (ends with `ALL OK`); on macOS check that `kubectl get pods -A` shows every pod `1/1 Running` and that `curl http://localhost:<NodePort>/health` returns `{"status":"ok"}`.
 
-### Monitoring (logs)
+### Monitoring
 
-Included in `kubectl apply -k kubernetes`. Promtail reads every pod's stdout and sends it to Loki; Grafana shows it at http://localhost:30300 (admin / admin), dashboard DLS → Service logs. Details and queries: [`kubernetes/monitoringguide.txt`](../kubernetes/monitoringguide.txt).
+Included in `kubectl apply -k kubernetes`. Grafana is at http://localhost:30300 (admin / admin), dashboards in the folder DLS.
+
+- Logs: Promtail reads every pod's stdout and sends it to Loki. Dashboard Service logs. Details and queries: [`kubernetes/monitoringguide.txt`](../kubernetes/monitoringguide.txt).
+- Load test results: k6 pushes them to Prometheus (http://localhost:30090). Dashboard k6 load test.
+
+### Load test (k6)
+
+Virtual customers and admins use the services with realistic pauses. Set how many of each in [`kubernetes/loadtest/settings.env`](../kubernetes/loadtest/settings.env) (`CUSTOMER_VUS`, `ADMIN_VUS`), then from the repo root:
+
+```bash
+kubectl delete -k kubernetes/loadtest --ignore-not-found
+```
+
+```bash
+kubectl apply -k kubernetes/loadtest
+```
+
+```bash
+kubectl logs -f job/k6-loadtest
+```
+
+The run passes with p95 < 500 ms, p99 < 1 s and errors < 1%. What the users do, the dashboard and troubleshooting: [`kubernetes/loadtestguide.txt`](../kubernetes/loadtestguide.txt).
 
 Resource usage: `kubectl top node`, `kubectl get hpa`.
 

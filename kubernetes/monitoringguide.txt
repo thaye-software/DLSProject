@@ -1,4 +1,4 @@
----------- Monitoring: logs in Grafana ----------
+---------- Monitoring: logs and load test results in Grafana ----------
 
 Start after the services in setupguide.txt are running.
 Normal PowerShell, from the repo root.
@@ -8,16 +8,20 @@ It sends them to Loki, which stores them for 7 days. Grafana shows them.
 Everything runs in its own namespace, monitoring. The services in default are not changed.
 
   pods (stdout) --> Promtail --> Loki --> Grafana  (http://localhost:30300)
+  k6 load test  --> Prometheus ---------> Grafana
 
-The images are public on Docker Hub: grafana/loki, grafana/promtail and grafana/grafana.
+Prometheus stores the results of the k6 load test, also for 7 days. How to run the test: loadtestguide.txt.
+
+The images are public on Docker Hub: grafana/loki, grafana/promtail, grafana/grafana and prom/prometheus.
 
 kubernetes/monitoring has the namespace and one folder per tool:
   namespace.yaml   the monitoring namespace, apply it first
   loki/            configmap (Loki's settings), pvc (stored logs), deployment, service
   promtail/        serviceaccount, clusterrole and clusterrolebinding (lets Promtail list the pods),
                    configmap (what to read and how to label it), daemonset (one Promtail per node)
-  grafana/         secret (admin login), datasources-configmap (Loki), dashboard-providers-configmap
-                   and dashboards-configmap (the Service logs dashboard), pvc, deployment, service
+  grafana/         secret (admin login), datasources-configmap (Loki and Prometheus), dashboard-providers-configmap
+                   and dashboards-configmap (the Service logs and k6 load test dashboards), pvc, deployment, service
+  prometheus/      configmap (Prometheus' settings), pvc (stored metrics), deployment, service
 
 kubectl apply -k kubernetes (see kubernetes/kustomization.yaml) applies all of this together with the services.
 To apply only the monitoring, in this order (Loki first, so Promtail has somewhere to send to):
@@ -27,11 +31,13 @@ kubectl apply -f kubernetes/monitoring/loki
 kubectl -n monitoring rollout status deployment/loki
 kubectl apply -f kubernetes/monitoring/promtail
 kubectl -n monitoring rollout status daemonset/promtail
+kubectl apply -f kubernetes/monitoring/prometheus
+kubectl -n monitoring rollout status deployment/prometheus
 kubectl apply -f kubernetes/monitoring/grafana
 kubectl -n monitoring rollout status deployment/grafana
 kubectl -n monitoring get pods
 
-Expected, each 1/1 Running: loki, promtail, grafana.
+Expected, each 1/1 Running: loki, promtail, prometheus, grafana.
 
 Loki answers ready once it has started, which can take up to a minute after the pod is Running:
 kubectl get --raw /api/v1/namespaces/monitoring/services/loki:3100/proxy/ready
@@ -99,7 +105,7 @@ kubectl -n monitoring delete deployment loki
 kubectl -n monitoring delete pvc loki-data
 kubectl apply -f kubernetes/monitoring/loki
 
-Grafana keeps its own settings and users on the grafana-data volume. The Loki data source and the Service logs dashboard come from the configmaps in kubernetes/monitoring/grafana and are loaded again on every start.
+Grafana keeps its own settings and users on the grafana-data volume. The data sources and the dashboards come from the configmaps in kubernetes/monitoring/grafana and are loaded again on every start.
 The admin login in secret.yaml is only used the first time Grafana starts on an empty volume. Changing it later changes nothing until the grafana-data PVC is deleted.
 After you change a file in kubernetes/monitoring/grafana, apply the folder and restart Grafana:
 kubectl apply -f kubernetes/monitoring/grafana
@@ -110,8 +116,10 @@ kubectl apply -f kubernetes/monitoring/loki
 kubectl -n monitoring rollout restart deployment/loki
 kubectl apply -f kubernetes/monitoring/promtail
 kubectl -n monitoring rollout restart daemonset/promtail
+kubectl apply -f kubernetes/monitoring/prometheus
+kubectl -n monitoring rollout restart deployment/prometheus
 
-To remove the monitoring and its stored logs:
+To remove the monitoring with its stored logs and metrics:
 kubectl delete namespace monitoring
 kubectl delete clusterrole promtail
 kubectl delete clusterrolebinding promtail
