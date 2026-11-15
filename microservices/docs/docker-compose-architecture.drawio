@@ -1,0 +1,173 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Docker Compose" id="docker-compose-architecture">
+    <mxGraphModel dx="1400" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1760" pageHeight="700" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="compose" value="Docker Compose project: microservices/docker-compose.yml" style="rounded=1;arcSize=2;whiteSpace=wrap;html=1;container=1;collapsible=0;verticalAlign=top;align=left;spacingLeft=12;spacingTop=6;fontSize=16;fontStyle=1;fillColor=#ffffff;strokeColor=#333333;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="20" y="20" width="1700" height="550" as="geometry" />
+        </mxCell>
+
+        <mxCell id="net-default" value="default network (shared): RabbitMQ and the services' HTTP APIs" style="rounded=1;arcSize=3;whiteSpace=wrap;html=1;container=1;collapsible=0;verticalAlign=top;align=left;spacingLeft=12;spacingTop=4;fontSize=13;fontStyle=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" vertex="1" parent="compose">
+          <mxGeometry x="20" y="50" width="1660" height="300" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rabbitmq" value="&lt;b&gt;rabbitmq&lt;/b&gt;&lt;br&gt;RabbitMQ 4 · AMQP :5672 · management UI :15672" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="net-default">
+          <mxGeometry x="40" y="50" width="1540" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="svc-auth" value="&lt;b&gt;auth&lt;/b&gt;&lt;br&gt;:3001" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="net-default">
+          <mxGeometry x="40" y="190" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-users" value="&lt;b&gt;users&lt;/b&gt;&lt;br&gt;:3005" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="net-default">
+          <mxGeometry x="240" y="190" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-payment" value="&lt;b&gt;payment&lt;/b&gt;&lt;br&gt;:3006" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="net-default">
+          <mxGeometry x="440" y="190" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-orders" value="&lt;b&gt;orders&lt;/b&gt;&lt;br&gt;:3000" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="net-default">
+          <mxGeometry x="640" y="190" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-catalog" value="&lt;b&gt;catalog&lt;/b&gt;&lt;br&gt;:3002" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="net-default">
+          <mxGeometry x="840" y="190" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-messaging" value="&lt;b&gt;messaging&lt;/b&gt;&lt;br&gt;:3004" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="net-default">
+          <mxGeometry x="1040" y="190" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-notif" value="&lt;b&gt;notif&lt;/b&gt;&lt;br&gt;:3007" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="net-default">
+          <mxGeometry x="1240" y="190" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-search" value="&lt;b&gt;search&lt;/b&gt;&lt;br&gt;:3003" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="net-default">
+          <mxGeometry x="1440" y="190" width="140" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="net-users-data" value="users-data network" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;container=1;collapsible=0;dashed=1;verticalAlign=top;fontSize=12;fontStyle=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="compose">
+          <mxGeometry x="240" y="390" width="180" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="db-users" value="&lt;b&gt;users-db&lt;/b&gt;&lt;br&gt;PostgreSQL&lt;br&gt;:5435" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="net-users-data">
+          <mxGeometry x="20" y="35" width="140" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="net-orders-data" value="orders-data network" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;container=1;collapsible=0;dashed=1;verticalAlign=top;fontSize=12;fontStyle=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="compose">
+          <mxGeometry x="640" y="390" width="180" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="db-orders" value="&lt;b&gt;orders-db&lt;/b&gt;&lt;br&gt;PostgreSQL&lt;br&gt;:5433" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="net-orders-data">
+          <mxGeometry x="20" y="35" width="140" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="net-catalog-data" value="catalog-data network" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;container=1;collapsible=0;dashed=1;verticalAlign=top;fontSize=12;fontStyle=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="compose">
+          <mxGeometry x="840" y="390" width="180" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="db-catalog" value="&lt;b&gt;catalog-db&lt;/b&gt;&lt;br&gt;PostgreSQL&lt;br&gt;:5434" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="net-catalog-data">
+          <mxGeometry x="20" y="35" width="140" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="net-messaging-data" value="messaging-data network" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;container=1;collapsible=0;dashed=1;verticalAlign=top;fontSize=12;fontStyle=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="compose">
+          <mxGeometry x="1040" y="390" width="180" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="db-messaging" value="&lt;b&gt;messaging-db&lt;/b&gt;&lt;br&gt;MongoDB&lt;br&gt;:27019" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="net-messaging-data">
+          <mxGeometry x="20" y="35" width="140" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="net-search-data" value="search-data network" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;container=1;collapsible=0;dashed=1;verticalAlign=top;fontSize=12;fontStyle=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="compose">
+          <mxGeometry x="1390" y="390" width="280" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="db-search" value="&lt;b&gt;search-db&lt;/b&gt;&lt;br&gt;MongoDB&lt;br&gt;:27018" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="net-search-data">
+          <mxGeometry x="15" y="35" width="120" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="cache-search" value="&lt;b&gt;search-cache&lt;/b&gt;&lt;br&gt;Redis&lt;br&gt;:6380" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fontSize=11;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="net-search-data">
+          <mxGeometry x="145" y="35" width="120" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="http-auth-users" value="HTTP" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#1f4e79;fontSize=11;labelBackgroundColor=#f5f5f5;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="svc-auth" target="svc-users">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="http-payment-orders" value="HTTP" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#1f4e79;fontSize=11;labelBackgroundColor=#f5f5f5;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="svc-payment" target="svc-orders">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="http-orders-catalog" value="HTTP" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#1f4e79;fontSize=11;labelBackgroundColor=#f5f5f5;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="svc-orders" target="svc-catalog">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="http-messaging-catalog" value="HTTP" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#1f4e79;fontSize=11;labelBackgroundColor=#f5f5f5;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="svc-messaging" target="svc-catalog">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="amqp-users" style="endArrow=none;html=1;rounded=0;dashed=1;strokeWidth=2;strokeColor=#d79b00;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.1753;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="svc-users" target="rabbitmq">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="amqp-payment" style="endArrow=none;html=1;rounded=0;dashed=1;strokeWidth=2;strokeColor=#d79b00;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.3052;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="svc-payment" target="rabbitmq">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="amqp-orders" style="endArrow=none;html=1;rounded=0;dashed=1;strokeWidth=2;strokeColor=#d79b00;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.4351;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="svc-orders" target="rabbitmq">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="amqp-catalog" style="endArrow=none;html=1;rounded=0;dashed=1;strokeWidth=2;strokeColor=#d79b00;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5649;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="svc-catalog" target="rabbitmq">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="amqp-messaging" style="endArrow=none;html=1;rounded=0;dashed=1;strokeWidth=2;strokeColor=#d79b00;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.6948;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="svc-messaging" target="rabbitmq">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="amqp-notif" style="endArrow=none;html=1;rounded=0;dashed=1;strokeWidth=2;strokeColor=#d79b00;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.8247;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="svc-notif" target="rabbitmq">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="amqp-search" style="endArrow=none;html=1;rounded=0;dashed=1;strokeWidth=2;strokeColor=#d79b00;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.9545;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="svc-search" target="rabbitmq">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="data-users" style="endArrow=none;html=1;rounded=0;strokeWidth=2;strokeColor=#82b366;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="svc-users" target="db-users">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="data-orders" style="endArrow=none;html=1;rounded=0;strokeWidth=2;strokeColor=#82b366;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="svc-orders" target="db-orders">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="data-catalog" style="endArrow=none;html=1;rounded=0;strokeWidth=2;strokeColor=#82b366;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="svc-catalog" target="db-catalog">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="data-messaging" style="endArrow=none;html=1;rounded=0;strokeWidth=2;strokeColor=#82b366;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="svc-messaging" target="db-messaging">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="data-search-db" style="endArrow=none;html=1;rounded=0;strokeWidth=2;strokeColor=#82b366;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="svc-search" target="db-search">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="data-search-cache" style="endArrow=none;html=1;rounded=0;strokeWidth=2;strokeColor=#82b366;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="svc-search" target="cache-search">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend-http-line" style="endArrow=block;html=1;rounded=0;strokeWidth=2;strokeColor=#1f4e79;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="40" y="605" as="sourcePoint" />
+            <mxPoint x="100" y="605" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="legend-http-text" value="HTTP call (sync), arrow points to the callee" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="110" y="595" width="280" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-amqp-line" style="endArrow=none;html=1;rounded=0;dashed=1;strokeWidth=2;strokeColor=#d79b00;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="420" y="605" as="sourcePoint" />
+            <mxPoint x="480" y="605" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="legend-amqp-text" value="AMQP connection to RabbitMQ (async events)" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="490" y="595" width="290" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-data-line" style="endArrow=none;html=1;rounded=0;strokeWidth=2;strokeColor=#82b366;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="810" y="605" as="sourcePoint" />
+            <mxPoint x="870" y="605" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="legend-data-text" value="Datastore connection over a private *-data network (only the owning service joins it)" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="880" y="595" width="500" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-port-text" value="&lt;b&gt;:port&lt;/b&gt; = port published on localhost" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="595" width="260" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-note" value="Each service and its datastore sit behind a compose profile, so START_CATALOG=false (and so on) switches them off. auth, payment and notif have no datastore. The API Gateway, Editorial and Auctions are not in this compose setup." style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontColor=#555555;" vertex="1" parent="1">
+          <mxGeometry x="40" y="625" width="1640" height="20" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
