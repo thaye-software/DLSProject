@@ -1,0 +1,28 @@
+# The k6 load test: the Job, its settings and its script. Not part of kubernetes/kustomization.yaml,
+# because a load test is something you start yourself, not something that runs with the cluster.
+#   kubectl delete -k kubernetes/loadtest --ignore-not-found
+#   kubectl apply -k kubernetes/loadtest
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: default
+resources:
+  - job.yaml
+configMapGenerator:
+  - name: k6-settings
+    envs:
+      - settings.env
+  - name: k6-script
+    files:
+      - script/main.js
+      - script/config.js
+      - script/gateway.js
+      - script/api.js
+      - script/customer.js
+      - script/admin.js
+      - script/data.js
+      - script/random.js
+generatorOptions:
+  # Fixed ConfigMap names, so a new run replaces the old settings and script instead of adding copies.
+  disableNameSuffixHash: true
+  labels:
+    app: k6

@@ -1,0 +1,17 @@
+# http://localhost:30090 is Prometheus' own page, and where a k6 run on your own machine sends its results.
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: monitoring
+  labels:
+    app: prometheus
+spec:
+  type: NodePort
+  selector:
+    app: prometheus
+  ports:
+    - name: http
+      port: 9090
+      targetPort: http
+      nodePort: 30090

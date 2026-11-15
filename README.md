@@ -6,7 +6,7 @@ Limited Watches, an online watch shop, migrated from a Next.js monolith to micro
 |---|---|
 | `monolith/limited-watches/` | The original monolith |
 | `microservices/` | The services, Docker Compose setup and contracts. **How to run: [`microservices/README.md`](microservices/README.md)** |
-| `kubernetes/` | Manifests per service, monitoring (Loki, Promtail, Grafana) and step-by-step guides |
+| `kubernetes/` | Manifests per service, monitoring (Loki, Promtail, Prometheus, Grafana), the k6 load test and step-by-step guides |
 | `.github/workflows/` | CI per service: tests, security scan, image publish to GHCR |
 | `docs/adr/` | Architecture decisions |
 
