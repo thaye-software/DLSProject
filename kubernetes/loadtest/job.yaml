@@ -34,9 +34,10 @@ spec:
               value: experimental-prometheus-rw
             - name: K6_PROMETHEUS_RW_SERVER_URL
               value: http://prometheus.monitoring.svc:9090/api/v1/write
-            # Which figures of each timing reach Prometheus, as k6_http_req_duration_p95 and so on.
-            - name: K6_PROMETHEUS_RW_TREND_STATS
-              value: p(50),p(95),p(99),avg,max
+            # Sends every timing as a histogram (k6_http_req_duration_seconds), so Grafana can work out
+            # the p95 and p99 of all requests together, or of one service or endpoint.
+            - name: K6_FEATURES
+              value: native-histograms
             - name: K6_PROMETHEUS_RW_PUSH_INTERVAL
               value: 5s
             # Ends every series when the run ends, so the graphs stop there instead of holding the last value.
