@@ -1,0 +1,69 @@
+# One run of the k6 load test. It calls the services inside the cluster and pushes its results to Prometheus,
+# where the "k6 load test" dashboard in Grafana reads them. A Job cannot be started twice:
+# delete it before the next run (kubernetes/loadtestguide.txt).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: k6-loadtest
+  labels:
+    app: k6
+spec:
+  # Never run the test a second time by itself, also not when a threshold fails (k6 exit code 99).
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: k6
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: k6
+          image: grafana/k6:2.4.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            # testid labels every result of this run with its start time (UTC), so Grafana can show one run at a time.
+            - exec k6 run --tag testid="$(date -u +%Y-%m-%d_%H-%M-%S)" /scripts/main.js
+          envFrom:
+            # CUSTOMER_VUS, ADMIN_VUS and the durations, from settings.env.
+            - configMapRef:
+                name: k6-settings
+          env:
+            - name: K6_OUT
+              value: experimental-prometheus-rw
+            - name: K6_PROMETHEUS_RW_SERVER_URL
+              value: http://prometheus.monitoring.svc:9090/api/v1/write
+            # Which figures of each timing reach Prometheus, as k6_http_req_duration_p95 and so on.
+            - name: K6_PROMETHEUS_RW_TREND_STATS
+              value: p(50),p(95),p(99),avg,max
+            - name: K6_PROMETHEUS_RW_PUSH_INTERVAL
+              value: 5s
+            # Ends every series when the run ends, so the graphs stop there instead of holding the last value.
+            - name: K6_PROMETHEUS_RW_STALE_MARKERS
+              value: "true"
+            - name: K6_NO_USAGE_REPORT
+              value: "true"
+            - name: ORDERS_URL
+              value: http://orders:3000
+            - name: AUTH_URL
+              value: http://auth:3001
+            - name: CATALOG_URL
+              value: http://catalog:3002
+            - name: SEARCH_URL
+              value: http://search:3003
+            - name: MESSAGING_URL
+              value: http://messaging:3004
+            - name: USERS_URL
+              value: http://users:3005
+            - name: PAYMENT_URL
+              value: http://payment:3006
+            - name: NOTIF_URL
+              value: http://notif:3007
+          volumeMounts:
+            - name: script
+              mountPath: /scripts
+      volumes:
+        - name: script
+          configMap:
+            name: k6-script
