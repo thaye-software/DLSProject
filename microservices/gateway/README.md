@@ -10,6 +10,7 @@ Design: `../../docs/superpowers/specs/2026-11-09-api-gateway-frontend-design.md`
 |---|---|---|
 | `PORT` | `8000` | Default 8000 |
 | `SUPABASE_URL` | `https://<project>.supabase.co` | Required; trailing slash is removed |
+| `SUPABASE_JWT_ISSUER` | `$SUPABASE_URL/auth/v1` | Optional. Exact `iss` to accept, when the gateway reaches Supabase on a different address than tokens name. Local Supabase in Docker: `SUPABASE_URL=http://host.docker.internal:55421`, `SUPABASE_JWT_ISSUER=http://127.0.0.1:55421/auth/v1` |
 | `SUPABASE_JWT_SECRET` | unset (default) | Optional, normally leave unset. Enables HS256 verification for a local Supabase on the legacy secret. Anyone who knows it can forge admin tokens, so never set it to a placeholder or a value that is in git |
 | `ORDERS_URL`, `PAYMENT_URL`, `CATALOG_URL`, `SEARCH_URL`, `MESSAGING_URL`, `NOTIF_URL`, `USERS_URL` | `http://orders:3000` | Upstream per service; unset means the service is not routed |
 | `CORS_ORIGINS` | `http://localhost:3100,https://limitedwatches.dk` | Comma-separated |

@@ -15,6 +15,9 @@ services:
   messaging:
     profiles: ["${START_MESSAGING:-true}"]
     build: .
+    # Lets containers reach a local Supabase on the host (Docker Desktop has this built in; Linux needs it).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     env_file:
       - path: ./.env
         required: false

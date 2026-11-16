@@ -16,11 +16,12 @@ const claimsSchema = z.object({
 
 export function createTokenVerifier(options: {
   supabaseUrl: string;
+  issuer?: string;
   jwtSecret: string | null;
   jwks?: JWTVerifyGetKey;
 }): VerifyToken {
-  const issuer = `${options.supabaseUrl}/auth/v1`;
-  const jwks = options.jwks ?? createRemoteJWKSet(new URL(`${issuer}/.well-known/jwks.json`));
+  const issuer = options.issuer ?? `${options.supabaseUrl}/auth/v1`;
+  const jwks = options.jwks ?? createRemoteJWKSet(new URL(`${options.supabaseUrl}/auth/v1/.well-known/jwks.json`));
   const secret = options.jwtSecret === null ? null : new TextEncoder().encode(options.jwtSecret);
 
   return async (token) => {

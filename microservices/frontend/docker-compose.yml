@@ -13,6 +13,11 @@ services:
         NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-}
     environment:
       GATEWAY_URL: http://gateway:8000
+      # Server-side Supabase address; the browser keeps NEXT_PUBLIC_SUPABASE_URL. Needed for a local Supabase.
+      SUPABASE_URL: ${SUPABASE_URL:-}
+    # Lets containers reach a local Supabase on the host (Docker Desktop has this built in; Linux needs it).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "3100:3100"
     restart: unless-stopped

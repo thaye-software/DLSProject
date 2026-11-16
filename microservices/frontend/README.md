@@ -10,6 +10,7 @@ Copy `.env.example` to `.env.local` (and to `.env` for Docker Compose).
 | --- | --- | --- |
 | `GATEWAY_URL` | runtime, server only | Gateway base URL (`http://localhost:8000`; `http://gateway:8000` in Compose/Kubernetes) |
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | build time | Login and Realtime chat (straight to Supabase) |
+| `SUPABASE_URL` | runtime, optional | Server-side Supabase address when it differs from the browser's (local Supabase in Docker: `http://host.docker.internal:55421`) |
 | `NEXT_PUBLIC_BASE_URL` | build time | Public site URL for canonical URLs, sitemap, robots and email-confirmation redirects (default `http://localhost:3100`) |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | build time | Stripe.js payment confirmation |
 | `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST` | build time | Analytics |

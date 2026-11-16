@@ -45,6 +45,28 @@ describe("createTokenVerifier", () => {
     );
   });
 
+  it("accepts the configured issuer when it differs from the fetch URL", async () => {
+    const verify = createTokenVerifier({
+      supabaseUrl: "http://host.docker.internal:55421",
+      issuer: "http://127.0.0.1:55421/auth/v1",
+      jwtSecret: null,
+      jwks: keys.jwks,
+    });
+    const token = await keys.sign(claims(), { issuer: "http://127.0.0.1:55421/auth/v1" });
+    await expect(verify(token)).resolves.toMatchObject({ userId: USER_ID });
+  });
+
+  it("with an issuer configured, rejects a token issued by the fetch URL", async () => {
+    const verify = createTokenVerifier({
+      supabaseUrl: "http://host.docker.internal:55421",
+      issuer: "http://127.0.0.1:55421/auth/v1",
+      jwtSecret: null,
+      jwks: keys.jwks,
+    });
+    const token = await keys.sign(claims(), { issuer: "http://host.docker.internal:55421/auth/v1" });
+    await expect(verify(token)).rejects.toBeInstanceOf(InvalidTokenError);
+  });
+
   it("rejects wrong audience", async () => {
     await expect(verifier()(await keys.sign(claims(), { audience: "other" }))).rejects.toBeInstanceOf(
       InvalidTokenError,

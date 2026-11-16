@@ -27,3 +27,4 @@
 - `payment.events` (Payment): `payment_complete`, `payment_failed`, `payment_refunded` -> Orders.
 
 Keep service boundaries, sync (HTTP) vs async (RabbitMQ) choices and per-service datastores matching this.
+

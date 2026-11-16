@@ -34,7 +34,7 @@ Without `SUPABASE_URL` / `SUPABASE_SECRET_KEY`, broadcasts are skipped and histo
 | `MONGODB_URL` | `mongodb://localhost:27019/messaging` | compose `messaging-db` |
 | `RABBITMQ_URL` | `amqp://guest:guest@localhost:5672` | |
 | `CATALOG_URL` | `http://localhost:3002` | |
-| `SUPABASE_URL` | `http://localhost:54321` | leave empty to skip Realtime |
+| `SUPABASE_URL` | `http://localhost:55421` | leave empty to skip Realtime |
 | `SUPABASE_SECRET_KEY` | service role key | leave empty to skip Realtime |
 
 Copy `.env.example` to `.env`; `.env` is gitignored.

@@ -28,6 +28,7 @@ async function listen(config: Config): Promise<string> {
 const baseConfig = (upstreams: Config["upstreams"]): Config => ({
   port: 0,
   supabaseUrl: "https://x.supabase.co",
+  supabaseJwtIssuer: "https://x.supabase.co/auth/v1",
   supabaseJwtSecret: null,
   upstreams,
   corsOrigins: [ORIGIN],

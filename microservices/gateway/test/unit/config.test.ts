@@ -33,6 +33,22 @@ describe("loadConfig", () => {
     expect(loadConfig({ SUPABASE_URL: "https://x.supabase.co/" }).supabaseUrl).toBe("https://x.supabase.co");
   });
 
+  it("defaults the JWT issuer to SUPABASE_URL/auth/v1, also when blank", () => {
+    expect(loadConfig({ SUPABASE_URL: "https://x.supabase.co/" }).supabaseJwtIssuer).toBe("https://x.supabase.co/auth/v1");
+    expect(loadConfig({ SUPABASE_URL: "https://x.supabase.co", SUPABASE_JWT_ISSUER: " " }).supabaseJwtIssuer).toBe(
+      "https://x.supabase.co/auth/v1",
+    );
+  });
+
+  it("uses SUPABASE_JWT_ISSUER when set", () => {
+    const config = loadConfig({
+      SUPABASE_URL: "http://host.docker.internal:55421",
+      SUPABASE_JWT_ISSUER: "http://127.0.0.1:55421/auth/v1/",
+    });
+    expect(config.supabaseUrl).toBe("http://host.docker.internal:55421");
+    expect(config.supabaseJwtIssuer).toBe("http://127.0.0.1:55421/auth/v1");
+  });
+
   it("rejects a short SUPABASE_JWT_SECRET", () => {
     expect(() => loadConfig({ ...validEnv, SUPABASE_JWT_SECRET: "0123456789" })).toThrow(/Invalid environment/);
   });

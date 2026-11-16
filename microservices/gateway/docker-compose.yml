@@ -14,6 +14,9 @@ services:
       MESSAGING_URL: http://messaging:3004
       NOTIF_URL: http://notif:3007
       CORS_ORIGINS: http://localhost:3100
+    # Lets containers reach a local Supabase on the host (Docker Desktop has this built in; Linux needs it).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "8000:8000"
     restart: unless-stopped
