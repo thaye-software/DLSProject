@@ -1,5 +1,6 @@
 import type { OrdersClient } from "../orders-client/orders-client.js";
 import type { PaymentProvider } from "../payment-provider/payment-provider.js";
+import { logger } from "../shared/logger.js";
 import type { CreatePaymentSessionResult } from "./payment-session-types.js";
 
 export type CreatePaymentSessionDependencies = {
@@ -15,11 +16,21 @@ export async function createPaymentSession(
   { orders, payments, now }: CreatePaymentSessionDependencies,
 ): Promise<CreatePaymentSessionResult> {
   const lookup = await orders.getPaymentDetails(orderId);
-  if (lookup.kind !== "found") return { outcome: lookup.kind };
+  if (lookup.kind !== "found") {
+    logger.info({ orderId, ordersAnswer: lookup.kind }, "Payment refused: Orders did not return payable details");
+    return { outcome: lookup.kind };
+  }
 
   const { details } = lookup;
-  if (details.user_id !== userId) return { outcome: "not_found" };
+  if (details.user_id !== userId) {
+    logger.info({ orderId, userId, orderUserId: details.user_id }, "Payment refused: order belongs to another user");
+    return { outcome: "not_found" };
+  }
   if (details.status !== PAYABLE_STATUS || new Date(details.expires_at) <= now()) {
+    logger.info(
+      { orderId, status: details.status, expiresAt: details.expires_at },
+      "Payment refused: order is not RESERVED or has expired",
+    );
     return { outcome: "not_payable" };
   }
 

@@ -1,4 +1,5 @@
 import type { ConfirmChannel } from "amqplib";
+import { callDependency } from "../shared/logger.js";
 import type { EventPublisher } from "./event-publisher.js";
 
 const EXCHANGE = "payment.events";
@@ -9,14 +10,19 @@ export async function createEventPublisher(channel: ConfirmChannel): Promise<Eve
 
   return {
     publish: (event) =>
-      new Promise((resolve, reject) => {
-        channel.publish(
-          EXCHANGE,
-          event.type,
-          Buffer.from(JSON.stringify(event), "utf8"),
-          { contentType: CONTENT_TYPE, persistent: true, messageId: event.id },
-          (error) => (error ? reject(error) : resolve()),
-        );
-      }),
+      callDependency(
+        "RabbitMQ publish event",
+        { exchange: EXCHANGE, eventId: event.id, eventType: event.type, orderId: event.subject },
+        () =>
+          new Promise<void>((resolve, reject) => {
+            channel.publish(
+              EXCHANGE,
+              event.type,
+              Buffer.from(JSON.stringify(event), "utf8"),
+              { contentType: CONTENT_TYPE, persistent: true, messageId: event.id },
+              (error) => (error ? reject(error) : resolve()),
+            );
+          }),
+      ),
   };
 }

@@ -1,5 +1,6 @@
 import express, { type Router } from "express";
 import { z } from "zod";
+import { logger } from "../shared/logger.js";
 import { sendProblem, sendValidationProblem } from "../shared/problem.js";
 import type { ContactMessage } from "./contact-types.js";
 
@@ -13,6 +14,7 @@ export function contactController(sendContactMessage: (contactMessage: ContactMe
   const router = express.Router();
 
   router.post("/contact", express.json(), async (request, response) => {
+    logger.debug({ input: request.body }, "Request input");
     const contactMessage = contactMessageSchema.safeParse(request.body);
     if (!contactMessage.success) {
       const detail = contactMessage.error.issues
@@ -25,7 +27,7 @@ export function contactController(sendContactMessage: (contactMessage: ContactMe
     try {
       await sendContactMessage(contactMessage.data);
     } catch (error) {
-      console.error("Failed to send contact message", error);
+      logger.error({ err: error }, "Failed to send contact message");
       sendProblem(response, {
         code: "email_unavailable",
         title: "Email provider unavailable",
@@ -35,6 +37,7 @@ export function contactController(sendContactMessage: (contactMessage: ContactMe
       });
       return;
     }
+    logger.info("Contact message sent");
     response.sendStatus(202);
   });
 

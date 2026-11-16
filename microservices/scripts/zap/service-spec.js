@@ -3,8 +3,8 @@
 //   node service-spec.js <openapi.json> <tag> <server-url> <out.json>
 //
 // Keeps the operations tagged <tag>, points `servers` at <server-url> (the auth proxy), and fills
-// order_id / product_id with records that exist in the CI stack, so ZAP reaches the handlers
-// instead of only their 404s. Env: ORDER_ID, PRODUCT_ID (either may be empty).
+// order_id / product_id / user_id with records that exist in the CI stack, so ZAP reaches the handlers
+// instead of only their 404s. Env: ORDER_ID, PRODUCT_ID, ZAP_USER_ID (any may be empty).
 import { readFileSync, writeFileSync } from "node:fs";
 
 const [input, tag, serverUrl, output] = process.argv.slice(2);
@@ -15,7 +15,9 @@ if (!input || !tag || !serverUrl || !output) {
 
 const METHODS = new Set(["get", "put", "post", "delete", "patch", "head", "options", "trace"]);
 const knownIds = Object.fromEntries(
-  Object.entries({ order_id: process.env.ORDER_ID, product_id: process.env.PRODUCT_ID }).filter(([, id]) => id),
+  Object.entries({ order_id: process.env.ORDER_ID, product_id: process.env.PRODUCT_ID, user_id: process.env.ZAP_USER_ID }).filter(
+    ([, id]) => id,
+  ),
 );
 
 const spec = JSON.parse(readFileSync(input, "utf8"));

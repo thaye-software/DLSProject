@@ -1,0 +1,23 @@
+# Only Orders's pods may connect to its Postgres; every other pod is refused.
+# Same rule as the orders-data network in microservices/orders/docker-compose.yml.
+# Enforced only when the cluster's network plugin supports NetworkPolicy (see setupguide.txt).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: orders-db
+  labels:
+    app: orders-db
+spec:
+  podSelector:
+    matchLabels:
+      app: orders-db
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: orders
+      ports:
+        - protocol: TCP
+          port: 5432

@@ -1,0 +1,55 @@
+services:
+  users-db:
+    profiles: ["${START_USERS:-true}"]
+    networks:
+      - users-data
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: users
+      POSTGRES_PASSWORD: users
+      POSTGRES_DB: users
+    ports:
+      - "5435:5432"
+    volumes:
+      - users-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "users", "-d", "users"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  users:
+    profiles: ["${START_USERS:-true}"]
+    networks:
+      - default
+      - users-data
+    build: .
+    env_file:
+      - path: ./.env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://users:users@users-db:5432/users
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    ports:
+      - "3005:3005"
+    depends_on:
+      users-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    # Restarted after a crash (non-zero exit), but not when Docker Desktop starts: on shutdown the service
+    # gets SIGTERM and exits 0, so Docker has nothing to restart. Start the stack with docker compose up.
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3005/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+networks:
+  # Only users joins this network with users-db, so no other container can reach it.
+  # RabbitMQ and the other services' HTTP APIs stay on the shared default network.
+  users-data:
+
+volumes:
+  users-db-data:

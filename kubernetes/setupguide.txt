@@ -18,7 +18,7 @@ If the client is older, follow softwareToInstall.txt.
 3.
 kubectl get pods
 
-Expected, each 1/1 Running: rabbitmq, catalog-db, catalog, orders-db, orders, payment, notif, search-db, search-cache, search, messaging-db, messaging.
+Expected, each 1/1 Running: rabbitmq, catalog-db, catalog, orders-db, orders, payment, notif, search-db, search-cache, search, messaging-db, messaging, users-db, users, auth.
 The first time, search-db or messaging-db can stay ContainerCreating while mongo:7 downloads.
 
 4.
@@ -29,29 +29,29 @@ Each line should be {"status":"ok"}.
 RabbitMQ UI: run kubectl port-forward svc/rabbitmq 15672 in a second terminal, open http://localhost:15672  guest / guest
 
 5. Open Lens. Bottom bar: docker-desktop (v1.36.1).
-Namespace default. Workloads lists the same twelve pods.
+Namespace default. Workloads lists the same fifteen pods.
 An empty Overview metrics panel is normal.
 "Node docker-desktop has been rebooted" is from startup.
 
-6. If a pod is ErrImageNeverPull, rebuild that image, then delete its pod:
+6. If an app pod is ErrImagePull or ImagePullBackOff, see why:
 
-docker build -t dls/catalog:local microservices/catalog
-docker build -t dls/orders:local microservices/orders
-docker build -t dls/payment:local microservices/payments
-docker build -t dls/notif:local microservices/emails
-docker build -t dls/search:local microservices/search
-docker build -t dls/messaging:local microservices/messaging
+kubectl describe pod -l app=catalog
 
+"unauthorized" or "denied": that image is still private on GHCR. Make it public, see First-time setup, then delete the pod:
 kubectl delete pod -l app=catalog
-kubectl delete pod -l app=orders
-kubectl delete pod -l app=payment
-kubectl delete pod -l app=notif
-kubectl delete pod -l app=search
-kubectl delete pod -l app=messaging
 
-If it stays ErrImageNeverPull: Docker Desktop, Settings, General, enable "Use containerd for pulling and storing images", Apply, then build and delete that pod again.
+"not found" or "manifest unknown": that service has no published image yet. CI publishes one on every push to dev or main that changes the service.
 
-7. If kubectl get pods lists nothing, apply again in this order:
+Use the matching app name: catalog, orders, payment, notif, search, messaging, users, or auth.
+
+To run the newest image CI published, restart the deployment. It pulls :latest again:
+kubectl rollout restart deployment/catalog
+
+7. If kubectl get pods lists nothing, apply everything again, monitoring included, with one command:
+
+kubectl apply -k kubernetes
+
+Or one folder at a time, in this order:
 
 kubectl apply -f kubernetes/rabbitmq
 kubectl apply -f kubernetes/catalog
@@ -60,6 +60,8 @@ kubectl apply -f kubernetes/payment
 kubectl apply -f kubernetes/notif
 kubectl apply -f kubernetes/search
 kubectl apply -f kubernetes/messaging
+kubectl apply -f kubernetes/users
+kubectl apply -f kubernetes/auth
 
 Then repeat steps 3 and 4.
 
@@ -77,18 +79,29 @@ kubectl get nodes
 
 Expected: v1.36.1, context docker-desktop, node docker-desktop Ready.
 
-This starts twelve workloads, in this order:
-RabbitMQ, Catalog and its Postgres, Orders and its Postgres, Payment, Notif, Search with MongoDB and Redis, then Messaging and its MongoDB.
+This starts fifteen workloads, in this order:
+RabbitMQ, Catalog and its Postgres, Orders and its Postgres, Payment, Notif, Search with MongoDB and Redis, Messaging and its MongoDB, Users and its Postgres, then Auth.
 
-Build each app image on this PC. Kubernetes uses the image you just built.
+Kubernetes pulls each app image from GitHub Container Registry: ghcr.io/thaye-software/dlsproject-<service folder>:latest.
+CI pushes these images on every push to dev or main, after the tests and the security scan pass. Nothing is built on this PC.
 Apply one folder at a time. The kubernetes folder also contains these text guides, so leave the folder itself out of kubectl apply.
-Usernames, passwords, the fake payment provider, and the fake mailer are already in the yaml files.
+Usernames, passwords, the fake payment provider, the fake mailer, and the fake Supabase stand-ins for Users and Auth are already in the yaml files.
 
-If an app pod stays ErrImageNeverPull, Docker Desktop is not sharing its images with Kubernetes.
-Settings, General, enable "Use containerd for pulling and storing images", Apply, run that service's docker build again, then delete the pod:
-kubectl delete pod -l app=catalog
+Each database and the Search cache has a NetworkPolicy (the *-networkpolicy.yaml files): only its own service's pods may connect to it.
+A NetworkPolicy only works when the cluster's network plugin enforces it, and Docker Desktop's kubeadm cluster may not. To check, after the stack is up:
 
-Use the matching app name: catalog, orders, payment, notif, search, or messaging.
+kubectl run netcheck --rm -it --restart=Never --image=busybox:1.36 -- nc -z -w 3 catalog-db 5432
+
+"pod deleted" with no error before it: nothing blocked the connection, so the policies are not enforced here.
+An error or a wait of 3 seconds: they are enforced. The database NodePorts from this PC may then be refused as well. Use a port-forward instead, for example:
+kubectl port-forward deployment/catalog-db 5434:5432
+
+The images are public, so Kubernetes pulls them without a login.
+A service's first image on GHCR starts out private. An owner of the thaye-software organization makes it public once:
+GitHub, thaye-software, Packages, the dlsproject-<service> package, Package settings, Change visibility, Public.
+
+If an app pod stays ErrImagePull or ImagePullBackOff, run kubectl describe pod -l app=catalog and see step 6 of Everyday setup start.
+Use the matching app name: catalog, orders, payment, notif, search, messaging, users, or auth.
 Wait until the health check in that section prints {"status":"ok"} before you start the next section.
 
 
@@ -119,8 +132,8 @@ The user must log in again to get a token with app_metadata.role = "admin".
 
 ---------- RabbitMQ ----------
 
-Start here. There is no image to build. The public image is rabbitmq:4-management.
-Catalog, Orders, Payment, Notif, Search, and Messaging connect to rabbitmq:5672 with guest / guest.
+Start here. The public image is rabbitmq:4-management.
+Catalog, Orders, Payment, Notif, Search, Messaging, and Users connect to rabbitmq:5672 with guest / guest.
 
 kubectl apply -f kubernetes/rabbitmq
 kubectl rollout status deployment/rabbitmq
@@ -136,7 +149,6 @@ From this PC, use kubectl port-forward svc/rabbitmq 5672 (AMQP on localhost:5672
 Start after RabbitMQ is Running.
 Catalog keeps products, stock, and reservations in its own Postgres. Other services call it over HTTP.
 
-docker build -t dls/catalog:local microservices/catalog
 kubectl apply -f kubernetes/catalog
 kubectl rollout status deployment/catalog-db
 kubectl rollout status deployment/catalog
@@ -155,7 +167,6 @@ Start after Catalog returns {"status":"ok"}.
 Orders keeps reserved orders in its own Postgres and calls Catalog at http://catalog:3002.
 The shipping price is 300 DKK.
 
-docker build -t dls/orders:local microservices/orders
 kubectl apply -f kubernetes/orders
 kubectl rollout status deployment/orders-db
 kubectl rollout status deployment/orders
@@ -172,9 +183,8 @@ Databases are not exposed to this PC; use kubectl port-forward svc/<name> <port>
 
 Start after Orders returns {"status":"ok"}.
 Payment has no database. It calls Orders at http://orders:3000 and uses the fake provider, so this cluster needs no Stripe key.
-The source folder is microservices/payments.
+The image is ghcr.io/thaye-software/dlsproject-payments:latest, built from microservices/payments.
 
-docker build -t dls/payment:local microservices/payments
 kubectl apply -f kubernetes/payment
 kubectl rollout status deployment/payment
 kubectl port-forward svc/payment 3006:3006   (second terminal; stop it with Ctrl+C)
@@ -190,9 +200,8 @@ Other pods call http://payment:3006.
 
 Start after Payment is up. Notif itself only waits for RabbitMQ.
 Notif has no database. It reads order events from RabbitMQ and uses the fake mailer, so this cluster needs no Resend key.
-The source folder is microservices/emails.
+The image is ghcr.io/thaye-software/dlsproject-emails:latest, built from microservices/emails.
 
-docker build -t dls/notif:local microservices/emails
 kubectl apply -f kubernetes/notif
 kubectl rollout status deployment/notif
 kubectl port-forward svc/notif 3007:3007   (second terminal; stop it with Ctrl+C)
@@ -207,10 +216,9 @@ Other pods call http://notif:3007.
 ---------- Search ----------
 
 Start after RabbitMQ is Running.
-Search fills its product read model from catalog events on RabbitMQ, and stores that model in MongoDB with a cache in Redis. The image is dls/search:local.
+Search fills its product read model from catalog events on RabbitMQ, and stores that model in MongoDB with a cache in Redis. The image is ghcr.io/thaye-software/dlsproject-search:latest.
 Redis has no disk. A restart clears the cache, and searches still run.
 
-docker build -t dls/search:local microservices/search
 kubectl apply -f kubernetes/search
 kubectl rollout status deployment/search-db
 
@@ -239,7 +247,6 @@ Start after Catalog returns {"status":"ok"}. RabbitMQ must already be Running.
 Messaging stores chat in its own MongoDB and calls Catalog at http://catalog:3002. It reads user_deleted from RabbitMQ.
 Supabase Realtime is left unset, so live broadcast is off and chat history still works over HTTP.
 
-docker build -t dls/messaging:local microservices/messaging
 kubectl apply -f kubernetes/messaging
 kubectl rollout status deployment/messaging-db
 
@@ -258,14 +265,59 @@ kubectl logs deployment/messaging
 The log should include: messaging listening on port 3004 (realtime: off)
 
 
+---------- Users ----------
+
+Start after RabbitMQ is Running.
+Users keeps profiles, roles, and the saved address in its own Postgres, and publishes user_deleted on RabbitMQ (Orders, Catalog, and Messaging read it).
+IDENTITY_PROVIDER is fake, so this cluster needs no Supabase project. Supabase accounts and avatar files are never touched, and avatars get a made-up URL.
+
+kubectl apply -f kubernetes/users
+kubectl rollout status deployment/users-db
+kubectl rollout status deployment/users
+
+The Users image applies its database migrations, then listens.
+curl.exe http://localhost:30005/health
+
+Expected: {"status":"ok"}
+Postgres from this PC is localhost:30435. Other pods call http://users:3005.
+kubectl logs deployment/users
+The log should include: users listening on port 3005
+
+
+---------- Auth ----------
+
+Start after Users returns {"status":"ok"}.
+Auth has no database. The gateway will ask it at /verify whether a caller is signed in. It looks up the role at http://users:3005.
+TOKEN_VERIFIER is fake, so this cluster needs no Supabase project: the bearer token fake:<user id> signs in as that user, unchecked. Only use it in this local cluster.
+
+kubectl apply -f kubernetes/auth
+kubectl rollout status deployment/auth
+curl.exe http://localhost:30001/health
+
+Expected: {"status":"ok"}
+kubectl logs deployment/auth
+The log should include: auth listening on port 3001 (token verifier: fake)
+Other pods call http://auth:3001.
+
+Try a sign-in. There is no gateway yet, so call Auth and Users directly. A user with no profile is stopped:
+curl.exe -i -H "Authorization: Bearer fake:11111111-1111-4111-8111-111111111111" -H "X-Forwarded-Method: GET" -H "X-Forwarded-Uri: /users/me" http://localhost:30001/verify
+
+Expected: HTTP/1.1 403 and "code":"profile_required" (the first time only; after the next step it is 200).
+Create the profile, as the gateway would after /verify:
+Invoke-RestMethod -Method Post http://localhost:30005/users -ContentType application/json -Headers @{ 'X-User-Id' = '11111111-1111-4111-8111-111111111111'; 'X-User-Email' = '11111111-1111-4111-8111-111111111111@fake.invalid' } -Body '{"username":"k8s_check"}'
+
+Expected: the new profile, with role customer.
+Run the first curl.exe again. Expected: HTTP/1.1 200 with X-User-Role: customer.
+
+
 ---------- Check the whole stack ----------
 
-Run this after Messaging is up.
+Run this after Auth is up.
 Or paste kubernetes/verifykubernetes.txt into PowerShell. The last line says ALL OK when the yaml workloads are running.
 
 kubectl get pods
 
-Expected, each 1/1 Running: rabbitmq, catalog-db, catalog, orders-db, orders, payment, notif, search-db, search-cache, search, messaging-db, messaging.
+Expected, each 1/1 Running: rabbitmq, catalog-db, catalog, orders-db, orders, payment, notif, search-db, search-cache, search, messaging-db, messaging, users-db, users, auth.
 
 curl.exe http://localhost:30080/health
 For each service, in a second terminal: kubectl port-forward svc/<name> <port>:<port>  (catalog 3002, orders 3000, payment 3006, notif 3007, search 3003, messaging 3004), then curl.exe http://localhost:<port>/health

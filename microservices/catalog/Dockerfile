@@ -18,4 +18,5 @@ COPY --from=build /app/dist ./dist
 USER node
 EXPOSE 3002
 # Applies pending migrations before starting; prisma migrate deploy is a no-op when the schema is current.
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+# exec: node replaces the shell, so it receives SIGTERM and shuts down cleanly.
+CMD ["sh", "-c", "npx prisma migrate deploy && exec node dist/main.js"]

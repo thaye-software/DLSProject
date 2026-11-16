@@ -1,0 +1,55 @@
+# auth pipeline: test ──► security-scan ──► publish (pushes to dev/main only).
+# Runs only when auth (or a stage it uses) changes, so auth ships independently.
+name: auth
+
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - "microservices/auth/**"
+      - "microservices/docs/contracts/**"
+      - "microservices/docker-compose.yml"
+      - ".github/workflows/auth.yml"
+      - ".github/workflows/execute-tests.yml"
+      - ".github/workflows/security-scan.yml"
+      - ".github/workflows/publish-image.yml"
+      - "microservices/scripts/zap/**"
+  pull_request:
+    paths:
+      - "microservices/auth/**"
+      - "microservices/docs/contracts/**"
+      - "microservices/docker-compose.yml"
+      - ".github/workflows/auth.yml"
+      - ".github/workflows/execute-tests.yml"
+      - ".github/workflows/security-scan.yml"
+      - ".github/workflows/publish-image.yml"
+      - "microservices/scripts/zap/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    uses: ./.github/workflows/execute-tests.yml
+    with:
+      service: auth
+
+  security-scan:
+    needs: test
+    uses: ./.github/workflows/security-scan.yml
+    with:
+      service: auth
+
+  publish:
+    needs: [test, security-scan]
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/publish-image.yml
+    with:
+      service: auth

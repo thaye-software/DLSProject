@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { paymentWebhookController } from "../../src/payment-webhook/payment-webhook-controller.js";
 import { handlePaymentWebhook } from "../../src/payment-webhook/payment-webhook-service.js";
 import type { EventPublisher } from "../../src/rabbitmq/event-publisher.js";
@@ -234,7 +234,6 @@ describe("POST /webhooks/stripe", () => {
       setup: { latestRefund: () => Promise.reject(new Error("Stripe is down")) },
     },
   ])("answers 500 when $name, so Stripe retries", async ({ event, setup }) => {
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
     const { deliver } = await webhookServer(setup);
 
     const response = await deliver(JSON.stringify(event));

@@ -1,5 +1,6 @@
 import type { Channel, ConsumeMessage } from "amqplib";
 import type { z } from "zod";
+import { elapsedMs, logger, withLogContext } from "../shared/logger.js";
 import { parseCloudEvent, type CloudEvent } from "./cloud-event.js";
 import { RETRY_DELAYS_MS, withRetries, type Sleep } from "./retry.js";
 
@@ -39,30 +40,42 @@ export async function startConsumer(
   { queue, handlers, prefetch = DEFAULT_PREFETCH, retryDelaysMs = RETRY_DELAYS_MS, sleep }: ConsumerOptions,
 ): Promise<Consumer> {
   async function process(message: ConsumeMessage): Promise<Outcome> {
+    logger.info(
+      { queue, routingKey: message.fields.routingKey, messageId: message.properties.messageId, bytes: message.content.length },
+      "Message received",
+    );
     const parsed = parseCloudEvent(message.content);
     if (!parsed.ok) {
-      console.error(`Dead-lettering message from ${queue}: ${parsed.reason}`);
+      logger.error({ queue, reason: parsed.reason }, "Dead-lettering message: not a valid CloudEvent");
       return "dead-letter";
     }
 
     const { event } = parsed;
+    return withLogContext({ queue, eventId: event.id, eventType: event.type }, () => handle(event));
+  }
+
+  async function handle(event: CloudEvent): Promise<Outcome> {
+    const startedAt = performance.now();
+    logger.debug({ input: event }, "Event input");
+
     const handler = Object.hasOwn(handlers, event.type) ? handlers[event.type] : undefined;
     if (!handler) {
-      console.error(`Dead-lettering event ${event.id}: no handler for type ${event.type}`);
+      logger.error("Dead-lettering event: no handler for its type");
       return "dead-letter";
     }
 
     const prepared = handler(event);
     if (!prepared.ok) {
-      console.error(`Dead-lettering event ${event.id} (${event.type}): ${prepared.reason}`);
+      logger.error({ reason: prepared.reason }, "Dead-lettering event: invalid data");
       return "dead-letter";
     }
 
     try {
       await withRetries(prepared.run, retryDelaysMs, sleep);
+      logger.debug({ durationMs: elapsedMs(startedAt) }, "Event handled");
       return "ack";
     } catch (error) {
-      console.error(`Dead-lettering event ${event.id} (${event.type}) after ${retryDelaysMs.length} retries`, error);
+      logger.error({ err: error, retries: retryDelaysMs.length }, "Dead-lettering event: handler kept failing");
       return "dead-letter";
     }
   }
@@ -72,7 +85,7 @@ export async function startConsumer(
     if (!message) return;
     process(message)
       .then((outcome) => (outcome === "ack" ? channel.ack(message) : channel.nack(message, false, false)))
-      .catch((error) => console.error(`Could not settle message from ${queue}`, error));
+      .catch((error) => logger.error({ err: error, queue }, "Could not settle message"));
   });
 
   return {

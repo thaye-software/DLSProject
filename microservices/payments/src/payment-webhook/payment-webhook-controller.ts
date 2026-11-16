@@ -2,6 +2,7 @@ import express, { type Router } from "express";
 import Stripe from "stripe";
 import { orderOwnerFrom } from "../payment-provider/order-metadata.js";
 import type { PaymentProvider } from "../payment-provider/payment-provider.js";
+import { logger } from "../shared/logger.js";
 import type { Money } from "../shared/money.js";
 import { sendProblem } from "../shared/problem.js";
 import type { PaymentWebhook } from "./payment-webhook-types.js";
@@ -27,6 +28,7 @@ export function paymentWebhookController({
     try {
       event = Stripe.webhooks.constructEvent(request.body, request.get("stripe-signature") ?? "", webhookSecret);
     } catch {
+      logger.warn("Rejected Stripe webhook: invalid signature");
       sendProblem(response, {
         code: "invalid_signature",
         title: "Invalid signature",
@@ -37,11 +39,19 @@ export function paymentWebhookController({
       return;
     }
 
+    logger.debug({ input: event }, "Stripe event input");
+
     try {
       const webhook = await toPaymentWebhook(event, payments);
-      if (webhook) await handlePaymentWebhook(webhook);
+      if (webhook) {
+        await handlePaymentWebhook(webhook);
+        logger.info(
+          { stripeEventId: event.id, stripeEventType: event.type, eventType: webhook.type, orderId: webhook.orderId },
+          "Stripe event published",
+        );
+      }
     } catch (error) {
-      console.error(`Failed to handle Stripe event ${event.id} (${event.type})`, error);
+      logger.error({ err: error, stripeEventId: event.id, stripeEventType: event.type }, "Failed to handle Stripe event");
       sendProblem(response, {
         code: "webhook_failed",
         title: "Webhook could not be processed",
@@ -123,12 +133,12 @@ async function toPaymentWebhook(
       };
     }
     default:
-      return null;
+      return ignore(event, "event type is not handled");
   }
 }
 
 function ignore(event: Stripe.Event, reason: string): null {
-  console.warn(`Ignoring Stripe event ${event.id} (${event.type}): ${reason}`);
+  logger.info({ stripeEventId: event.id, stripeEventType: event.type, reason }, "Ignoring Stripe event");
   return null;
 }
 

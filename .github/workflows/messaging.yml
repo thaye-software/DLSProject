@@ -1,3 +1,5 @@
+# messaging pipeline: test ──► security-scan ──► publish (pushes to dev/main only).
+# Runs only when messaging (or a stage it uses) changes, so messaging ships independently.
 name: messaging
 
 on:
@@ -5,26 +7,49 @@ on:
     branches: [dev, main]
     paths:
       - "microservices/messaging/**"
+      - "microservices/docs/contracts/**"
+      - "microservices/docker-compose.yml"
       - ".github/workflows/messaging.yml"
+      - ".github/workflows/execute-tests.yml"
+      - ".github/workflows/security-scan.yml"
+      - ".github/workflows/publish-image.yml"
+      - "microservices/scripts/zap/**"
   pull_request:
     paths:
       - "microservices/messaging/**"
+      - "microservices/docs/contracts/**"
+      - "microservices/docker-compose.yml"
       - ".github/workflows/messaging.yml"
+      - ".github/workflows/execute-tests.yml"
+      - ".github/workflows/security-scan.yml"
+      - ".github/workflows/publish-image.yml"
+      - "microservices/scripts/zap/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    uses: ./.github/workflows/execute-tests.yml
+    with:
+      service: messaging
 
-      - name: Set up toolchain
-        run: echo "::warning title=messaging::Language and test framework not chosen yet"
+  security-scan:
+    needs: test
+    uses: ./.github/workflows/security-scan.yml
+    with:
+      service: messaging
 
-      - name: Install dependencies
-        run: echo "TODO install dependencies"
-
-      - name: Unit tests
-        run: echo "TODO run unit tests"
-
-      - name: Integration tests
-        run: echo "TODO run integration tests"
+  publish:
+    needs: [test, security-scan]
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/publish-image.yml
+    with:
+      service: messaging

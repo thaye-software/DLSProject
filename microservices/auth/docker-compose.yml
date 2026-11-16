@@ -1,0 +1,24 @@
+services:
+  auth:
+    profiles: ["${START_AUTH:-true}"]
+    build: .
+    env_file:
+      - path: ./.env
+        required: false
+    environment:
+      USERS_URL: http://users:3005
+    ports:
+      - "3001:3001"
+    depends_on:
+      users:
+        condition: service_healthy
+        # Users can be switched off with START_USERS=false (or run elsewhere); /verify then answers 503.
+        required: false
+    # Restarted after a crash (non-zero exit), but not when Docker Desktop starts: on shutdown the service
+    # gets SIGTERM and exits 0, so Docker has nothing to restart. Start the stack with docker compose up.
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
