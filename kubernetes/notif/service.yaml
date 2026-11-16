@@ -5,11 +5,10 @@ metadata:
   labels:
     app: notif
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: notif
   ports:
     - name: http
       port: 3007
       targetPort: http
-      nodePort: 30007

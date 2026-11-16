@@ -1,4 +1,6 @@
 include:
+  - gateway/docker-compose.yml
+  - frontend/docker-compose.yml
   - catalog/docker-compose.yml
   - orders/docker-compose.yml
   - payments/docker-compose.yml
@@ -11,6 +13,8 @@ include:
 services:
   rabbitmq:
     image: rabbitmq:4-management
+    # Run as rabbitmq so the healthcheck (docker exec) doesn't create .erlang.cookie as root and lock the server out.
+    user: rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"

@@ -1,0 +1,28 @@
+services:
+  frontend:
+    profiles: ["${START_FRONTEND:-true}"]
+    build:
+      context: .
+      # Public values are baked into the browser bundle: cp .env.example .env (see README.md)
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-}
+        NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:-}
+        NEXT_PUBLIC_POSTHOG_KEY: ${NEXT_PUBLIC_POSTHOG_KEY:-}
+        NEXT_PUBLIC_POSTHOG_HOST: ${NEXT_PUBLIC_POSTHOG_HOST:-}
+        NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-}
+    environment:
+      GATEWAY_URL: http://gateway:8000
+      # Server-side Supabase address; the browser keeps NEXT_PUBLIC_SUPABASE_URL. Needed for a local Supabase.
+      SUPABASE_URL: ${SUPABASE_URL:-}
+    # Lets containers reach a local Supabase on the host (Docker Desktop has this built in; Linux needs it).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "3100:3100"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3100/').then(r=>process.exit(r.status<500?0:1),()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3

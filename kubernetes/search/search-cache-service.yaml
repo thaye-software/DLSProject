@@ -5,11 +5,10 @@ metadata:
   labels:
     app: search-cache
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: search-cache
   ports:
     - name: redis
       port: 6379
       targetPort: redis
-      nodePort: 30380

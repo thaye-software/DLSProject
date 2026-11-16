@@ -5,11 +5,10 @@ metadata:
   labels:
     app: messaging
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: messaging
   ports:
     - name: http
       port: 3004
       targetPort: http
-      nodePort: 30004

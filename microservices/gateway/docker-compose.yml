@@ -1,0 +1,27 @@
+services:
+  gateway:
+    profiles: ["${START_GATEWAY:-true}"]
+    build: .
+    # Needs SUPABASE_URL: cp .env.example .env (see README.md)
+    env_file:
+      - path: ./.env
+        required: false
+    environment:
+      ORDERS_URL: http://orders:3000
+      PAYMENT_URL: http://payment:3006
+      CATALOG_URL: http://catalog:3002
+      SEARCH_URL: http://search:3003
+      MESSAGING_URL: http://messaging:3004
+      NOTIF_URL: http://notif:3007
+      CORS_ORIGINS: http://localhost:3100
+    # Lets containers reach a local Supabase on the host (Docker Desktop has this built in; Linux needs it).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
