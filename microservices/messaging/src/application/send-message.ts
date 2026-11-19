@@ -1,5 +1,6 @@
 import { canAccess, type Message, type Viewer } from "../domain/chat.js";
 import { uuidV5 } from "../domain/uuid-v5.js";
+import { logger } from "../shared/logger.js";
 import type { ChatBroadcaster } from "./ports/chat-broadcaster.js";
 import type { ConversationStore } from "./ports/conversation-store.js";
 
@@ -54,7 +55,7 @@ export async function sendMessage(
     try {
       await broadcaster.messageCreated(message);
     } catch (error) {
-      console.error(`Could not broadcast message ${message.messageId}`, error);
+      logger.error({ err: error, messageId: message.messageId, conversationId }, "Could not broadcast message");
     }
 
     return { outcome: "sent", message };

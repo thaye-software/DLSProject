@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { onUserDeleted, type UserDeletedDependencies } from "../../application/anonymise-user.js";
+import { logger } from "../../shared/logger.js";
 import { handleEvent, type EventHandler } from "./consumer.js";
 
 export const USER_EVENTS_EXCHANGE = "user.events";
@@ -15,8 +16,14 @@ export function createUserEventHandlers(dependencies: UserDeletedDependencies): 
   return {
     user_deleted: handleEvent(userDeletedSchema, async ({ user_id }, event) => {
       const result = await onUserDeleted(user_id, event.id, dependencies);
-      const outcome = result.kind === "duplicate" ? "already handled, skipped" : `anonymised ${result.conversations} conversation(s)`;
-      console.log(`${event.type} ${event.id}: user ${user_id} ${outcome}`);
+      logger.info(
+        {
+          userId: user_id,
+          outcome: result.kind,
+          ...(result.kind === "applied" ? { conversations: result.conversations } : {}),
+        },
+        "User deleted handled",
+      );
     }),
   };
 }

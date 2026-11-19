@@ -16,15 +16,19 @@ import { assertConsumerTopology } from "./adapters/rabbitmq/topology.js";
 import { createUserEventHandlers, USER_EVENTS_EXCHANGE, USER_EVENTS_QUEUE } from "./adapters/rabbitmq/user-events.js";
 import { SupabaseBroadcast } from "./adapters/realtime/supabase-broadcast.js";
 import { loadConfig } from "./config.js";
+import { logger } from "./shared/logger.js";
+
+process.on("uncaughtException", (error) => {
+  logger.fatal({ err: error }, "Uncaught exception, exiting");
+  process.exit(1);
+});
 
 const config = loadConfig(process.env);
 const mongo = await connectToMongo(config.mongodbUrl);
 const broker = await connectToBroker(config.rabbitmqUrl);
 
 broker.onUnexpectedClose((error) => {
-  console.error(
-    error ? `RabbitMQ connection lost, exiting: ${error.message}` : "RabbitMQ closed the connection, exiting",
-  );
+  logger.fatal({ err: error }, "RabbitMQ connection lost, exiting");
   process.exit(1);
 });
 
@@ -59,7 +63,7 @@ const app = createApp({
   markRead: (viewer, conversationId) => markRead(viewer, conversationId, store, now),
 });
 const server = app.listen(config.port, () => {
-  console.log(`messaging listening on port ${config.port} (realtime: ${broadcaster === noBroadcast ? "off" : "supabase"})`);
+  logger.info({ port: config.port, realtime: broadcaster === noBroadcast ? "off" : "supabase" }, "Service listening");
 });
 
 async function shutdown(): Promise<void> {
