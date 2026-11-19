@@ -44,6 +44,10 @@ jobs:
       # Every service in the compose files sits behind profiles: ["${START_X:-true}"].
       # Locally microservices/.env (from .env.example) sets this; without it only rabbitmq starts.
       COMPOSE_PROFILES: "true"
+      # Only the services this workflow can scan; their databases and RabbitMQ come in through depends_on.
+      # gateway and frontend are left out: the frontend build needs NEXT_PUBLIC_* values and the gateway a
+      # SUPABASE_URL, which CI does not have.
+      BACKEND_SERVICES: auth catalog messaging notif orders payment search users
       # Catalog, Orders, Payment, Users and Auth sign and verify service JWTs with this shared secret.
       INTERNAL_JWT_SECRET: ci-only-secret-0123456789abcdef0123456789
       # The user the API scan acts as (the gateway's X-User-Id / X-User-Email).
@@ -111,14 +115,14 @@ jobs:
       - name: Build images
         run: |
           for attempt in 1 2 3; do
-            docker compose build && exit 0
+            docker compose build $BACKEND_SERVICES && exit 0
             echo "::warning::docker compose build failed (attempt $attempt of 3)"
             sleep 15
           done
           exit 1
 
       - name: Start stack
-        run: docker compose up --detach --wait --wait-timeout 300
+        run: docker compose up --detach --wait --wait-timeout 300 $BACKEND_SERVICES
 
       # --wait only covers the containers that were created, so check every service answers.
       - name: Check services are up
