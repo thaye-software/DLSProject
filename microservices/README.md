@@ -129,4 +129,4 @@ npm test
 npm run stack:down
 ```
 
-There is no API Gateway in compose, so the tests do the gateway's forward-auth step themselves: Auth `GET /verify` with a `fake:<user id>:<email>` token, then the service with Auth's `X-User-*` headers. Two events are published by the tests: `payment_complete` / `payment_failed`, because fake Payment has no Stripe webhook, and `product_created`, because Catalog has no product admin yet. Everything after those events is the real services.
+The stack starts only the eight backend services, not `gateway` or `frontend`. The gateway checks Supabase JWTs itself instead of asking Auth, so the tests do the forward-auth step of the target architecture: Auth `GET /verify` with a `fake:<user id>:<email>` token, then the service with Auth's `X-User-*` headers. Two events are published by the tests: `payment_complete` / `payment_failed`, because fake Payment has no Stripe webhook, and `product_created`, because Catalog has no product admin yet. Everything after those events is the real services.

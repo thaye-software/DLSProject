@@ -7,7 +7,8 @@
     "node": ">=24"
   },
   "scripts": {
-    "stack:up": "docker compose --project-name dls-system-tests --profile true --file ../docker-compose.yml --file compose.yml up --build --detach --wait --wait-timeout 300",
+    "stack:build": "docker compose --project-name dls-system-tests --profile true --file ../docker-compose.yml --file compose.yml build auth catalog messaging notif orders payment search users",
+    "stack:up": "docker compose --project-name dls-system-tests --profile true --file ../docker-compose.yml --file compose.yml up --build --detach --wait --wait-timeout 300 auth catalog messaging notif orders payment search users",
     "stack:down": "docker compose --project-name dls-system-tests --profile true --file ../docker-compose.yml --file compose.yml down --volumes",
     "stack:logs": "docker compose --project-name dls-system-tests --profile true --file ../docker-compose.yml --file compose.yml logs",
     "typecheck": "tsc --noEmit",

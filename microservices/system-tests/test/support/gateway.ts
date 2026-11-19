@@ -6,8 +6,9 @@ export type ApiResponse<T = any> = { status: number; body: T };
 
 export type CallOptions = { body?: unknown; headers?: Record<string, string> };
 
-// The compose stack has no API Gateway, so this does its forward-auth step: GET /verify on Auth, then the
-// service with Auth's X-User-* headers, or Auth's own answer when it is not 200.
+// The forward-auth step of the target architecture (CLAUDE.md): GET /verify on Auth, then the service with
+// Auth's X-User-* headers, or Auth's own answer when it is not 200. microservices/gateway checks tokens
+// itself instead of asking Auth, so the stack runs without it.
 export class Gateway {
   constructor(private readonly token: string | null) {}
 

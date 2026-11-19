@@ -51,7 +51,7 @@ jobs:
       - name: Build images
         run: |
           for attempt in 1 2 3; do
-            docker compose --project-name dls-system-tests --profile true --file ../docker-compose.yml --file compose.yml build && exit 0
+            npm run stack:build && exit 0
             echo "::warning::docker compose build failed (attempt $attempt of 3)"
             sleep 15
           done
