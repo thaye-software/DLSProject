@@ -5,11 +5,10 @@ metadata:
   labels:
     app: orders
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: orders
   ports:
     - name: http
       port: 3000
       targetPort: http
-      nodePort: 30000
