@@ -1,26 +1,27 @@
 # Starts every microservice together with docker compose (fake Stripe, Resend and Supabase) and runs the
 # cross-service journeys in microservices/system-tests against it: checkout, cancellation, fulfilment,
 # account deletion, search and messaging, each with its failure paths.
+#
+# execute-tests.yml calls it for every service pipeline, after typecheck + build and next to the unit and
+# integration tests. It also runs on its own when only the system tests change, since no service pipeline
+# watches those paths.
 name: system-tests
 
 on:
+  workflow_call:
   push:
     branches: [dev, main]
     paths:
-      - "microservices/**"
+      - "microservices/system-tests/**"
       - ".github/workflows/system-tests.yml"
   pull_request:
     paths:
-      - "microservices/**"
+      - "microservices/system-tests/**"
       - ".github/workflows/system-tests.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   system-tests:

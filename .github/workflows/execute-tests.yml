@@ -1,6 +1,11 @@
-# Reusable test stage for one Node/TypeScript microservice: typecheck, unit tests, integration tests
-# (Vitest + testcontainers) and build. Each service workflow calls it first, before
-# security-scan.yml and publish-image.yml.
+# Reusable test stage for one Node/TypeScript microservice. Each service workflow calls it first, before
+# security-scan.yml and publish-image.yml:
+#
+#   typecheck + build ──┬─► unit tests
+#                       ├─► integration tests (Vitest + testcontainers)
+#                       └─► system tests (whole compose stack, system-tests.yml)
+#
+# The cheap check runs first, so a commit that does not compile never starts the slower test jobs.
 name: execute-tests
 
 on:
@@ -23,8 +28,62 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    name: Tests (${{ inputs.service }})
+  typecheck-build:
+    name: Typecheck + build (${{ inputs.service }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: microservices/${{ inputs.service }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: microservices/${{ inputs.service }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Also covers the test files, which the build leaves out, so it goes first.
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+  unit-tests:
+    name: Unit tests (${{ inputs.service }})
+    needs: typecheck-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: microservices/${{ inputs.service }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: microservices/${{ inputs.service }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Catalog, Orders and Users import their Prisma client from src/generated/, which is not committed.
+      - name: Generate Prisma client
+        run: if [ -f prisma.config.ts ]; then npx prisma generate; fi
+
+      - name: Unit tests
+        run: npm run test:unit
+
+  integration-tests:
+    name: Integration tests (${{ inputs.service }})
+    needs: typecheck-build
     runs-on: ubuntu-latest
     timeout-minutes: 20
     defaults:
@@ -42,11 +101,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Unit tests
-        run: npm run test:unit
+      - name: Generate Prisma client
+        run: if [ -f prisma.config.ts ]; then npx prisma generate; fi
 
       # Postgres, MongoDB, Redis and RabbitMQ come from testcontainers, using the runner's Docker.
       - name: Integration tests
@@ -56,5 +112,6 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL || 'onboarding@resend.dev' }}
 
-      - name: Build
-        run: npm run build
+  system-tests:
+    needs: typecheck-build
+    uses: ./.github/workflows/system-tests.yml

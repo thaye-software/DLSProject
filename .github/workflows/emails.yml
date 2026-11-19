@@ -1,4 +1,5 @@
 # emails pipeline: test ──► security-scan ──► publish (pushes to dev/main only).
+#                  test = typecheck + build, then unit, integration and system tests in parallel (execute-tests.yml).
 # Runs only when emails (or a stage it uses) changes, so emails ships independently.
 name: emails
 

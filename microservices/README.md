@@ -130,7 +130,7 @@ In a service folder: `npm ci`, then `npm run test:unit`. `npm run test:integrati
 
 ### System tests
 
-[`system-tests/`](system-tests) starts every service with docker compose and runs the cross-service journeys against it: checkout, cancellation, fulfilment, account deletion, search and messaging, with their failure paths. CI runs them in [`system-tests.yml`](../.github/workflows/system-tests.yml) on every change under `microservices/`.
+[`system-tests/`](system-tests) starts every service with docker compose and runs the cross-service journeys against it: checkout, cancellation, fulfilment, account deletion, search and messaging, with their failure paths. Every service pipeline runs them ([`system-tests.yml`](../.github/workflows/system-tests.yml)) in its test stage ([`execute-tests.yml`](../.github/workflows/execute-tests.yml)): typecheck + build first, then unit, integration and system tests in parallel. The image is only published when all of them pass. A change to the system tests alone runs them on their own.
 
 Stop your own compose stack first, because both use the same ports. The system-test stack runs as its own compose project (`dls-system-tests`) with its own volumes. [`system-tests/compose.yml`](system-tests/compose.yml) switches every service to fake Stripe, Resend and Supabase, so it is safe even when your `.env` files hold real keys.
 
