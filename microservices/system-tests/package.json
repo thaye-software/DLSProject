@@ -1,0 +1,22 @@
+{
+  "name": "system-tests",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "stack:up": "docker compose --project-name dls-system-tests --profile true --file ../docker-compose.yml --file compose.yml up --build --detach --wait --wait-timeout 300",
+    "stack:down": "docker compose --project-name dls-system-tests --profile true --file ../docker-compose.yml --file compose.yml down --volumes",
+    "stack:logs": "docker compose --project-name dls-system-tests --profile true --file ../docker-compose.yml --file compose.yml logs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "amqplib": "^2.2.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

@@ -1,0 +1,38 @@
+# Layered over ../docker-compose.yml. `environment` wins over each service's env_file, so the stack runs
+# against fake providers even on a machine whose .env files hold real Stripe, Resend and Supabase keys.
+x-internal-jwt-secret: &internal-jwt-secret system-tests-only-secret-0123456789abcdef
+
+services:
+  catalog:
+    environment:
+      INTERNAL_JWT_SECRET: *internal-jwt-secret
+
+  orders:
+    environment:
+      INTERNAL_JWT_SECRET: *internal-jwt-secret
+
+  payment:
+    environment:
+      PAYMENT_PROVIDER: fake
+      INTERNAL_JWT_SECRET: *internal-jwt-secret
+
+  notif:
+    environment:
+      MAILER: fake
+
+  messaging:
+    environment:
+      SUPABASE_URL: ""
+      SUPABASE_SECRET_KEY: ""
+
+  users:
+    environment:
+      IDENTITY_PROVIDER: fake
+      INTERNAL_JWT_SECRET: *internal-jwt-secret
+      SUPABASE_WEBHOOK_SECRET: system-tests-only-webhook-secret-0123456789
+
+  auth:
+    environment:
+      TOKEN_VERIFIER: fake
+      INTERNAL_JWT_SECRET: *internal-jwt-secret
+      ROLE_CACHE_TTL_MS: "0"

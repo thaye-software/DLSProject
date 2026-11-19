@@ -106,3 +106,27 @@ Resource usage: `kubectl top node`, `kubectl get hpa`.
 ## Tests
 
 In a service folder: `npm ci`, then `npm run test:unit`. `npm run test:integration` needs Docker (Testcontainers).
+
+### System tests
+
+[`system-tests/`](system-tests) starts every service with docker compose and runs the cross-service journeys against it: checkout, cancellation, fulfilment, account deletion, search and messaging, with their failure paths. CI runs them in [`system-tests.yml`](../.github/workflows/system-tests.yml) on every change under `microservices/`.
+
+Stop your own compose stack first, because both use the same ports. The system-test stack runs as its own compose project (`dls-system-tests`) with its own volumes. [`system-tests/compose.yml`](system-tests/compose.yml) switches every service to fake Stripe, Resend and Supabase, so it is safe even when your `.env` files hold real keys.
+
+```powershell
+cd system-tests; npm ci
+```
+
+```powershell
+npm run stack:up
+```
+
+```powershell
+npm test
+```
+
+```powershell
+npm run stack:down
+```
+
+There is no API Gateway in compose, so the tests do the gateway's forward-auth step themselves: Auth `GET /verify` with a `fake:<user id>:<email>` token, then the service with Auth's `X-User-*` headers. Two events are published by the tests: `payment_complete` / `payment_failed`, because fake Payment has no Stripe webhook, and `product_created`, because Catalog has no product admin yet. Everything after those events is the real services.
