@@ -70,7 +70,28 @@ kubectl get pods -A
 
 [`kubernetes/kustomization.yaml`](../kubernetes/kustomization.yaml) lists every manifest; add new files there. The order does not matter: each app pod waits for its database and RabbitMQ, and pods restart until the services they call answer. The first start takes several minutes while images download.
 
-One service only: `kubectl apply -f kubernetes/<folder>`. Newest image of a service: `kubectl rollout restart deployment/<name>`.
+One service only: `kubectl apply -f kubernetes/<folder>`.
+
+### Deploying new versions
+
+`kubectl apply` only rolls out changes to the manifests. The image is always `:latest`, so after CI publishes a new image the manifest is unchanged, `apply` replaces nothing, and the pods keep the old image. To get the newest image, restart the Deployment: Kubernetes replaces its pods one by one, and `imagePullPolicy: Always` makes each new pod pull the image again.
+
+| What changed | What to do |
+|---|---|
+| Code only (CI published new images) | Restart the service's Deployment |
+| Files in `kubernetes/` | `kubectl apply -k kubernetes`, then restart the Deployments if they also need the newest image |
+
+In Lens: Workloads → Deployments, select one or more services, ⋮ → **Restart**. From a terminal (Lens has one built in):
+
+```bash
+kubectl rollout restart deployment/orders
+kubectl rollout restart deployment/auth deployment/catalog deployment/messaging deployment/notif deployment/orders deployment/payment deployment/search deployment/users
+```
+
+- Deleting a pod in Lens also pulls the newest image, but every service runs one replica, so the service is down until the new pod is ready. Restart the Deployment instead.
+- A specific version or a rollback: edit the Deployment in Lens and change `:latest` to a commit SHA (CI tags every image `:latest` and `:<full commit SHA>`). This lives only in the cluster: the next `kubectl apply -k kubernetes` sets it back to `:latest`.
+- `gateway` and `frontend` use `dls/<name>:local` with `imagePullPolicy: Never`, so nothing is pulled. Build the image first (commands in [`kubernetes/setupguide.txt`](../kubernetes/setupguide.txt); the frontend needs its `--build-arg NEXT_PUBLIC_...` values), then restart.
+- A restart only picks up what CI has pushed. If the service's workflow has not published since the last pull, the pods come back on the same image.
 
 Remove everything, including the stored data: `kubectl delete -k kubernetes`.
 
