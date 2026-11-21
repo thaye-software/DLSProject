@@ -1,6 +1,7 @@
 import { messageJson } from "../http/chat-json.js";
 import type { ChatBroadcaster } from "../../application/ports/chat-broadcaster.js";
 import type { Message } from "../../domain/chat.js";
+import { callDependency } from "../../shared/logger.js";
 
 const REQUEST_TIMEOUT_MS = 5000;
 
@@ -22,7 +23,15 @@ export class SupabaseBroadcast implements ChatBroadcaster {
     this.fetchImpl = fetchImpl;
   }
 
-  async messageCreated(message: Message): Promise<void> {
+  messageCreated(message: Message): Promise<void> {
+    return callDependency(
+      "Supabase broadcast message",
+      { conversationId: message.conversationId, messageId: message.messageId },
+      () => this.post(message),
+    );
+  }
+
+  private async post(message: Message): Promise<void> {
     const response = await this.fetchImpl(this.endpoint, {
       method: "POST",
       headers: {
