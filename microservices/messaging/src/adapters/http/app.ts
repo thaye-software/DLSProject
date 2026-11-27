@@ -7,6 +7,7 @@ import type { SendMessageResult } from "../../application/send-message.js";
 import type { Conversation, MessageCursor, Viewer } from "../../domain/chat.js";
 import { conversationJson, listMessagesQuerySchema, messageJson, messagePageJson, openConversationRequestSchema, sendMessageRequestSchema } from "./chat-json.js";
 import { notFoundHandler, securityHeaders } from "./http-security.js";
+import { logger, requestLogger } from "../../shared/logger.js";
 import { sendProblem, sendValidationProblem } from "./problem.js";
 
 export type AppDependencies = {
@@ -59,6 +60,7 @@ export function createApp({
 }: AppDependencies): Express {
   const app = express();
   app.disable("x-powered-by");
+  app.use(requestLogger);
   app.use(securityHeaders);
   app.use(express.json({ limit: "32kb" }));
 
@@ -93,6 +95,7 @@ export function createApp({
       sendUnauthorized(response, instance);
       return;
     }
+    logger.debug({ input: request.body }, "Request input");
     const body = openConversationRequestSchema.safeParse(request.body);
     if (!body.success) {
       sendValidationProblem(response, instance, z.prettifyError(body.error));
@@ -117,6 +120,7 @@ export function createApp({
       });
       return;
     }
+    logger.info({ conversationId: result.conversation.conversationId, productId: body.data.product_id, outcome: result.outcome }, "Conversation opened");
     response.status(result.outcome === "created" ? 201 : 200).json(conversationJson(result.conversation, viewer));
   });
 
@@ -177,6 +181,7 @@ export function createApp({
       sendValidationProblem(response, instance, "Idempotency-Key header must be a UUID.");
       return;
     }
+    logger.debug({ input: request.body }, "Request input");
     const body = sendMessageRequestSchema.safeParse(request.body);
     if (!body.success) {
       sendValidationProblem(response, instance, z.prettifyError(body.error));
@@ -191,6 +196,10 @@ export function createApp({
       sendForbidden(response, instance, "Not a participant of this conversation.");
       return;
     }
+    logger.info(
+      { conversationId: conversationId.data, messageId: result.message.messageId, outcome: result.outcome },
+      "Message sent",
+    );
     response.status(201).json(messageJson(result.message));
   });
 
@@ -215,6 +224,7 @@ export function createApp({
       sendForbidden(response, instance, "Not a participant of this conversation.");
       return;
     }
+    logger.info({ conversationId: conversationId.data }, "Conversation marked read");
     response.status(204).end();
   });
 
@@ -229,7 +239,7 @@ const unexpectedErrorHandler: ErrorRequestHandler = (error, request, response, _
     sendValidationProblem(response, request.path, "Body is not JSON.");
     return;
   }
-  console.error(`${request.method} ${request.path} failed`, error);
+  logger.error({ err: error }, "Unhandled request error");
   sendProblem(response, {
     code: "internal_error",
     title: "Internal error",

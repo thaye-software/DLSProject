@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { CatalogClient, CatalogLookup } from "../../application/ports/catalog-client.js";
+import { callDependency } from "../../shared/logger.js";
 
 const REQUEST_TIMEOUT_MS = 5000;
 
@@ -16,7 +17,11 @@ export class HttpCatalogClient implements CatalogClient {
     this.baseUrl = new URL(baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`);
   }
 
-  async getProduct(productId: string): Promise<CatalogLookup> {
+  getProduct(productId: string): Promise<CatalogLookup> {
+    return callDependency("Catalog get product", { productId }, () => this.fetchProduct(productId));
+  }
+
+  private async fetchProduct(productId: string): Promise<CatalogLookup> {
     let response: Response;
     try {
       response = await fetch(new URL(`products/${encodeURIComponent(productId)}`, this.baseUrl), {

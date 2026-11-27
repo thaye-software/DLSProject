@@ -45,6 +45,6 @@ describe("SupabaseBroadcast", () => {
       fetchImpl: vi.fn(async () => new Response("nope", { status: 500 })) as unknown as typeof fetch,
     });
 
-    await expect(broadcaster.messageCreated(message())).rejects.toThrow(/500/);
+    await expect(broadcaster.messageCreated(message())).rejects.toThrow("Supabase broadcast message failed");
   });
 });
