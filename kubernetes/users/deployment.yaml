@@ -5,7 +5,6 @@ metadata:
   labels:
     app: users
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: users
@@ -52,6 +51,13 @@ spec:
             # No Supabase project: Supabase accounts and avatar files are not touched, avatars get a made-up URL.
             - name: IDENTITY_PROVIDER
               value: fake
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           startupProbe:
             httpGet:
               path: /health

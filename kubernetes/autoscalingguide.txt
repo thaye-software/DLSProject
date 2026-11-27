@@ -1,0 +1,240 @@
+---------- Autoscaling with KEDA and the HPA ----------
+
+Start after the services in setupguide.txt are running.
+Normal PowerShell, from the repo root.
+
+Each app Deployment gets more pods when its pods use more CPU or memory, and fewer again when the load is gone.
+
+  metrics-server --> CPU and memory per pod
+  KEDA ScaledObject (kubernetes/autoscaling/<service>.yaml) --> creates the HPA keda-hpa-<service>
+  HPA --> sets the number of replicas on the Deployment
+
+KEDA writes and owns the HorizontalPodAutoscaler (HPA). You change the ScaledObject, never the HPA itself:
+KEDA overwrites a hand-made change to keda-hpa-<service> on its next sync.
+
+These ten Deployments scale: gateway, auth, search, catalog, orders, users, messaging, payment, notif, frontend.
+They are safe to run as several pods. Their RabbitMQ queues are shared, so each message goes to one pod.
+The outbox relays and Orders' expiry sweeper pick rows with SKIP LOCKED, so two pods never handle the same row.
+
+These do not scale and stay at one pod: the databases (catalog-db, orders-db, users-db, search-db, messaging-db),
+search-cache (Redis), rabbitmq and everything in the monitoring namespace.
+Each database keeps its data on one ReadWriteOnce volume, and a second Postgres or MongoDB pod would not be a replica of the first.
+
+
+---------- The numbers, and why ----------
+
+Every ScaledObject uses the same rules. Only maxReplicaCount differs per service.
+
+  CPU target       70% of the CPU request
+  Memory target    80% of the memory request
+  minReplicaCount  1
+  maxReplicaCount  4 for gateway, auth, search and catalog. 3 for the others
+  Scale up         at once, at most doubling the pods every 15 seconds
+  Scale down       only after 5 minutes below target, then 1 pod per minute
+
+70% CPU is the usual starting point. A new pod takes a few seconds to start and pass its readiness probe,
+and the 30% left over absorbs the extra load until it does. A target close to 100% scales too late, a low one like 50% runs pods you do not need.
+Memory gets 80% because memory use grows more slowly than CPU, and a pod that hits its memory limit is killed (OOMKilled), not slowed down.
+
+gateway and auth answer every protected request (the gateway asks auth GET /verify each time), and search and catalog
+get most of the browsing (40% of the customer journeys in the load test), so they get one more pod.
+
+The 5-minute wait before scaling down is the Kubernetes default. Without it the pod count goes up and down with every short burst.
+Scaling up has no wait, because a slow site is worse than a pod too many.
+
+How the HPA counts. Every 15 seconds it works out, for each trigger:
+
+  desired pods = ceil(current pods * current utilisation / target)
+
+It takes the larger of the CPU and the memory answer, and stays between minReplicaCount and maxReplicaCount.
+Example: 2 search pods at 140% CPU, target 70%: ceil(2 * 140 / 70) = 4 pods.
+It does nothing while the result is within 10% of the target.
+
+Utilisation is always a percentage of the container's request, not of its limit and not of the node.
+That is why every app container now has resources in its deployment.yaml:
+
+  Node services   requests cpu 100m, memory 256Mi   limits cpu 500m, memory 512Mi
+  frontend        requests cpu 200m, memory 384Mi   limits cpu 1, memory 768Mi
+
+Without a request the HPA cannot compute a percentage, and the target shows <unknown>.
+These requests are a starting point, not a measurement. Check them with kubectl top pods (below) and adjust.
+
+
+---------- First time: install metrics-server and KEDA ----------
+
+Once per cluster. Both stay installed when Docker Desktop restarts.
+
+1. metrics-server v0.9.1. kubernetes/autoscaling/metrics-server adds --kubelet-insecure-tls to the official manifest,
+because Docker Desktop's kubelet has a self-signed certificate. Only do that in this local cluster.
+
+kubectl apply -k kubernetes/autoscaling/metrics-server
+kubectl -n kube-system rollout status deployment/metrics-server
+
+After about a minute this prints CPU and memory per pod:
+kubectl top pods
+
+"Metrics API not available" right after the install is normal. Try again after a minute.
+
+2. KEDA v2.21.1 (made for Kubernetes 1.36). --server-side is needed, because KEDA's CRDs are too large for a normal kubectl apply.
+
+kubectl apply --server-side -f https://github.com/kedacore/keda/releases/download/v2.21.1/keda-2.21.1.yaml
+kubectl -n keda rollout status deployment/keda-operator
+kubectl -n keda rollout status deployment/keda-metrics-apiserver
+kubectl -n keda rollout status deployment/keda-admission
+
+3. The ScaledObjects:
+
+kubectl apply -k kubernetes/autoscaling
+
+kubernetes/autoscaling is not part of kubectl apply -k kubernetes, because kubectl rejects a ScaledObject
+("no matches for kind ScaledObject") until KEDA is installed. That way the main apply keeps working on a cluster without KEDA.
+After you change a file in kubernetes/autoscaling, run this command again.
+
+
+---------- Check that it works ----------
+
+kubectl get scaledobject
+
+Expected, for each of the ten: READY True, and the MIN and MAX from the table above.
+ACTIVE only matters for scaling to and from 0, which CPU and memory triggers never do, so ignore it.
+gateway and frontend show READY False until their Deployments exist (setupguide.txt, Gateway).
+
+kubectl get hpa
+
+Expected: keda-hpa-<service> for each, with TARGETS like cpu: 3%/70%, memory: 35%/80% and REPLICAS 1.
+<unknown>/70% for the first minute is normal. See "If something is wrong" when it stays.
+
+kubectl top pods
+
+Compare each app pod's memory with its 256Mi request. A pod that sits above 80% (205Mi) with no load
+scales up for nothing and never scales down. Raise its memory request then (see Configure).
+
+
+---------- See it scale ----------
+
+Run the k6 load test (loadtestguide.txt) with more load. In kubernetes/loadtest/settings.env, for example:
+
+CUSTOMER_VUS=150
+THINK_TIME_SCALE=0.2
+
+In a second terminal, watch the HPAs and the pods:
+
+kubectl get hpa -w
+kubectl get pods -w
+
+The busiest services get more pods within a minute or two.
+k6 calls auth and the services directly, not through the gateway, so gateway and frontend stay at 1 pod during this test. About 5 minutes after the test ends they go back to 1, one pod per minute.
+Lens shows the same under Workloads, Deployments (the Pods column) and Config, Horizontal Pod Autoscalers.
+Why the HPA changed something:
+
+kubectl describe hpa keda-hpa-search
+
+The Events at the bottom say "New size: 3; reason: cpu resource utilization (percentage of request) above target".
+
+Put settings.env back afterwards. The pass limits in loadtestguide.txt are for the normal settings.
+
+
+---------- Configure ----------
+
+Change a file, then apply it again with kubectl apply -k kubernetes/autoscaling. KEDA updates the HPA within seconds.
+
+Thresholds, in kubernetes/autoscaling/<service>.yaml under triggers:
+
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "70"          percent of the CPU request. The value is a string
+
+    - type: memory
+      metricType: Utilization
+      metadata:
+        value: "80"          percent of the memory request
+
+metricType AverageValue instead of Utilization takes an absolute amount per pod, for example value: "200m" for CPU or "300Mi" for memory.
+Delete the memory trigger to scale on CPU alone.
+
+Number of pods:
+
+  minReplicaCount: 1     never fewer. CPU and memory triggers cannot scale to 0, so this must be 1 or more
+  maxReplicaCount: 4     never more
+
+Speed, under advanced.horizontalPodAutoscalerConfig.behavior:
+
+  scaleUp.stabilizationWindowSeconds: 0       how long the load must stay high before adding pods
+  scaleUp.policies: Percent 100 per 15s       at most double the pods every 15 seconds
+  scaleDown.stabilizationWindowSeconds: 300   how long the load must stay low before removing pods
+  scaleDown.policies: Pods 1 per 60s          remove at most 1 pod per minute
+
+Requests and limits, in kubernetes/<service>/deployment.yaml under resources. A change there restarts the pods:
+
+kubectl apply -f kubernetes/<service>/deployment.yaml
+
+A lower request makes the same load a higher percentage, so the service scales up sooner. A higher request does the opposite.
+Keep the memory limit about twice the request, so a short peak is not OOMKilled.
+
+The Deployments have no replicas field any more, because the HPA sets it.
+With replicas: 1 in the file, every kubectl apply -k kubernetes would push a scaled-up service back to 1 pod until the HPA scales it up again.
+The first apply after this change still sets each Deployment to 1 once. After that, applying leaves the pod count alone.
+
+A new service:
+1. Give its container resources.requests (cpu and memory) in its deployment.yaml, and remove replicas.
+2. Copy kubernetes/autoscaling/orders.yaml to kubernetes/autoscaling/<service>.yaml and replace orders with the Deployment's name.
+3. Add the file under resources in kubernetes/autoscaling/kustomization.yaml.
+4. kubectl apply -k kubernetes/autoscaling
+
+
+---------- Things to know ----------
+
+Memory rarely brings the pod count down. Node.js keeps memory it has used for a while, so a pod added because of memory may stay.
+If that happens, raise the memory request or delete the memory trigger for that service.
+
+Everything runs on one node. More pods only help while the laptop has free CPU. When the node's requests are full,
+new pods stay Pending, and kubectl describe pod shows "Insufficient cpu" or "Insufficient memory".
+At the maximum, all ten services request about 3.7 CPU and 8.9Gi of memory together. Docker Desktop, Settings, Resources sets what the node has.
+
+The databases and RabbitMQ have no requests. Under memory pressure Kubernetes evicts pods without requests first.
+
+KEDA can also scale on things other than CPU and memory, for example the length of a RabbitMQ queue (trigger type rabbitmq).
+That would suit payment and notif, which mostly read queues. Only CPU and memory are set up here.
+
+Scaling does not change the guides' checks. verifykubernetes.txt accepts one or more ready pods per Deployment.
+kubectl get pods can list several pods for one service, for example search-6d9c...-abcde and search-6d9c...-fghij.
+
+
+---------- Turn it off ----------
+
+For one service, keep the ScaledObject and stop it from scaling, at its current size:
+kubectl annotate scaledobject search autoscaling.keda.sh/paused=true
+Start it again:
+kubectl annotate scaledobject search autoscaling.keda.sh/paused-
+
+Remove all the autoscaling. KEDA deletes the HPAs with their ScaledObjects. The Deployments keep their current pod count:
+kubectl delete -k kubernetes/autoscaling
+kubectl scale deployment gateway auth search catalog orders users messaging payment notif frontend --replicas=1
+
+Remove KEDA and metrics-server from the cluster:
+kubectl delete -f https://github.com/kedacore/keda/releases/download/v2.21.1/keda-2.21.1.yaml
+kubectl delete -k kubernetes/autoscaling/metrics-server
+
+
+---------- If something is wrong ----------
+
+kubectl apply -k kubernetes/autoscaling says no matches for kind "ScaledObject":
+KEDA is not installed. Do step 2 of the first-time section.
+
+kubectl top pods says "Metrics API not available" for more than two minutes:
+kubectl -n kube-system logs deployment/metrics-server
+"x509: cannot validate certificate" means the --kubelet-insecure-tls patch is missing. Apply kubernetes/autoscaling/metrics-server again.
+
+The HPA target stays <unknown>:
+kubectl describe hpa keda-hpa-<service>
+"missing request for cpu" or "missing request for memory": the Deployment has no resources.requests. Apply its deployment.yaml.
+"unable to get metrics": metrics-server is not ready, see the line above.
+
+A ScaledObject stays READY False:
+kubectl describe scaledobject <service>
+"Target resource doesn't exist": the Deployment is not applied (often gateway or frontend).
+kubectl -n keda logs deployment/keda-operator has more.
+
+The pods never scale down:
+Look at kubectl get hpa. If memory is above 80% while CPU is low, see "Memory rarely brings the pod count down".

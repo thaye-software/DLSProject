@@ -1,0 +1,17 @@
+# One KEDA ScaledObject per app Deployment. Not part of kubernetes/kustomization.yaml, because a ScaledObject
+# can only be applied once KEDA is installed. Install KEDA and metrics-server first (kubernetes/autoscalingguide.txt), then:
+#   kubectl apply -k kubernetes/autoscaling
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: default
+resources:
+  - gateway.yaml
+  - auth.yaml
+  - search.yaml
+  - catalog.yaml
+  - orders.yaml
+  - users.yaml
+  - messaging.yaml
+  - payment.yaml
+  - notif.yaml
+  - frontend.yaml

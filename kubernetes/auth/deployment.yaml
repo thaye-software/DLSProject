@@ -5,7 +5,6 @@ metadata:
   labels:
     app: auth
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: auth
@@ -34,6 +33,13 @@ spec:
                 secretKeyRef:
                   name: auth-secret
                   key: INTERNAL_JWT_SECRET
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           startupProbe:
             httpGet:
               path: /health

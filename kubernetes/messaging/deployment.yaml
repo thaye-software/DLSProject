@@ -5,7 +5,6 @@ metadata:
   labels:
     app: messaging
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: messaging
@@ -38,6 +37,13 @@ spec:
               value: amqp://guest:guest@rabbitmq:5672
             - name: CATALOG_URL
               value: http://catalog:3002
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           startupProbe:
             httpGet:
               path: /health

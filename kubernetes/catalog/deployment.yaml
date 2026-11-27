@@ -5,7 +5,6 @@ metadata:
   labels:
     app: catalog
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: catalog
@@ -44,6 +43,13 @@ spec:
                 secretKeyRef:
                   name: catalog-secret
                   key: INTERNAL_JWT_SECRET
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           startupProbe:
             httpGet:
               path: /health

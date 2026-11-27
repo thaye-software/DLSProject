@@ -1,0 +1,17 @@
+# metrics-server reads each pod's CPU and memory from the kubelets. The HPAs that KEDA creates need it.
+#   kubectl apply -k kubernetes/autoscaling/metrics-server
+# Docker Desktop's kubelet serves a self-signed certificate, so metrics-server is told not to check it.
+# Only do that in this local cluster.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.9.1/components.yaml
+patches:
+  - target:
+      kind: Deployment
+      name: metrics-server
+      namespace: kube-system
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/args/-
+        value: --kubelet-insecure-tls

@@ -4,6 +4,7 @@
 # database and RabbitMQ, and Kubernetes restarts a pod until the services it calls answer.
 # A new manifest file must be added here too.
 # The k6 load test is not part of this: it is a Job you start yourself, see kubernetes/loadtest.
+# Autoscaling is not part of this either: it needs KEDA installed first, see kubernetes/autoscalingguide.txt.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:

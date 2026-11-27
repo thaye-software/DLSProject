@@ -65,6 +65,9 @@ kubectl apply -f kubernetes/auth
 
 Then repeat steps 3 and 4.
 
+8. Autoscaling (KEDA and the HPA) is set up separately, once per cluster: autoscalingguide.txt.
+With it, a busy service can show more than one pod in kubectl get pods.
+
 
 ---------- First-time setup ----------
 

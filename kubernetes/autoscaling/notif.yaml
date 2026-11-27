@@ -1,0 +1,37 @@
+# KEDA creates and runs the HPA keda-hpa-notif for the notif Deployment from this ScaledObject.
+# How to change the numbers: kubernetes/autoscalingguide.txt
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: notif
+  labels:
+    app: notif
+spec:
+  scaleTargetRef:
+    name: notif
+  minReplicaCount: 1
+  maxReplicaCount: 3
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleUp:
+          stabilizationWindowSeconds: 0
+          policies:
+            - type: Percent
+              value: 100
+              periodSeconds: 15
+        scaleDown:
+          stabilizationWindowSeconds: 300
+          policies:
+            - type: Pods
+              value: 1
+              periodSeconds: 60
+  triggers:
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "70"
+    - type: memory
+      metricType: Utilization
+      metadata:
+        value: "80"
